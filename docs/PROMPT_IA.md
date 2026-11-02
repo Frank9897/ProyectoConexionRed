@@ -8,7 +8,7 @@ Crear una aplicación web en español para inventariar, consultar y visualizar l
 - Hay un primer MVP de solo lectura en C# / ASP.NET Core MVC con EF Core y SQLite.
 - El MVP tiene página de inicio, vista de inventario con búsqueda por nombre/IP/área/modelo/fabricante y 25 registros iniciales.
 - La base de datos se crea al iniciar con EnsureCreated; esto es un prototipo. Usar migraciones antes de cambios de esquema posteriores.
-- No están implementados todavía el acceso con usuarios, permisos, edición de inventario, auditoría, topología, enlaces, SFP, simulaciones, exportación ni imágenes.
+- No están implementados todavía el acceso con usuarios, permisos, edición de inventario, auditoría, topología, enlaces, SFP, simulaciones, exportación ni imágenes. No desplegar el MVP como servicio de producción hasta incorporar autenticación y autorización.
 - El usuario compartirá posteriormente otros dos Visios con nombres de PC, usuarioPC y nombres de usuario. No inventar esos datos antes de revisar las fuentes.
 - Al modificar el código, actualizar siempre README.md y docs/PROMPT_IA.md.
 - No se ha confirmado con el usuario que el programa compile ni se han verificado las páginas en ejecución; no afirmar que están verificadas.
