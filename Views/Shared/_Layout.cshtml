@@ -14,6 +14,7 @@
             <nav aria-label="Navegación principal">
                 <a asp-controller="Home" asp-action="Index">Inicio</a>
                 <a asp-controller="Inventario" asp-action="Index">Inventario</a>
+                <a asp-controller="Auditoria" asp-action="Index">Accesos</a>
                 <span class="usuario-actual">@(User.Identity?.Name ?? "Cuenta")</span>
                 <form asp-controller="Cuenta" asp-action="Salir" method="post" class="formulario-salida">
                     <button class="enlace-salida" type="submit">Cerrar sesión</button>
