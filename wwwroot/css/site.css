@@ -63,6 +63,22 @@ nav a:hover { color: var(--azul); }
 .boton:hover { background: var(--azul-oscuro); }
 .hero .boton { margin-top: 12px; background: #fff; color: var(--azul-oscuro); }
 .boton-secundario { background: #eef3f5; color: var(--tinta); }
+.boton-ancho { width: 100%; margin-top: 8px; }
+.usuario-actual { color: var(--secundario); font-size: .88rem; }
+.formulario-salida { margin: 0; }
+.enlace-salida { padding: 0; border: 0; background: transparent; color: var(--azul); font: inherit; cursor: pointer; }
+.enlace-salida:hover { color: var(--azul-oscuro); text-decoration: underline; }
+
+.acceso-contenedor { width: min(480px, 100%); margin: 50px auto; }
+.acceso-intro { margin-bottom: 20px; }
+.acceso-intro h1 { margin: 4px 0; font-size: 2.4rem; letter-spacing: -.035em; }
+.acceso-intro p:last-child { color: var(--secundario); }
+.acceso-formulario { padding: 28px; border: 1px solid var(--borde); border-radius: 14px; background: #fff; box-shadow: 0 12px 35px #172b3a0d; }
+.campo-formulario { margin-bottom: 18px; }
+.campo-formulario label { display: block; margin-bottom: 7px; font-size: .9rem; font-weight: 700; }
+.campo-formulario input { width: 100%; padding: 12px; border: 1px solid var(--borde); border-radius: 8px; font: inherit; }
+.campo-formulario input:focus { outline: 3px solid #126b8325; border-color: var(--azul); }
+.mensaje-error { color: #a02d26; font-size: .85rem; }
 
 .busqueda label { display: block; margin-bottom: 9px; font-size: .9rem; font-weight: 700; }
 .fila-busqueda { display: flex; gap: 10px; }
@@ -97,7 +113,7 @@ td small { margin-top: 3px; color: var(--secundario); line-height: 1.35; }
 @media print {
     @page { margin: 14mm; }
     body { background: #fff; color: #111; font-size: 9pt; }
-    .barra-superior, .pie, .busqueda, .acciones-tabla { display: none !important; }
+    .barra-superior, .pie, .busqueda, .acciones-tabla, .formulario-salida { display: none !important; }
     .contenedor { width: 100%; margin: 0; }
     .encabezado-pagina h1 { font-size: 20pt; }
     .encabezado-pagina p { margin-bottom: 10px; }
