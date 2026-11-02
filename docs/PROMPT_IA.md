@@ -61,7 +61,7 @@ Los datos de la lista se transcriben del Visio y las IP son vigentes según el u
 | Switch principal de Mesa de Entradas | No indicado |
 
 - El Visio repite 192.168.1.19 en dos etiquetas. Preservar ambas etiquetas y sus datos como aparecen. No deducir que es un error ni asumir si se trata de un equipo duplicado.
-- El seed inicial también contiene el módem y las patcheras como elementos de la vista general cuando hay identificación. No asignar IP ni enlace sin fuente.
+- El Visio también muestra un módem Claro y patcheras; no están cargados como registros en el MVP actual. No asignarles IP ni enlace sin fuente.
 - No incluir credenciales del Visio en registros semilla, código, comentarios o documentación.
 
 ## Arquitectura y alcance acordados
