@@ -1,0 +1,16 @@
+@{
+    ViewData["Title"] = "Inicio";
+}
+
+<section class="hero">
+    <p class="sobrelinea">DOCUMENTACIÓN DE INFRAESTRUCTURA</p>
+    <h1>La red, organizada y consultable.</h1>
+    <p>Primer módulo disponible: inventario de equipos con IP, área, vigencia documental y estado de acceso.</p>
+    <a class="boton" asp-controller="Inventario" asp-action="Index">Abrir inventario</a>
+</section>
+
+<section class="panel">
+    <h2>Estado del proyecto</h2>
+    <p>Esta versión inicial consulta los equipos documentados. Las conexiones del rack, los SFP sin confirmar y los datos de PCs/usuarios que llegarán en otros Visios se incorporarán en etapas posteriores.</p>
+    <p>La información es documental: esta página no ejecuta pruebas ni cambios sobre la red de producción.</p>
+</section>
