@@ -9,10 +9,17 @@
 <body>
     <header class="barra-superior">
         <a class="marca" asp-controller="Home" asp-action="Index">ProyectoConexionRed</a>
-        <nav aria-label="Navegación principal">
-            <a asp-controller="Home" asp-action="Index">Inicio</a>
-            <a asp-controller="Inventario" asp-action="Index">Inventario</a>
-        </nav>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <nav aria-label="Navegación principal">
+                <a asp-controller="Home" asp-action="Index">Inicio</a>
+                <a asp-controller="Inventario" asp-action="Index">Inventario</a>
+                <span class="usuario-actual">@(User.Identity?.Name ?? "Cuenta")</span>
+                <form asp-controller="Cuenta" asp-action="Salir" method="post" class="formulario-salida">
+                    <button class="enlace-salida" type="submit">Cerrar sesión</button>
+                </form>
+            </nav>
+        }
     </header>
     <main class="contenedor">
         @RenderBody()
