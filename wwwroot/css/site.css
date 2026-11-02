@@ -1,14 +1,24 @@
 :root {
     color-scheme: light;
+    /* tinta define el color principal del texto; cambiarlo ajusta el contraste textual general. */
     --tinta: #172b3a;
+    /* secundario define el texto de apoyo; cambiarlo modifica su contraste en toda la interfaz. */
     --secundario: #526575;
+    /* fondo define el lienzo de la página; cambiarlo modifica el color detrás de paneles y tablas. */
     --fondo: #f3f6f8;
+    /* borde define separadores y contornos; cambiarlo altera la intensidad de los límites visuales. */
     --borde: #dce4e9;
+    /* azul define acciones y enlaces; cambiarlo modifica el color principal de interacción. */
     --azul: #126b83;
+    /* azul-oscuro define el color de interacción al pasar el cursor; cambiarlo modifica ese estado visual. */
     --azul-oscuro: #0a5268;
+    /* verde-fondo define el fondo de estados vigentes; cambiarlo altera su señal visual. */
     --verde-fondo: #e6f5ef;
+    /* verde-texto define el texto de estados vigentes; cambiarlo altera su legibilidad y énfasis. */
     --verde-texto: #176747;
+    /* ambar-fondo define el fondo de avisos administrativos; cambiarlo altera la alerta visual. */
     --ambar-fondo: #fff2d7;
+    /* ambar-texto define el texto de avisos; cambiarlo altera su contraste y énfasis. */
     --ambar-texto: #815914;
 }
 
