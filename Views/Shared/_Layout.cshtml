@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ProyectoConexionRed</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="barra-superior">
+        <a class="marca" asp-controller="Home" asp-action="Index">ProyectoConexionRed</a>
+        <nav aria-label="Navegación principal">
+            <a asp-controller="Home" asp-action="Index">Inicio</a>
+            <a asp-controller="Inventario" asp-action="Index">Inventario</a>
+        </nav>
+    </header>
+    <main class="contenedor">
+        @RenderBody()
+    </main>
+    <footer class="pie">
+        Inventario documental de red · Los cambios aquí no configuran equipos reales.
+    </footer>
+</body>
+</html>
