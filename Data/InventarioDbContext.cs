@@ -29,23 +29,22 @@ public class InventarioDbContext : DbContext
     {
         base.OnModelCreating(constructorModelo);
 
-        constructorModelo.Entity<EquipoRed>(entidad =>
-        {
-            entidad.ToTable("EquiposRed");
-            entidad.HasKey(equipo => equipo.Identificador);
-            entidad.Property(equipo => equipo.Nombre).HasMaxLength(160).IsRequired();
-            entidad.Property(equipo => equipo.Fabricante).HasMaxLength(100);
-            entidad.Property(equipo => equipo.Modelo).HasMaxLength(120);
-            entidad.Property(equipo => equipo.IpAdministracion).HasMaxLength(45);
-            entidad.Property(equipo => equipo.DireccionMac).HasMaxLength(32);
-            entidad.Property(equipo => equipo.Area).HasMaxLength(120);
-            entidad.Property(equipo => equipo.RolEnArea).HasMaxLength(60).IsRequired();
-            entidad.Property(equipo => equipo.TipoDispositivo).HasMaxLength(100).IsRequired();
-            entidad.Property(equipo => equipo.EstadoAdministrativo).HasMaxLength(100).IsRequired();
-            entidad.Property(equipo => equipo.EstadoDatos).HasMaxLength(60).IsRequired();
-            entidad.Property(equipo => equipo.Observaciones).HasMaxLength(1000);
-            entidad.HasIndex(equipo => equipo.Nombre);
-            entidad.HasIndex(equipo => equipo.IpAdministracion);
-        });
+        // configuracionEquipo reúne el esquema de EquipoRed; cambiar sus límites modifica las columnas e índices de la base.
+        var configuracionEquipo = constructorModelo.Entity<EquipoRed>();
+        configuracionEquipo.ToTable("EquiposRed");
+        configuracionEquipo.HasKey(nameof(EquipoRed.Identificador));
+        configuracionEquipo.Property(nameof(EquipoRed.Nombre)).HasMaxLength(160).IsRequired();
+        configuracionEquipo.Property(nameof(EquipoRed.Fabricante)).HasMaxLength(100);
+        configuracionEquipo.Property(nameof(EquipoRed.Modelo)).HasMaxLength(120);
+        configuracionEquipo.Property(nameof(EquipoRed.IpAdministracion)).HasMaxLength(45);
+        configuracionEquipo.Property(nameof(EquipoRed.DireccionMac)).HasMaxLength(32);
+        configuracionEquipo.Property(nameof(EquipoRed.Area)).HasMaxLength(120);
+        configuracionEquipo.Property(nameof(EquipoRed.RolEnArea)).HasMaxLength(60).IsRequired();
+        configuracionEquipo.Property(nameof(EquipoRed.TipoDispositivo)).HasMaxLength(100).IsRequired();
+        configuracionEquipo.Property(nameof(EquipoRed.EstadoAdministrativo)).HasMaxLength(100).IsRequired();
+        configuracionEquipo.Property(nameof(EquipoRed.EstadoDatos)).HasMaxLength(60).IsRequired();
+        configuracionEquipo.Property(nameof(EquipoRed.Observaciones)).HasMaxLength(1000);
+        configuracionEquipo.HasIndex(nameof(EquipoRed.Nombre));
+        configuracionEquipo.HasIndex(nameof(EquipoRed.IpAdministracion));
     }
 }
