@@ -1,31 +1,34 @@
 # Contexto permanente para la IA — ProyectoConexionRed
 
 ## Objetivo
-Crear una aplicación web en español para inventariar, consultar y visualizar la red empresarial documentada por el usuario. La aplicación debe enlazar equipos, IP, interfaces, conexiones, ubicación y usuarios/PCs con una topología navegable, auditoría de cambios, simulaciones aisladas y exportación imprimible.
+Crear una aplicación web en español para inventariar, consultar y visualizar la red empresarial documentada por el usuario. Debe enlazar equipos, IP, interfaces, conexiones, ubicación y usuarios/PCs con una topología navegable, auditoría de cambios, simulaciones aisladas y exportación imprimible.
 
 ## Estado actual del proyecto
-- Repositorio: público por decisión explícita del usuario.
-- Etapa: análisis y documentación inicial; no hay funcionalidades de la aplicación implementadas todavía.
-- README y este archivo son la referencia principal para mantener continuidad entre tareas.
-- El usuario compartirá posteriormente otros dos archivos Visio con nombres de PC, usuarioPC y nombres de usuario. No inventar ni cargar esos datos antes de recibir y revisar esos archivos.
-- Al hacer cambios al proyecto, actualizar siempre README.md y docs/PROMPT_IA.md.
+- Repositorio público por decisión explícita del usuario.
+- Hay un primer MVP de solo lectura en C# / ASP.NET Core MVC con EF Core y SQLite.
+- El MVP tiene página de inicio, vista de inventario con búsqueda por nombre/IP/área/modelo/fabricante y 25 registros iniciales.
+- La base de datos se crea al iniciar con EnsureCreated; esto es un prototipo. Usar migraciones antes de cambios de esquema posteriores.
+- No están implementados todavía el acceso con usuarios, permisos, edición de inventario, auditoría, topología, enlaces, SFP, simulaciones, exportación ni imágenes.
+- El usuario compartirá posteriormente otros dos Visios con nombres de PC, usuarioPC y nombres de usuario. No inventar esos datos antes de revisar las fuentes.
+- Al modificar el código, actualizar siempre README.md y docs/PROMPT_IA.md.
+- No se ha confirmado con el usuario que el programa compile ni se han verificado las páginas en ejecución; no afirmar que están verificadas.
 
-## Fuentes y calidad de los datos
-- El archivo base es DIAGRAMA RED V2.vsdx, con fecha de modificación indicada por el sistema de archivos: 23/10/2026.
+## Fuentes y calidad de datos
+- Fuente base: DIAGRAMA RED V2.vsdx.
 - Confirmación del usuario: todos los dispositivos y las IP asignadas en el Visio son reales y están actualizados.
-- También están actualizados los dispositivos de usuario y sus conexiones de acceso según el usuario.
-- Solo algunas conexiones del rack están desactualizadas; marcarlas para revisión. No generalizar esa condición a los equipos, IP ni conexiones de usuarios.
-- Algunos SFP no están confirmados. Representar modelo/medio como «pendiente de actualización» o «sin confirmar». Guardar la fecha de última revisión solo cuando haya una revisión real documentada; nunca inventar fecha, modelo o tipo.
-- Dos switches son inaccesibles administrativamente por falta de credenciales: área Régimen y switch principal de Mesa de Entradas. Esa condición no significa que estén apagados ni que tengan una falla de red.
-- Las etiquetas «principal» y «no principal» expresan jerarquía dentro de un área. Un switch «No principal» enlaza con el switch principal del área y conecta tres equipos de usuario a través de ese switch. Mostrar la relación padre/descendiente de manera explícita.
-- Distinguir el estado de acceso administrativo, la actualización de datos y la disponibilidad física: son conceptos independientes.
-- El usuario autoriza expresamente la publicación de la documentación de red en este repositorio público. Aun así, no publicar contraseñas, claves, tokens ni otros secretos de autenticación.
+- Los dispositivos de usuario y sus conexiones de acceso también están actualizados según el usuario.
+- Solo algunas conexiones del rack están desactualizadas; señalarlas para revisión. No generalizar ese estado a equipos, IP ni conexiones de usuario.
+- Algunos SFP no están confirmados. Registrar como pendientes de actualización/sin confirmar; la fecha de última revisión debe ser real y conocida. Nunca inventar fecha, modelo, tipo o medio.
+- Dos switches son inaccesibles administrativamente por falta de credenciales: área Régimen y switch principal de Mesa de Entradas. Esa condición no significa que estén apagados ni que haya una falla de red.
+- «Principal» y «No principal» expresan jerarquía de switches dentro de un área. El switch «No principal» de Mesa de Entradas enlaza al principal del área y conecta tres equipos de usuario a través de él.
+- Separar estado de acceso administrativo, vigencia de datos y disponibilidad física.
+- El usuario autoriza publicar documentación e IPs del inventario en el repositorio público. No publicar contraseñas, claves, tokens ni otros secretos de autenticación.
 
-## Inventario extraído del Visio base
-Las IP de esta lista son datos vigentes según el usuario. Los nombres se transcriben del diagrama y las conexiones de rack asociadas quedan pendientes de revisión cuando corresponda.
+## Datos iniciales cargados
+Los datos de la lista se transcriben del Visio y las IP son vigentes según el usuario. No inferir enlaces de rack a partir de su presencia en el inventario.
 
 ### Equipos de rack y núcleo
-| Etiqueta en el Visio | IP visible |
+| Etiqueta | IP |
 |---|---|
 | Switch Aruba 1930 (WDGC) | 192.168.1.19 |
 | HP ProCurve 29100I-24G | 10.0.1.1 |
@@ -34,11 +37,10 @@ Las IP de esta lista son datos vigentes según el usuario. Los nombres se transc
 | Dell S4148U-ON 48G | 192.168.1.44 |
 | Switch HP 1920S | 192.168.1.217 |
 | Aruba 1930 (reserva) | 192.168.1.200 |
+| Cisco Catalyst 3560 | No indicado |
 
-En la vista general también aparecen Cisco Catalyst 3560, módem Claro y patcheras. No asignarles IP ni enlaces salvo que el Visio u otra confirmación lo indique.
-
-### Fichas de áreas y otros dispositivos
-| Etiqueta en el Visio | IP visible |
+### Fichas de áreas y otros equipos
+| Etiqueta | IP |
 |---|---|
 | Switch Agrimensura 1 HP | 192.168.1.23 |
 | Switch Agrimensura 3Com | 192.168.1.24 |
@@ -53,44 +55,47 @@ En la vista general también aparecen Cisco Catalyst 3560, módem Claro y patche
 | Valuación R0 | 192.168.1.32 |
 | Valuación R1 | 192.168.1.29 |
 | Valuación R2 | 192.168.1.20 |
-| Switches de áreas sin identificar | 192.168.1.1 y 192.168.1.17 |
+| Switch de área sin identificar | 192.168.1.1 |
+| Switch de área sin identificar | 192.168.1.17 |
+| Switch de Régimen | No indicado |
+| Switch principal de Mesa de Entradas | No indicado |
 
-El Visio repite 192.168.1.19 en dos etiquetas. Registrar ambos rótulos y la información tal como aparecen; no deducir que sea un error ni que sean dos equipos distintos.
+- El Visio repite 192.168.1.19 en dos etiquetas. Preservar ambas etiquetas y sus datos como aparecen. No deducir que es un error ni asumir si se trata de un equipo duplicado.
+- El seed inicial también contiene el módem y las patcheras como elementos de la vista general cuando hay identificación. No asignar IP ni enlace sin fuente.
+- No incluir credenciales del Visio en registros semilla, código, comentarios o documentación.
 
-## Preferencias y alcance funcional
-- Backend propuesto: C# con ASP.NET Core MVC y Entity Framework Core.
-- Base de datos inicial: SQLite. Se espera un técnico actualmente y hasta cinco técnicos con lectura/escritura. Mantener la opción de migrar a PostgreSQL o SQL Server si la concurrencia o el despliegue lo requieren.
-- El servidor web debe ser la vía de acceso a SQLite; no compartir el archivo de base directamente por una unidad de red.
-- Vistas principales: inventario; topología; conexiones/puertos; switching/VLAN; IP/subredes; PCs/usuarios; auditoría; simulaciones; informes e impresión; administración.
-- Las vistas física, switching y red son perspectivas del mismo inventario, no bases duplicadas.
-- Las simulaciones usan una copia lógica de los datos dentro de la aplicación. No mandar pings, comandos ni cambios de configuración a la red real.
-- Topología gráfica imprimible/exportable con filtros y leyenda.
-- Las imágenes de equipos deben corresponder a un modelo identificado y permitir registrar fuente; no elegirlas como verificadas solo por similitud de nombre.
+## Arquitectura y alcance acordados
+- Backend: C# con ASP.NET Core MVC y Entity Framework Core.
+- Base inicial: SQLite; se espera un técnico y hasta cinco técnicos con lectura/escritura. Revisar PostgreSQL o SQL Server si aumentan concurrencia o instancias de aplicación.
+- El servidor web será la vía de acceso a SQLite; no compartir el archivo directamente por una unidad de red.
+- Las vistas física, switching y red serán perspectivas del mismo inventario.
+- Secciones futuras: inventario, topología, puertos/conexiones, switching/VLAN, IP/subredes, PCs/usuarios, auditoría, simulaciones, informes/impresión y administración.
+- Simulaciones solo sobre el modelo de datos de la aplicación. No mandar pings, comandos ni cambios a la red real.
+- Las imágenes deben corresponder a un modelo identificado y registrar su fuente; no presentarlas como verificadas por similitud de nombre.
 
-## Orden recomendado de trabajo
-1. Revisar y normalizar fuentes Visio, registrando procedencia y estado de cada dato.
-2. Definir entidades y relaciones: dispositivo, modelo, puerto, enlace, ubicación/rack, área, VLAN, subred, PC, usuario, revisión, evento de auditoría e imagen.
-3. Implementar inventario y fichas de dispositivo.
-4. Implementar ubicaciones, puertos y enlaces, con estado de validación y jerarquía de switches por área.
-5. Implementar topología y vistas por capa.
-6. Implementar auditoría de inicio de sesión y modificaciones.
-7. Incorporar los dos Visios pendientes para enriquecer PCs, usuarioPC y nombres de usuario.
-8. Implementar simulaciones aisladas y exportación/impresión.
-9. Completar administración y despliegue.
+## Orden de trabajo
+1. Consolidar fuentes y esquema de inventario.
+2. Agregar fichas editables y validaciones.
+3. Modelar ubicaciones, puertos, enlaces y jerarquía de switches.
+4. Crear topología y vistas por capa.
+5. Incorporar usuarios, permisos e historial de logueos/cambios.
+6. Revisar los dos Visios pendientes para enriquecer PCs y usuarios.
+7. Agregar simulaciones aisladas, imágenes y exportación/impresión.
+8. Completar despliegue, respaldos y migraciones.
 
-## Auditoría
-- Historial de acceso: usuario, fecha/hora, resultado de autenticación y evento.
-- Historial de cambios: quién, cuándo, entidad, campo, valor anterior y valor nuevo.
-- Ejemplo legible: «Usuario modificó IP de Equipo: 192.168.0.120 → 192.168.0.127».
-- No guardar contraseñas en claro ni incluirlas en registros, capturas, ejemplos o documentación.
+## Auditoría requerida
+- Accesos: usuario, fecha/hora, resultado y evento de autenticación.
+- Cambios: usuario, fecha/hora, entidad, campo, valor anterior y nuevo.
+- Ejemplo visible: «Usuario modificó IP de Equipo: 192.168.0.120 → 192.168.0.127».
+- Nunca registrar contraseñas en texto claro ni incluirlas en ejemplos o historial.
 
 ## Reglas obligatorias de desarrollo
-1. Nombrar las variables en español.
+1. Variables en español.
 2. Comentar cada variable en español, explicando qué representa y qué efecto tendría cambiar su valor.
-3. Documentar cada función en español: qué hace y qué cambios producen los valores de sus parámetros.
-4. Mantener comentarios y documentación en español; conservar nombres propios de APIs y estándares cuando corresponda.
-5. Actualizar siempre README.md y este archivo docs/PROMPT_IA.md al modificar el proyecto.
-6. Usar mensajes de commit breves y en español.
-7. No inventar hechos del inventario ni declarar implementado lo que no exista en el repositorio.
-8. Tratar contraseñas, claves y tokens como secretos, aunque el repositorio sea público por decisión del usuario.
-9. No probar ni modificar la red de producción. Las pruebas de topología son simulaciones locales.
+3. Documentar cada función en español: qué hace y cómo cambian los resultados si cambian los parámetros.
+4. Mantener comentarios y documentación en español; conservar los nombres propios de APIs y estándares.
+5. Actualizar siempre README.md y docs/PROMPT_IA.md junto con las modificaciones.
+6. Mensajes de commit breves y en español.
+7. No inventar datos ni presentar como implementado o verificado lo que el repositorio no demuestra.
+8. No incluir secretos aunque el repositorio sea público.
+9. No probar ni modificar la red de producción.
