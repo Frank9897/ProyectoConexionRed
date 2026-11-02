@@ -12,6 +12,8 @@ Reunir en un inventario navegable los dispositivos, IP, puertos, enlaces, áreas
 
 La base SQLite se crea al iniciar la aplicación. Esta versión usa creación inicial de esquema para el prototipo; las evoluciones del modelo deberán incorporar migraciones.
 
+Esta versión todavía no tiene inicio de sesión, permisos ni auditoría. No desplegarla como servicio de producción hasta implementar y configurar esos controles.
+
 El archivo **DIAGRAMA RED V2.vsdx** es la fuente base. El usuario confirmó que los dispositivos, IP y datos de los equipos de usuario están vigentes. Algunas conexiones del rack necesitan revisión y algunos SFP están pendientes de actualizar. Se esperan otros dos Visios para incorporar nombres de PC, usuarioPC y nombres de usuario.
 
 Los switches de las áreas Régimen y Mesa de Entradas Principal son inaccesibles administrativamente por falta de credenciales. La aplicación muestra ese estado separado de la vigencia de datos. El switch etiquetado «No principal» de Mesa de Entradas queda identificado como secundario del principal del área y conectado a tres equipos de usuario según la confirmación del usuario.
