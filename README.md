@@ -8,7 +8,7 @@ Reunir en un inventario navegable los dispositivos, IP, puertos, enlaces, áreas
 
 ## Estado del desarrollo
 
-**Primera versión funcional: inventario de solo lectura.** La aplicación usa ASP.NET Core MVC, Entity Framework Core y SQLite. Incluye una página de inicio, una tabla de inventario con búsqueda por nombre, IP, área, modelo o fabricante y 25 registros documentales iniciales cargados cuando la base está vacía.
+**Primera versión funcional: inventario de solo lectura.** La aplicación usa ASP.NET Core MVC, Entity Framework Core y SQLite. Incluye una página de inicio, una tabla de inventario con búsqueda por nombre, IP, área, modelo o fabricante, exportación CSV de los resultados y formato de impresión para esa tabla. Carga 25 registros documentales iniciales cuando la base está vacía. La exportación gráfica de la topología todavía no está implementada.
 
 La base SQLite se crea al iniciar la aplicación. Esta versión usa creación inicial de esquema para el prototipo; las evoluciones del modelo deberán incorporar migraciones.
 
