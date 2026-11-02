@@ -25,6 +25,12 @@
     <span>Datos de equipos e IP confirmados por el usuario</span>
 </div>
 
+<div class="acciones-tabla">
+    <a class="boton boton-secundario" asp-controller="Inventario" asp-action="ExportarCsv" asp-route-busqueda="@Context.Request.Query["busqueda"]">Descargar CSV</a>
+    @* La impresión usa el diálogo del navegador y conserva el formato de tabla para papel o PDF. *@
+    <button class="boton boton-secundario" type="button" onclick="window.print()">Imprimir inventario</button>
+</div>
+
 <div class="tabla-contenedor">
     <table>
         <thead>
