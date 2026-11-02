@@ -1,0 +1,84 @@
+:root {
+    color-scheme: light;
+    --tinta: #172b3a;
+    --secundario: #526575;
+    --fondo: #f3f6f8;
+    --borde: #dce4e9;
+    --azul: #126b83;
+    --azul-oscuro: #0a5268;
+    --verde-fondo: #e6f5ef;
+    --verde-texto: #176747;
+    --ambar-fondo: #fff2d7;
+    --ambar-texto: #815914;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--fondo);
+    color: var(--tinta);
+    font-family: "Segoe UI", Arial, sans-serif;
+    line-height: 1.5;
+}
+
+.barra-superior {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px max(24px, calc((100% - 1180px) / 2));
+    background: #fff;
+    border-bottom: 1px solid var(--borde);
+}
+
+.marca { color: var(--tinta); font-weight: 750; text-decoration: none; letter-spacing: -.02em; }
+nav { display: flex; gap: 24px; }
+nav a { color: var(--secundario); text-decoration: none; font-size: .94rem; }
+nav a:hover { color: var(--azul); }
+
+.contenedor { width: min(1180px, calc(100% - 40px)); margin: 42px auto 64px; }
+.hero { padding: 54px; background: linear-gradient(125deg, #102d43, #176e81); border-radius: 18px; color: #fff; }
+.hero h1 { max-width: 680px; margin: 8px 0 12px; font-size: clamp(2.2rem, 5vw, 3.6rem); line-height: 1.08; letter-spacing: -.04em; }
+.hero p:not(.sobrelinea) { max-width: 680px; color: #d8e8ed; font-size: 1.05rem; }
+.sobrelinea { color: var(--azul); font-size: .75rem; font-weight: 750; letter-spacing: .12em; }
+.hero .sobrelinea { color: #9de2e8; }
+
+.panel, .busqueda { margin-top: 24px; padding: 26px; border: 1px solid var(--borde); border-radius: 14px; background: #fff; }
+.panel h2 { margin-top: 0; }
+.panel p, .encabezado-pagina p { color: var(--secundario); }
+.encabezado-pagina h1 { margin: 4px 0; font-size: 2.5rem; letter-spacing: -.035em; }
+.encabezado-pagina p { margin-top: 8px; }
+
+.boton { display: inline-flex; align-items: center; justify-content: center; padding: 11px 16px; border: 0; border-radius: 9px; background: var(--azul); color: #fff; font: inherit; font-weight: 650; text-decoration: none; cursor: pointer; }
+.boton:hover { background: var(--azul-oscuro); }
+.hero .boton { margin-top: 12px; background: #fff; color: var(--azul-oscuro); }
+.boton-secundario { background: #eef3f5; color: var(--tinta); }
+
+.busqueda label { display: block; margin-bottom: 9px; font-size: .9rem; font-weight: 700; }
+.fila-busqueda { display: flex; gap: 10px; }
+.fila-busqueda input { flex: 1; min-width: 150px; padding: 11px 13px; border: 1px solid var(--borde); border-radius: 8px; font: inherit; }
+
+.resumen { display: flex; justify-content: space-between; margin: 20px 2px 10px; color: var(--secundario); font-size: .88rem; }
+.tabla-contenedor { overflow-x: auto; border: 1px solid var(--borde); border-radius: 12px; background: #fff; }
+table { width: 100%; border-collapse: collapse; text-align: left; font-size: .9rem; }
+th, td { padding: 14px 13px; border-bottom: 1px solid #edf1f3; vertical-align: top; }
+th { background: #f8fafb; color: #536675; font-size: .76rem; text-transform: uppercase; letter-spacing: .04em; }
+tbody tr:last-child td { border-bottom: 0; }
+td strong, td small { display: block; }
+td small { margin-top: 3px; color: var(--secundario); line-height: 1.35; }
+.ip { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.estado { display: inline-block; padding: 4px 8px; border-radius: 99px; background: #eef2f4; color: #485d69; font-size: .78rem; white-space: nowrap; }
+.estado-vigente { background: var(--verde-fondo); color: var(--verde-texto); }
+.estado-alerta { background: var(--ambar-fondo); color: var(--ambar-texto); }
+.pie { padding: 22px; border-top: 1px solid var(--borde); color: var(--secundario); text-align: center; font-size: .85rem; }
+
+@media (max-width: 720px) {
+    .barra-superior { align-items: flex-start; gap: 12px; }
+    nav { gap: 12px; }
+    .contenedor { width: min(100% - 24px, 1180px); margin-top: 24px; }
+    .hero { padding: 32px 24px; }
+    .busqueda { padding: 18px; }
+    .fila-busqueda { flex-wrap: wrap; }
+    .fila-busqueda input { flex-basis: 100%; }
+    .resumen { flex-direction: column; gap: 4px; }
+}
