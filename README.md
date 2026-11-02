@@ -8,11 +8,11 @@ Reunir en un inventario navegable los dispositivos, IP, puertos, enlaces, áreas
 
 ## Estado del desarrollo
 
-**Primera versión funcional: inventario de solo lectura.** La aplicación usa ASP.NET Core MVC, Entity Framework Core y SQLite. Incluye una página de inicio, una tabla de inventario con búsqueda por nombre, IP, área, modelo o fabricante, exportación CSV de los resultados y formato de impresión para esa tabla. Carga 25 registros documentales iniciales cuando la base está vacía. La exportación gráfica de la topología todavía no está implementada.
+**Primera versión funcional del inventario, acceso e historial de logueos.** La aplicación usa ASP.NET Core MVC, Entity Framework Core y SQLite. Incluye una página de inicio, una tabla de inventario con búsqueda por nombre, IP, área, modelo o fabricante, descarga CSV de los resultados y formato de impresión para esa tabla. Carga 25 registros documentales iniciales cuando la base está vacía.
 
-La base SQLite se crea al iniciar la aplicación. Esta versión usa creación inicial de esquema para el prototipo; las evoluciones del modelo deberán incorporar migraciones.
+El acceso requiere sesión. La cuenta administradora inicial solo se crea cuando la base todavía no contiene usuarios y se configuran las variables de entorno `INVENTARIO_ADMIN_USUARIO` y `INVENTARIO_ADMIN_CLAVE`. La clave se guarda como hash. No hay registro público ni pantalla de alta de usuarios. La pantalla «Accesos» muestra los últimos cien inicios de sesión y cierres de sesión, con hora UTC y resultado; no registra contraseñas.
 
-Esta versión todavía no tiene inicio de sesión, permisos ni auditoría. No desplegarla como servicio de producción hasta implementar y configurar esos controles.
+Esta versión todavía no permite editar equipos ni registrar auditoría de modificaciones. Tampoco tiene topología gráfica, conexiones modeladas, ficha SFP, gestión de usuarios, roles diferenciados o exportación gráfica de la topología. No desplegarla en producción hasta completar controles, HTTPS y gestión de usuarios.
 
 El archivo **DIAGRAMA RED V2.vsdx** es la fuente base. El usuario confirmó que los dispositivos, IP y datos de los equipos de usuario están vigentes. Algunas conexiones del rack necesitan revisión y algunos SFP están pendientes de actualizar. Se esperan otros dos Visios para incorporar nombres de PC, usuarioPC y nombres de usuario.
 
@@ -22,38 +22,54 @@ El inventario detallado y las reglas de continuidad están en [docs/PROMPT_IA.md
 
 ## Ejecutar localmente
 
-Requiere el SDK de .NET 10.
+Requiere el SDK de .NET 10. Antes del primer inicio, configura la cuenta administradora en el entorno de la sesión, no en archivos del repositorio. Ejemplo para PowerShell:
 
 ```powershell
+# usuarioInicial define el nombre de la cuenta creada si la base todavía no tiene usuarios.
+$usuarioInicial = Read-Host "Usuario inicial"
+$env:INVENTARIO_ADMIN_USUARIO = $usuarioInicial
+
+# contrasenaProtegida recibe la clave sin mostrarla mientras se escribe.
+$contrasenaProtegida = Read-Host "Contraseña inicial" -AsSecureString
+
+# La variable de entorno se usa solo para el alta inicial; no la guardes en scripts ni en el repositorio.
+$env:INVENTARIO_ADMIN_CLAVE = [System.Net.NetworkCredential]::new("", $contrasenaProtegida).Password
+
 dotnet run --project ProyectoConexionRed.Web.csproj
+
+# Quitar los valores de la sesión al detener la aplicación.
+Remove-Item Env:INVENTARIO_ADMIN_USUARIO
+Remove-Item Env:INVENTARIO_ADMIN_CLAVE
+Remove-Variable contrasenaProtegida
+Remove-Variable usuarioInicial
 ```
 
-Al iniciar, se crea `proyecto-conexion-red.db` en el directorio de ejecución y se agregan los registros iniciales si todavía no existen datos.
+Al iniciar, se crea `proyecto-conexion-red.db` y se agregan los registros iniciales si todavía no existen. Si ya existe una cuenta, las variables de alta inicial no modifican ni restablecen usuarios.
 
 ## Arquitectura
 
 - C# y ASP.NET Core MVC.
 - Entity Framework Core con proveedor SQLite.
+- Cookie de autenticación HTTP Only; en producción se requiere HTTPS.
 - El servidor web es la vía de acceso a SQLite; no compartir directamente el archivo de base por una unidad de red.
-- Secciones previstas: inventario, topología, puertos y conexiones, switching/VLAN, redes/IP, PCs/usuarios, auditoría, simulaciones, informes e impresión y administración.
-- Se espera un técnico actualmente y hasta cinco técnicos con lectura/escritura. Se revisará una base cliente-servidor si aumenta la concurrencia o cambia el despliegue.
+- Se espera un técnico actualmente y hasta cinco técnicos con lectura/escritura. La gestión de cuentas para varios técnicos todavía no está implementada.
 
 ## Próximas etapas
 
-1. Revisar y modelar ubicaciones, puertos, conexiones del rack y SFP, con estado de validación.
-2. Incorporar edición controlada del inventario.
-3. Añadir usuarios, permisos e historial de logueos y modificaciones.
+1. Incorporar gestión de usuarios y permisos.
+2. Habilitar edición controlada del inventario y auditoría de modificaciones.
+3. Modelar ubicaciones, puertos, conexiones del rack y SFP con estado de validación.
 4. Construir topología y vistas por capa.
 5. Incorporar los dos Visios pendientes para PCs y usuarios.
-6. Agregar simulaciones aisladas, imágenes de modelos y exportación/impresión.
-7. Completar despliegue y respaldos.
+6. Agregar simulaciones aisladas, imágenes de modelos y exportación/impresión gráfica.
+7. Incorporar migraciones, respaldos y despliegue seguro.
 
 ## Principios de datos y seguridad
 
 - Diferenciar vigencia de datos, estado de acceso administrativo y conectividad física.
 - No inventar conexiones, puertos, modelos de SFP ni fechas de revisión.
 - Las simulaciones no deben ejecutar acciones contra la red de producción.
-- No guardar contraseñas, claves ni tokens en el inventario o en el historial.
+- No guardar contraseñas, claves ni tokens en el inventario, los logs o el historial.
 
 ## Reglas para contribuir
 
