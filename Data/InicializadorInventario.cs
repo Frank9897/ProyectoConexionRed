@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Storage;
 using ProyectoConexionRed.Web.Models;
 
 namespace ProyectoConexionRed.Web.Data;
