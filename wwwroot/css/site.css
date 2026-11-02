@@ -69,6 +69,7 @@ nav a:hover { color: var(--azul); }
 .fila-busqueda input { flex: 1; min-width: 150px; padding: 11px 13px; border: 1px solid var(--borde); border-radius: 8px; font: inherit; }
 
 .resumen { display: flex; justify-content: space-between; margin: 20px 2px 10px; color: var(--secundario); font-size: .88rem; }
+.acciones-tabla { display: flex; justify-content: flex-end; gap: 10px; margin: 14px 0; }
 .tabla-contenedor { overflow-x: auto; border: 1px solid var(--borde); border-radius: 12px; background: #fff; }
 table { width: 100%; border-collapse: collapse; text-align: left; font-size: .9rem; }
 th, td { padding: 14px 13px; border-bottom: 1px solid #edf1f3; vertical-align: top; }
@@ -91,4 +92,20 @@ td small { margin-top: 3px; color: var(--secundario); line-height: 1.35; }
     .fila-busqueda { flex-wrap: wrap; }
     .fila-busqueda input { flex-basis: 100%; }
     .resumen { flex-direction: column; gap: 4px; }
+}
+
+@media print {
+    @page { margin: 14mm; }
+    body { background: #fff; color: #111; font-size: 9pt; }
+    .barra-superior, .pie, .busqueda, .acciones-tabla { display: none !important; }
+    .contenedor { width: 100%; margin: 0; }
+    .encabezado-pagina h1 { font-size: 20pt; }
+    .encabezado-pagina p { margin-bottom: 10px; }
+    .resumen { margin: 8px 0; }
+    .tabla-contenedor { overflow: visible; border: 0; }
+    table { font-size: 8pt; }
+    th, td { padding: 6px; border: 1px solid #bbb; }
+    th { background: #eee !important; color: #111; }
+    .estado { padding: 0; background: transparent; color: #111; }
+    tr { break-inside: avoid; }
 }
