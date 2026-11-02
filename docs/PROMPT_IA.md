@@ -5,10 +5,13 @@ Crear una aplicación web en español para inventariar, consultar y visualizar l
 
 ## Estado actual del proyecto
 - Repositorio público por decisión explícita del usuario.
-- Hay un primer MVP de solo lectura en C# / ASP.NET Core MVC con EF Core y SQLite.
-- El MVP tiene página de inicio, vista de inventario con búsqueda por nombre/IP/área/modelo/fabricante, descarga CSV de resultados filtrados y formato de impresión de la tabla; carga 25 registros iniciales.
-- La base de datos se crea al iniciar con EnsureCreated; esto es un prototipo. Usar migraciones antes de cambios de esquema posteriores.
-- No están implementados todavía el acceso con usuarios, permisos, edición de inventario, auditoría, topología gráfica, enlaces, SFP, simulaciones, exportación gráfica ni imágenes. No desplegar el MVP como servicio de producción hasta incorporar autenticación y autorización.
+- Hay un MVP inicial en C# / ASP.NET Core MVC con EF Core y SQLite.
+- Incluye página de inicio, inventario con búsqueda por nombre/IP/área/modelo/fabricante, CSV de resultados filtrados, impresión de la tabla y 25 registros semilla.
+- Requiere autenticación por cookie para ver las páginas. El administrador inicial se crea solo cuando la base no tiene usuarios y se configuran INVENTARIO_ADMIN_USUARIO e INVENTARIO_ADMIN_CLAVE fuera del repositorio.
+- Las claves se almacenan como hash. La tabla de accesos registra ingresos correctos/fallidos y cierres con hora UTC; no guarda contraseñas.
+- La tabla de accesos tiene una página para consultar los últimos cien eventos.
+- Las tablas de usuarios e historial se crean con SQL IF NOT EXISTS para compatibilidad con la base prototipo creada en la primera versión. El resto del modelo usa EnsureCreated; emplear migraciones en futuras evoluciones del esquema.
+- No están implementados la gestión de usuarios/permisos diferenciados, edición de inventario, auditoría de modificaciones, topología gráfica, enlaces, SFP, simulaciones, exportación gráfica ni imágenes. No desplegar en producción hasta implementar gestión de usuarios, autorización adecuada y HTTPS.
 - El usuario compartirá posteriormente otros dos Visios con nombres de PC, usuarioPC y nombres de usuario. No inventar esos datos antes de revisar las fuentes.
 - Al modificar el código, actualizar siempre README.md y docs/PROMPT_IA.md.
 - No se ha confirmado con el usuario que el programa compile ni se han verificado las páginas en ejecución; no afirmar que están verificadas.
@@ -70,22 +73,23 @@ Los datos de la lista se transcriben del Visio y las IP son vigentes según el u
 - El servidor web será la vía de acceso a SQLite; no compartir el archivo directamente por una unidad de red.
 - Las vistas física, switching y red serán perspectivas del mismo inventario.
 - La impresión disponible en el MVP corresponde solo al inventario tabular; no presentarla como exportación de topología.
+- La cookie de autenticación es HTTP Only; en producción se requiere HTTPS. No hay alta pública de usuarios.
 - Secciones futuras: inventario, topología, puertos/conexiones, switching/VLAN, IP/subredes, PCs/usuarios, auditoría, simulaciones, informes/impresión y administración.
 - Simulaciones solo sobre el modelo de datos de la aplicación. No mandar pings, comandos ni cambios a la red real.
 - Las imágenes deben corresponder a un modelo identificado y registrar su fuente; no presentarlas como verificadas por similitud de nombre.
 
 ## Orden de trabajo
-1. Consolidar fuentes y esquema de inventario.
-2. Agregar fichas editables y validaciones.
+1. Gestionar cuentas y permisos para el máximo previsto de cinco técnicos.
+2. Agregar fichas editables y auditoría de modificaciones.
 3. Modelar ubicaciones, puertos, enlaces y jerarquía de switches.
 4. Crear topología y vistas por capa.
-5. Incorporar usuarios, permisos e historial de logueos/cambios.
-6. Revisar los dos Visios pendientes para enriquecer PCs y usuarios.
-7. Agregar simulaciones aisladas, imágenes y exportación/impresión.
-8. Completar despliegue, respaldos y migraciones.
+5. Revisar los dos Visios pendientes para enriquecer PCs y usuarios.
+6. Agregar simulaciones aisladas, imágenes y exportación/impresión gráfica.
+7. Completar despliegue HTTPS, respaldos y migraciones.
 
 ## Auditoría requerida
-- Accesos: usuario, fecha/hora, resultado y evento de autenticación.
+- El MVP registra accesos correctos/fallidos y cierres de sesión con usuario, evento, resultado y fecha UTC.
+- Próxima extensión de auditoría: usuario, fecha/hora, entidad, campo, valor anterior y nuevo para modificaciones.
 - Cambios: usuario, fecha/hora, entidad, campo, valor anterior y nuevo.
 - Ejemplo visible: «Usuario modificó IP de Equipo: 192.168.0.120 → 192.168.0.127».
 - Nunca registrar contraseñas en texto claro ni incluirlas en ejemplos o historial.
