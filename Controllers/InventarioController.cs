@@ -38,11 +38,13 @@ public class InventarioController : Controller
 
         if (!string.IsNullOrWhiteSpace(busqueda))
         {
-            // textoNormalizado convierte la búsqueda a minúsculas; cambiar su normalización altera la sensibilidad del filtro.
+            // textoNormalizado conserva el término escrito; cambiarlo altera qué registros coinciden.
             var textoNormalizado = busqueda.Trim();
 
             // equiposFiltrados contiene solo coincidencias; cambiar las propiedades revisadas cambia los campos buscables.
             var equiposFiltrados = new List<EquipoRed>();
+
+            // equipo avanza por cada registro cargado; cambiar el inventario de entrada cambia los registros comparados.
             foreach (var equipo in equiposEncontrados)
             {
                 if (CoincideConBusqueda(equipo, textoNormalizado))
