@@ -6,9 +6,9 @@ Crear una aplicación web en español para inventariar, consultar y visualizar l
 ## Estado actual del proyecto
 - Repositorio público por decisión explícita del usuario.
 - Hay un primer MVP de solo lectura en C# / ASP.NET Core MVC con EF Core y SQLite.
-- El MVP tiene página de inicio, vista de inventario con búsqueda por nombre/IP/área/modelo/fabricante y 25 registros iniciales.
+- El MVP tiene página de inicio, vista de inventario con búsqueda por nombre/IP/área/modelo/fabricante, descarga CSV de resultados filtrados y formato de impresión de la tabla; carga 25 registros iniciales.
 - La base de datos se crea al iniciar con EnsureCreated; esto es un prototipo. Usar migraciones antes de cambios de esquema posteriores.
-- No están implementados todavía el acceso con usuarios, permisos, edición de inventario, auditoría, topología, enlaces, SFP, simulaciones, exportación ni imágenes. No desplegar el MVP como servicio de producción hasta incorporar autenticación y autorización.
+- No están implementados todavía el acceso con usuarios, permisos, edición de inventario, auditoría, topología gráfica, enlaces, SFP, simulaciones, exportación gráfica ni imágenes. No desplegar el MVP como servicio de producción hasta incorporar autenticación y autorización.
 - El usuario compartirá posteriormente otros dos Visios con nombres de PC, usuarioPC y nombres de usuario. No inventar esos datos antes de revisar las fuentes.
 - Al modificar el código, actualizar siempre README.md y docs/PROMPT_IA.md.
 - No se ha confirmado con el usuario que el programa compile ni se han verificado las páginas en ejecución; no afirmar que están verificadas.
@@ -69,6 +69,7 @@ Los datos de la lista se transcriben del Visio y las IP son vigentes según el u
 - Base inicial: SQLite; se espera un técnico y hasta cinco técnicos con lectura/escritura. Revisar PostgreSQL o SQL Server si aumentan concurrencia o instancias de aplicación.
 - El servidor web será la vía de acceso a SQLite; no compartir el archivo directamente por una unidad de red.
 - Las vistas física, switching y red serán perspectivas del mismo inventario.
+- La impresión disponible en el MVP corresponde solo al inventario tabular; no presentarla como exportación de topología.
 - Secciones futuras: inventario, topología, puertos/conexiones, switching/VLAN, IP/subredes, PCs/usuarios, auditoría, simulaciones, informes/impresión y administración.
 - Simulaciones solo sobre el modelo de datos de la aplicación. No mandar pings, comandos ni cambios a la red real.
 - Las imágenes deben corresponder a un modelo identificado y registrar su fuente; no presentarlas como verificadas por similitud de nombre.
