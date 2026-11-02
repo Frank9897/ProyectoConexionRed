@@ -37,7 +37,7 @@ Las IP de esta lista son datos vigentes según el usuario. Los nombres se transc
 
 En la vista general también aparecen Cisco Catalyst 3560, módem Claro y patcheras. No asignarles IP ni enlaces salvo que el Visio u otra confirmación lo indique.
 
-### Switches de área / otras fichas
+### Fichas de áreas y otros dispositivos
 | Etiqueta en el Visio | IP visible |
 |---|---|
 | Switch Agrimensura 1 HP | 192.168.1.23 |
@@ -55,7 +55,7 @@ En la vista general también aparecen Cisco Catalyst 3560, módem Claro y patche
 | Valuación R2 | 192.168.1.20 |
 | Switches de áreas sin identificar | 192.168.1.1 y 192.168.1.17 |
 
-Hay direcciones repetidas en etiquetas distintas del Visio, por ejemplo 192.168.1.19. Preservar lo escrito y marcar esa coincidencia para validar; no corregir ni deducir a qué equipo corresponde.
+El Visio repite 192.168.1.19 en dos etiquetas. Registrar ambos rótulos y la información tal como aparecen; no deducir que sea un error ni que sean dos equipos distintos.
 
 ## Preferencias y alcance funcional
 - Backend propuesto: C# con ASP.NET Core MVC y Entity Framework Core.
