@@ -1,15 +1,18 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using ProyectoConexionRed.Web.Models;
 
 namespace ProyectoConexionRed.Web.Data;
 
 /// <summary>
-/// Prepara el esquema prototipo y agrega los registros base confirmados por el usuario.
+/// Prepara SQLite y agrega registros iniciales sin duplicarlos.
 /// </summary>
 public static class InicializadorInventario
 {
     /// <summary>
-    /// Crea la base si falta y siembra los equipos una sola vez cuando el inventario está vacío.
+    /// Crea el esquema necesario, completa tablas de acceso si la base existía y carga equipo y administrador inicial.
     /// </summary>
     /// <param name="serviciosAplicacion">Proveedor de servicios; cambiarlo selecciona otra instancia configurada del inventario.</param>
     /// <param name="cancelacion">Señal de cancelación; activarla detiene la inicialización pendiente.</param>
@@ -21,21 +24,124 @@ public static class InicializadorInventario
         // contextoInventario representa la conexión SQLite del servidor; cambiarla dirige la carga a otra base configurada.
         var contextoInventario = alcanceServicios.ServiceProvider.GetRequiredService<InventarioDbContext>();
 
-        // Crear la estructura es adecuado para este prototipo vacío; las siguientes evoluciones deberán usar migraciones.
+        // Crear la estructura funciona para la base nueva; en bases existentes no agrega tablas faltantes.
         await contextoInventario.Database.EnsureCreatedAsync(cancelacion);
 
-        // inventarioExistente permite evitar duplicar los registros semilla; cambiar la consulta altera el criterio de carga inicial.
+        // CrearTablasDeAccesoAsync permite conservar bases antiguas que ya tenían EquiposRed.
+        await CrearTablasDeAccesoAsync(contextoInventario, cancelacion);
+
+        // CargarEquiposInicialesAsync agrega el catálogo documental una sola vez.
+        await CargarEquiposInicialesAsync(contextoInventario, cancelacion);
+
+        // CargarAdministradorInicialAsync utiliza variables de entorno y nunca escribe la contraseña en los registros.
+        await CargarAdministradorInicialAsync(
+            contextoInventario,
+            alcanceServicios.ServiceProvider.GetRequiredService<IPasswordHasher<UsuarioAplicacion>>(),
+            cancelacion);
+    }
+
+    /// <summary>
+    /// Garantiza que existan las tablas e índices de cuentas e historial incluso si EquiposRed ya estaba creada.
+    /// </summary>
+    /// <param name="contextoInventario">Contexto de la base; cambiarlo selecciona dónde se crean las tablas.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla detiene las instrucciones SQL.</param>
+    private static async Task CrearTablasDeAccesoAsync(
+        InventarioDbContext contextoInventario,
+        CancellationToken cancelacion)
+    {
+        // comandosSql crea solo tablas de acceso faltantes; cambiar estas sentencias altera su estructura persistida.
+        const string comandosSql = """
+            CREATE TABLE IF NOT EXISTS "UsuariosAplicacion" (
+                "Identificador" INTEGER NOT NULL CONSTRAINT "PK_UsuariosAplicacion" PRIMARY KEY AUTOINCREMENT,
+                "NombreUsuario" TEXT NOT NULL,
+                "NombreUsuarioNormalizado" TEXT NOT NULL,
+                "HashContrasena" TEXT NOT NULL,
+                "Activo" INTEGER NOT NULL,
+                "FechaCreacionUtc" TEXT NOT NULL
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_UsuariosAplicacion_NombreUsuarioNormalizado"
+                ON "UsuariosAplicacion" ("NombreUsuarioNormalizado");
+            CREATE TABLE IF NOT EXISTS "EventosAcceso" (
+                "Identificador" INTEGER NOT NULL CONSTRAINT "PK_EventosAcceso" PRIMARY KEY AUTOINCREMENT,
+                "NombreUsuario" TEXT NOT NULL,
+                "FechaUtc" TEXT NOT NULL,
+                "TipoEvento" TEXT NOT NULL,
+                "Resultado" TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS "IX_EventosAcceso_FechaUtc"
+                ON "EventosAcceso" ("FechaUtc");
+            """;
+
+        await contextoInventario.Database.ExecuteSqlRawAsync(comandosSql, cancelacion);
+    }
+
+    /// <summary>
+    /// Carga equipos iniciales si no hay registros en la tabla de inventario.
+    /// </summary>
+    /// <param name="contextoInventario">Contexto de datos; cambiarlo selecciona qué inventario recibe el catálogo.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla interrumpe la consulta o escritura.</param>
+    private static async Task CargarEquiposInicialesAsync(
+        InventarioDbContext contextoInventario,
+        CancellationToken cancelacion)
+    {
+        // inventarioExistente evita repetir los registros semilla; cambiar el criterio altera cuándo se carga el catálogo.
         var inventarioExistente = await contextoInventario.Equipos.AnyAsync(cancelacion);
         if (inventarioExistente)
         {
             return;
         }
 
-        // equiposIniciales contiene únicamente los dispositivos/IP extraídos y las dos restricciones administrativas confirmadas.
+        // equiposIniciales contiene dispositivos e IP confirmados, sin datos de credenciales.
         var equiposIniciales = CrearEquiposIniciales();
 
         // Guardar esta lista carga el inventario documental; no cambia ningún dispositivo de la red real.
         await contextoInventario.Equipos.AddRangeAsync(equiposIniciales, cancelacion);
+        await contextoInventario.SaveChangesAsync(cancelacion);
+    }
+
+    /// <summary>
+    /// Crea la cuenta administradora inicial solo cuando aún no hay cuentas y se configuraron ambas variables de entorno.
+    /// </summary>
+    /// <param name="contextoInventario">Contexto de usuarios; cambiarlo dirige la creación a otra base.</param>
+    /// <param name="codificadorContrasenas">Servicio de hash; cambiarlo modifica el mecanismo de almacenamiento de contraseñas.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla interrumpe la consulta o creación.</param>
+    private static async Task CargarAdministradorInicialAsync(
+        InventarioDbContext contextoInventario,
+        IPasswordHasher<UsuarioAplicacion> codificadorContrasenas,
+        CancellationToken cancelacion)
+    {
+        // usuarioInicial contiene el nombre configurado fuera del repositorio; cambiarlo selecciona otra cuenta administradora.
+        var usuarioInicial = Environment.GetEnvironmentVariable("INVENTARIO_ADMIN_USUARIO");
+
+        // contrasenaInicial solo existe durante la creación; cambiarla modifica la clave verificada, que se guarda únicamente como hash.
+        var contrasenaInicial = Environment.GetEnvironmentVariable("INVENTARIO_ADMIN_CLAVE");
+
+        if (string.IsNullOrWhiteSpace(usuarioInicial) || string.IsNullOrWhiteSpace(contrasenaInicial))
+        {
+            return;
+        }
+
+        // nombreNormalizado permite una comparación estable; cambiarlo altera la clave única de búsqueda de la cuenta.
+        var nombreNormalizado = usuarioInicial.Trim().ToUpperInvariant();
+
+        // hayUsuarios evita reemplazar cuentas ya configuradas; cambiar el resultado habilita o detiene el alta inicial.
+        var hayUsuarios = await contextoInventario.Usuarios.AnyAsync(cancelacion);
+        if (hayUsuarios)
+        {
+            return;
+        }
+
+        // nuevoUsuario guarda el nombre y la clave derivada; cambiar sus campos altera la cuenta inicial creada.
+        var nuevoUsuario = new UsuarioAplicacion
+        {
+            NombreUsuario = usuarioInicial.Trim(),
+            NombreUsuarioNormalizado = nombreNormalizado,
+            Activo = true,
+            FechaCreacionUtc = DateTime.UtcNow
+        };
+        nuevoUsuario.HashContrasena = codificadorContrasenas.HashPassword(nuevoUsuario, contrasenaInicial);
+
+        await contextoInventario.Usuarios.AddAsync(nuevoUsuario, cancelacion);
         await contextoInventario.SaveChangesAsync(cancelacion);
     }
 
