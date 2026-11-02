@@ -1,0 +1,31 @@
+@model InicioSesionViewModel
+@{
+    ViewData["Title"] = "Iniciar sesión";
+}
+
+<section class="acceso-contenedor">
+    <div class="acceso-intro">
+        <p class="sobrelinea">ACCESO AL INVENTARIO</p>
+        <h1>Iniciar sesión</h1>
+        <p>Ingresá con la cuenta administradora configurada para esta instalación.</p>
+    </div>
+
+    <form asp-controller="Cuenta" asp-action="Ingresar" method="post" class="acceso-formulario">
+        <div asp-validation-summary="ModelOnly" class="mensaje-error" role="alert"></div>
+        <input asp-for="UrlRetorno" type="hidden" />
+
+        <div class="campo-formulario">
+            <label asp-for="NombreUsuario"></label>
+            <input asp-for="NombreUsuario" autocomplete="username" autofocus />
+            <span asp-validation-for="NombreUsuario" class="mensaje-error"></span>
+        </div>
+
+        <div class="campo-formulario">
+            <label asp-for="Contrasena"></label>
+            <input asp-for="Contrasena" autocomplete="current-password" />
+            <span asp-validation-for="Contrasena" class="mensaje-error"></span>
+        </div>
+
+        <button class="boton boton-ancho" type="submit">Ingresar</button>
+    </form>
+</section>
