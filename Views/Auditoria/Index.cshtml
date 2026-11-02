@@ -1,0 +1,37 @@
+@model IReadOnlyList<EventoAcceso>
+@{
+    ViewData["Title"] = "Historial de accesos";
+}
+
+<section class="encabezado-pagina">
+    <div>
+        <p class="sobrelinea">ADMINISTRACIÓN</p>
+        <h1>Historial de accesos</h1>
+        <p>Últimos @Model.Count eventos. Las contraseñas no se guardan en este registro.</p>
+    </div>
+</section>
+
+<div class="tabla-contenedor historial-contenedor">
+    <table>
+        <thead>
+            <tr>
+                <th>Fecha y hora (UTC)</th>
+                <th>Usuario</th>
+                <th>Evento</th>
+                <th>Resultado</th>
+            </tr>
+        </thead>
+        <tbody>
+        @* evento representa una fila del historial; cambiar la lista de entrada modifica los accesos visibles. *@
+        @foreach (var evento in Model)
+        {
+            <tr>
+                <td>@evento.FechaUtc.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                <td>@evento.NombreUsuario</td>
+                <td>@evento.TipoEvento</td>
+                <td><span class="estado @(evento.Resultado == "Correcto" ? "estado-vigente" : "estado-alerta")">@evento.Resultado</span></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
