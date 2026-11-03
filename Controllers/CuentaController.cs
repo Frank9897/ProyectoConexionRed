@@ -105,7 +105,8 @@ public class CuentaController : Controller
         var identidadUsuario = new ClaimsIdentity(
         [
             new Claim(ClaimTypes.NameIdentifier, usuarioEncontrado.Identificador.ToString()),
-            new Claim(ClaimTypes.Name, usuarioEncontrado.NombreUsuario)
+            new Claim(ClaimTypes.Name, usuarioEncontrado.NombreUsuario),
+            new Claim(ClaimTypes.Role, usuarioEncontrado.Rol)
         ],
         CookieAuthenticationDefaults.AuthenticationScheme);
 
