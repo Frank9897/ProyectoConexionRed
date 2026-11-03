@@ -125,3 +125,63 @@ td small { margin-top: 3px; color: var(--secundario); line-height: 1.35; }
     .estado { padding: 0; background: transparent; color: #111; }
     tr { break-inside: avoid; }
 }
+
+
+/* estilosFormulario organizan las fichas; cambiar medidas modifica el espacio y la lectura de campos. */
+.panel-formulario {
+    width: min(680px, 100%);
+    margin: 36px auto;
+    padding: 28px;
+    border: 1px solid var(--borde);
+    border-radius: 14px;
+    background: #fff;
+}
+.panel-formulario-ancho { width: min(900px, 100%); }
+.panel-formulario h1 { margin: 4px 0; font-size: 2rem; }
+.panel-formulario > p:not(.sobrelinea) { color: var(--secundario); }
+.panel-formulario label { display: block; margin: 14px 0 6px; font-weight: 700; font-size: .9rem; }
+.panel-formulario input, .panel-formulario textarea {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    font: inherit;
+}
+.panel-formulario input:focus, .panel-formulario textarea:focus {
+    outline: 3px solid #126b8325;
+    border-color: var(--azul);
+}
+.rejilla-formulario { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 18px; }
+.campo-completo { grid-column: 1 / -1; }
+.acciones-formulario { display: flex; align-items: center; gap: 16px; margin-top: 22px; }
+.boton-principal {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 11px 16px;
+    border: 0;
+    border-radius: 9px;
+    background: var(--azul);
+    color: #fff;
+    font: inherit;
+    font-weight: 650;
+    text-decoration: none;
+    cursor: pointer;
+}
+.boton-principal:hover { background: var(--azul-oscuro); }
+.boton-secundario { display: inline-flex; align-items: center; padding: 9px 12px; border-radius: 8px; text-decoration: none; font: inherit; cursor: pointer; }
+.texto-ayuda { color: var(--secundario); font-size: .85rem; }
+.mensaje-exito { padding: 12px 16px; border-radius: 8px; background: var(--verde-fondo); color: var(--verde-texto); }
+.mensaje-error { color: #a02d26; font-size: .85rem; }
+.encabezado-pagina { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.encabezado-pagina > div { max-width: 760px; }
+
+@media (max-width: 720px) {
+    .encabezado-pagina { align-items: flex-start; flex-direction: column; }
+    .rejilla-formulario { grid-template-columns: 1fr; }
+    .campo-completo { grid-column: auto; }
+    .panel-formulario { padding: 20px; }
+}
+@media print {
+    .columna-accion { display: none; }
+}
