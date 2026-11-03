@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Authorization;
@@ -37,6 +39,38 @@ public class Program
                 opcionesCookie.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
                 opcionesCookie.ExpireTimeSpan = TimeSpan.FromHours(8);
                 opcionesCookie.SlidingExpiration = true;
+                // contextoValidacion consulta el estado actual en cada solicitud autenticada; cambiar esta política altera cuándo se revocan sesiones.
+                opcionesCookie.Events.OnValidatePrincipal = async contextoValidacion =>
+                {
+                    // identificadorCuenta conserva el ID firmado al iniciar sesión; cambiar su origen altera qué cuenta se valida.
+                    var identificadorCuenta = contextoValidacion.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+                    // baseDeCuentas consulta el estado persistido; cambiar el contexto cambia la fuente de validación.
+                    var baseDeCuentas = contextoValidacion.HttpContext.RequestServices.GetRequiredService<InventarioDbContext>();
+                    // cuentaActualizada determina si la cuenta sigue activa y qué rol debe tener la sesión.
+                    var cuentaActualizada = int.TryParse(identificadorCuenta, out var idCuenta)
+                        ? await baseDeCuentas.Usuarios.AsNoTracking()
+                            .SingleOrDefaultAsync(cuenta => cuenta.Identificador == idCuenta)
+                        : null;
+
+                    if (cuentaActualizada is null || !cuentaActualizada.Activo)
+                    {
+                        contextoValidacion.RejectPrincipal();
+                        await contextoValidacion.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                        return;
+                    }
+
+                    // rolEnCookie compara privilegios firmados con el rol vigente; cambiar la comparación altera cuándo se renuevan.
+                    var rolEnCookie = contextoValidacion.Principal?.FindFirstValue(ClaimTypes.Role);
+                    if (rolEnCookie != cuentaActualizada.Rol)
+                    {
+                        // identidadActualizada conserva la sesión y reemplaza sus datos por los vigentes.
+                        var identidadActualizada = (ClaimsIdentity)contextoValidacion.Principal!.Identity!;
+                        identidadActualizada.RemoveClaim(
+                            identidadActualizada.FindFirst(ClaimTypes.Role)!);
+                        identidadActualizada.AddClaim(new Claim(ClaimTypes.Role, cuentaActualizada.Rol));
+                        contextoValidacion.ShouldRenew = true;
+                    }
+                };
             });
 
         constructorWeb.Services.AddAuthorization();
