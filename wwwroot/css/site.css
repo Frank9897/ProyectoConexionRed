@@ -185,3 +185,18 @@ td small { margin-top: 3px; color: var(--secundario); line-height: 1.35; }
 @media print {
     .columna-accion { display: none; }
 }
+
+
+/* rejillaCapas organiza vistas de preparación; cambiar columnas adapta el resumen a pantallas estrechas. */
+.rejilla-capas {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+}
+.rejilla-capas .panel { margin-top: 0; }
+.rejilla-capas h2 { margin: 4px 0 8px; font-size: 1.15rem; }
+.aviso-topologia { margin-top: 18px; border-left: 4px solid var(--ambar-texto); }
+@media (max-width: 850px) {
+    .rejilla-capas { grid-template-columns: 1fr; }
+}
