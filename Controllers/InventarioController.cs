@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -91,6 +92,171 @@ public class InventarioController : Controller
             .ToArray();
 
         return File(bytesCsv, "text/csv; charset=utf-8", "inventario-red.csv");
+    }
+
+
+    /// <summary>
+    /// Presenta la ficha editable del equipo seleccionado.
+    /// </summary>
+    /// <param name="id">Identificador del equipo; cambiarlo selecciona otra ficha.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla interrumpe la consulta.</param>
+    /// <returns>Formulario de edición o respuesta 404 cuando no existe el equipo.</returns>
+    [HttpGet]
+    public async Task<IActionResult> Editar(int id, CancellationToken cancelacion)
+    {
+        // equipoEncontrado carga el registro seleccionado; cambiar id consulta otro equipo.
+        var equipoEncontrado = await contextoInventario.Equipos
+            .AsNoTracking()
+            .SingleOrDefaultAsync(equipo => equipo.Identificador == id, cancelacion);
+        if (equipoEncontrado is null)
+        {
+            return NotFound();
+        }
+
+        // formularioEdicion contiene solo campos editables; cambiar el mapeo altera los datos enviados al formulario.
+        var formularioEdicion = new EditarEquipoViewModel
+        {
+            Identificador = equipoEncontrado.Identificador,
+            Nombre = equipoEncontrado.Nombre,
+            Fabricante = equipoEncontrado.Fabricante,
+            Modelo = equipoEncontrado.Modelo,
+            IpAdministracion = equipoEncontrado.IpAdministracion,
+            DireccionMac = equipoEncontrado.DireccionMac,
+            Area = equipoEncontrado.Area,
+            RolEnArea = equipoEncontrado.RolEnArea,
+            TipoDispositivo = equipoEncontrado.TipoDispositivo,
+            EstadoAdministrativo = equipoEncontrado.EstadoAdministrativo,
+            EstadoDatos = equipoEncontrado.EstadoDatos,
+            FechaUltimaRevision = equipoEncontrado.FechaUltimaRevision,
+            Observaciones = equipoEncontrado.Observaciones
+        };
+
+        return View(formularioEdicion);
+    }
+
+    /// <summary>
+    /// Guarda los campos permitidos y registra cada diferencia en el historial.
+    /// </summary>
+    /// <param name="formulario">Valores editados; cambiar sus propiedades modifica solo la ficha documental.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla interrumpe lectura o persistencia.</param>
+    /// <returns>Redirección al inventario o formulario con errores de validación.</returns>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Editar(EditarEquipoViewModel formulario, CancellationToken cancelacion)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(formulario);
+        }
+
+        // equipoGuardado es la fila persistida; cambiar el identificador del formulario selecciona otra fila.
+        var equipoGuardado = await contextoInventario.Equipos
+            .SingleOrDefaultAsync(equipo => equipo.Identificador == formulario.Identificador, cancelacion);
+        if (equipoGuardado is null)
+        {
+            return NotFound();
+        }
+
+        // usuarioEditor atribuye el cambio; cambiar la identidad altera el autor almacenado en la auditoría.
+        var usuarioEditor = User.Identity?.Name ?? "Usuario desconocido";
+        // cambiosRegistrados reúne solo diferencias reales; cambiar los campos comparados altera qué se audita.
+        var cambiosRegistrados = new List<EventoModificacion>();
+        // nombreEquipoAnterior conserva la etiqueta previa para identificar el registro aunque se renombre.
+        var nombreEquipoAnterior = equipoGuardado.Nombre;
+
+        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Nombre", equipoGuardado.Nombre, formulario.Nombre);
+        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Fabricante", equipoGuardado.Fabricante, formulario.Fabricante);
+        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Modelo", equipoGuardado.Modelo, formulario.Modelo);
+        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "IP de administración", equipoGuardado.IpAdministracion, formulario.IpAdministracion);
+        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Dirección MAC", equipoGuardado.DireccionMac, formulario.DireccionMac);
+        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Área", equipoGuardado.Area, formulario.Area);
+        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Rol en el área", equipoGuardado.RolEnArea, formulario.RolEnArea);
+        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Tipo de dispositivo", equipoGuardado.TipoDispositivo, formulario.TipoDispositivo);
+        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Acceso administrativo", equipoGuardado.EstadoAdministrativo, formulario.EstadoAdministrativo);
+        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Vigencia de datos", equipoGuardado.EstadoDatos, formulario.EstadoDatos);
+        AgregarCambio(
+            cambiosRegistrados,
+            equipoGuardado.Identificador,
+            nombreEquipoAnterior,
+            usuarioEditor,
+            "Última revisión",
+            equipoGuardado.FechaUltimaRevision?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            formulario.FechaUltimaRevision?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Observaciones", equipoGuardado.Observaciones, formulario.Observaciones);
+
+        equipoGuardado.Nombre = formulario.Nombre.Trim();
+        equipoGuardado.Fabricante = NormalizarTextoOpcional(formulario.Fabricante);
+        equipoGuardado.Modelo = NormalizarTextoOpcional(formulario.Modelo);
+        equipoGuardado.IpAdministracion = NormalizarTextoOpcional(formulario.IpAdministracion);
+        equipoGuardado.DireccionMac = NormalizarTextoOpcional(formulario.DireccionMac);
+        equipoGuardado.Area = NormalizarTextoOpcional(formulario.Area);
+        equipoGuardado.RolEnArea = formulario.RolEnArea.Trim();
+        equipoGuardado.TipoDispositivo = formulario.TipoDispositivo.Trim();
+        equipoGuardado.EstadoAdministrativo = formulario.EstadoAdministrativo.Trim();
+        equipoGuardado.EstadoDatos = formulario.EstadoDatos.Trim();
+        equipoGuardado.FechaUltimaRevision = formulario.FechaUltimaRevision;
+        equipoGuardado.Observaciones = NormalizarTextoOpcional(formulario.Observaciones);
+
+        if (cambiosRegistrados.Count > 0)
+        {
+            await contextoInventario.EventosModificacion.AddRangeAsync(cambiosRegistrados, cancelacion);
+        }
+
+        await contextoInventario.SaveChangesAsync(cancelacion);
+        TempData["Mensaje"] = cambiosRegistrados.Count == 0
+            ? "No se detectaron cambios en la ficha."
+            : $"Se guardaron {cambiosRegistrados.Count} cambios en el historial.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    /// <summary>
+    /// Agrega al historial una diferencia entre los valores recibidos.
+    /// </summary>
+    /// <param name="cambios">Lista que acumula las diferencias; cambiarla cambia dónde se agregan.</param>
+    /// <param name="identificadorEquipo">ID del equipo editado; cambiarlo asocia el evento a otro registro.</param>
+    /// <param name="nombreEquipo">Etiqueta previa; cambiarla modifica el texto histórico del equipo.</param>
+    /// <param name="usuarioEditor">Cuenta actual; cambiarla modifica la atribución del evento.</param>
+    /// <param name="campo">Nombre del campo; cambiarlo cambia la propiedad descrita.</param>
+    /// <param name="valorAnterior">Dato previo; cambiarlo altera el antes documentado.</param>
+    /// <param name="valorNuevo">Dato posterior; cambiarlo altera el después documentado.</param>
+    private static void AgregarCambio(
+        List<EventoModificacion> cambios,
+        int identificadorEquipo,
+        string nombreEquipo,
+        string usuarioEditor,
+        string campo,
+        string? valorAnterior,
+        string? valorNuevo)
+    {
+        if (string.Equals(valorAnterior, valorNuevo, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        // eventoCambio almacena la diferencia textual; cambiar estos campos modifica la línea de auditoría.
+        var eventoCambio = new EventoModificacion
+        {
+            IdentificadorEquipo = identificadorEquipo,
+            NombreEquipo = nombreEquipo,
+            NombreUsuario = usuarioEditor,
+            FechaUtc = DateTime.UtcNow,
+            Campo = campo,
+            ValorAnterior = valorAnterior,
+            ValorNuevo = valorNuevo
+        };
+        cambios.Add(eventoCambio);
+    }
+
+    /// <summary>
+    /// Convierte textos opcionales compuestos por espacios en valor nulo.
+    /// </summary>
+    /// <param name="texto">Texto recibido; cambiarlo cambia el valor almacenado.</param>
+    /// <returns>Texto recortado o nulo cuando no tiene contenido.</returns>
+    private static string? NormalizarTextoOpcional(string? texto)
+    {
+        // textoRecortado elimina espacios externos; cambiar esta regla altera la forma guardada.
+        var textoRecortado = texto?.Trim();
+        return string.IsNullOrEmpty(textoRecortado) ? null : textoRecortado;
     }
 
     /// <summary>
