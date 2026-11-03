@@ -10,6 +10,7 @@
         <p>Consulta equipos e IP confirmados. El estado administrativo no representa disponibilidad de red.</p>
     </div>
 </section>
+@* mensajeInventario informa el resultado de la edición; cambiarlo modifica el aviso de confirmación. *@
 @if (TempData["Mensaje"] is string mensajeInventario)
 {
     <p class="mensaje-exito" role="status">@mensajeInventario</p>
