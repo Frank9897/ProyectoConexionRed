@@ -1,0 +1,60 @@
+@model ProyectoConexionRed.Web.Models.TopologiaViewModel
+@{
+    ViewData["Title"] = "Topología";
+}
+<section class="encabezado-pagina">
+    <div>
+        <p class="sobrelinea">MAPA DE RED</p>
+        <h1>Topología</h1>
+        <p>Las conexiones aparecen cuando sus puertos y extremos están documentados.</p>
+    </div>
+</section>
+<section class="rejilla-capas" aria-label="Vistas de la red por capa">
+    <article class="panel">
+        <p class="sobrelinea">CAPA 1 · FÍSICA</p>
+        <h2>Interfaces y enlaces</h2>
+        <p>@Model.TotalInterfaces interfaces · @Model.TotalEnlaces enlaces registrados</p>
+        <p>Cables, puertos y módulos ópticos. Los enlaces del rack marcados para revisión no deben darse por confirmados.</p>
+    </article>
+    <article class="panel">
+        <p class="sobrelinea">CAPA 2 · SWITCHING</p>
+        <h2>Switches y jerarquía</h2>
+        <p>La jerarquía y administración de switches se mostrará aquí cuando se documenten sus relaciones.</p>
+    </article>
+    <article class="panel">
+        <p class="sobrelinea">CAPA 3 · ACCESO E IP</p>
+        <h2>Equipos de usuario</h2>
+        <p>Los dispositivos de usuario y sus IP se incorporarán desde los Visios previstos. Esta vista no presume asociaciones que aún no estén cargadas.</p>
+    </article>
+</section>
+@if (Model.Enlaces.Count == 0)
+{
+    <div class="panel aviso-topologia">
+        <strong>No hay enlaces físicos cargados todavía.</strong>
+        <p>La página no infiere conexiones a partir del inventario. Primero se incorporarán puertos y enlaces con estado de verificación y fuente documental.</p>
+    </div>
+}
+else
+{
+    <section class="panel">
+        <h2>Enlaces físicos documentados</h2>
+        <div class="tabla-contenedor">
+            <table>
+                <thead><tr><th>Origen</th><th>Destino</th><th>Medio</th><th>Estado</th><th>Última revisión</th></tr></thead>
+                <tbody>
+                @* enlace representa cada relación física guardada; cambiar la lista de datos cambia las filas mostradas. *@
+                @foreach (var enlace in Model.Enlaces)
+                {
+                    <tr>
+                        <td>@enlace.EquipoOrigen <small>Puerto @enlace.PuertoOrigen</small></td>
+                        <td>@enlace.EquipoDestino <small>Puerto @enlace.PuertoDestino</small></td>
+                        <td>@enlace.Medio</td>
+                        <td>@enlace.EstadoDatos</td>
+                        <td>@(enlace.FechaUltimaRevision?.ToString("yyyy-MM-dd") ?? "Sin fecha confirmada")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}
