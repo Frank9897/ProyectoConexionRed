@@ -12,7 +12,7 @@ Reunir en un inventario navegable los dispositivos, IP, puertos, enlaces, áreas
 
 El acceso requiere sesión. La cuenta administradora inicial solo se crea cuando la base todavía no contiene usuarios y se configuran las variables de entorno `INVENTARIO_ADMIN_USUARIO` y `INVENTARIO_ADMIN_CLAVE`. La clave se guarda como hash. La cuenta inicial recibe rol Administrador. El administrador puede crear cuentas Técnicas, hasta cinco cuentas en total, y activar o desactivar cuentas. Las cuentas existentes reciben rol Administrador al actualizar una base anterior, para no quitar el acceso que ya tenían. El administrador no puede desactivar su propia cuenta activa ni la última cuenta administradora activa. La pantalla «Accesos» muestra los últimos cien inicios de sesión y cierres de sesión, con hora UTC y resultado; no registra contraseñas.
 
-La aplicación permite editar los campos documentales de cada equipo y guarda en un historial el usuario, la fecha UTC, el campo y los valores anterior y nuevo. El historial es de solo lectura desde la web. Estos cambios actualizan SQLite y no ejecutan acciones sobre la red. Todavía no tiene topología gráfica, conexiones modeladas, ficha SFP ni exportación gráfica. Falta aplicar límites a intentos de acceso, verificar la aplicación y completar HTTPS antes de considerar un despliegue de producción.
+La aplicación permite editar los campos documentales de cada equipo y guarda en un historial el usuario, la fecha UTC, el campo y los valores anterior y nuevo. El historial es de solo lectura desde la web y presenta hasta doscientos eventos recientes. Estos cambios actualizan SQLite y no ejecutan acciones sobre la red. Todavía no tiene topología gráfica, conexiones modeladas, ficha SFP ni exportación gráfica. Falta aplicar límites a intentos de acceso, verificar la aplicación y completar HTTPS antes de considerar un despliegue de producción.
 
 El archivo **DIAGRAMA RED V2.vsdx** es la fuente base. El usuario confirmó que los dispositivos, IP y datos de los equipos de usuario están vigentes. Algunas conexiones del rack necesitan revisión y algunos SFP están pendientes de actualizar. Se esperan otros dos Visios para incorporar nombres de PC, usuarioPC y nombres de usuario.
 
@@ -56,13 +56,12 @@ Al iniciar, se crea `proyecto-conexion-red.db` y se agregan los registros inicia
 
 ## Próximas etapas
 
-1. Incorporar gestión de usuarios y permisos.
-2. Habilitar edición controlada del inventario y auditoría de modificaciones.
-3. Modelar ubicaciones, puertos, conexiones del rack y SFP con estado de validación.
-4. Construir topología y vistas por capa.
-5. Incorporar los dos Visios pendientes para PCs y usuarios.
-6. Agregar simulaciones aisladas, imágenes de modelos y exportación/impresión gráfica.
-7. Incorporar migraciones, respaldos y despliegue seguro.
+1. Revisar y verificar el flujo de edición, auditoría y actualización de SQLite existente.
+2. Modelar ubicaciones, puertos, conexiones del rack y SFP con estado de validación.
+3. Construir topología y vistas por capa.
+4. Incorporar los dos Visios pendientes para PCs y usuarios.
+5. Agregar simulaciones aisladas, imágenes de modelos y exportación/impresión gráfica.
+6. Incorporar migraciones, respaldos y despliegue seguro.
 
 ## Principios de datos y seguridad
 
