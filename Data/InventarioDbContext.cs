@@ -32,6 +32,11 @@ public class InventarioDbContext : DbContext
     public DbSet<EventoAcceso> EventosAcceso => Set<EventoAcceso>();
 
     /// <summary>
+    /// Conjunto de cambios de inventario; cambiar sus filas modifica el historial documental.
+    /// </summary>
+    public DbSet<EventoModificacion> EventosModificacion => Set<EventoModificacion>();
+
+    /// <summary>
     /// Define nombres y límites de columnas; cambiar estas reglas requiere actualizar el esquema de la base.
     /// </summary>
     /// <param name="constructorModelo">Constructor de metadatos; cambiar su configuración altera el esquema generado.</param>
@@ -75,5 +80,17 @@ public class InventarioDbContext : DbContext
         configuracionEvento.Property(nameof(EventoAcceso.TipoEvento)).HasMaxLength(60).IsRequired();
         configuracionEvento.Property(nameof(EventoAcceso.Resultado)).HasMaxLength(40).IsRequired();
         configuracionEvento.HasIndex(nameof(EventoAcceso.FechaUtc));
+
+        // configuracionCambio reúne los cambios de fichas; cambiar límites altera qué valores caben en la auditoría.
+        var configuracionCambio = constructorModelo.Entity<EventoModificacion>();
+        configuracionCambio.ToTable("EventosModificacion");
+        configuracionCambio.HasKey(nameof(EventoModificacion.Identificador));
+        configuracionCambio.Property(nameof(EventoModificacion.NombreEquipo)).HasMaxLength(160).IsRequired();
+        configuracionCambio.Property(nameof(EventoModificacion.NombreUsuario)).HasMaxLength(100).IsRequired();
+        configuracionCambio.Property(nameof(EventoModificacion.Campo)).HasMaxLength(100).IsRequired();
+        configuracionCambio.Property(nameof(EventoModificacion.ValorAnterior)).HasMaxLength(2000);
+        configuracionCambio.Property(nameof(EventoModificacion.ValorNuevo)).HasMaxLength(2000);
+        configuracionCambio.HasIndex(nameof(EventoModificacion.FechaUtc));
+        configuracionCambio.HasIndex(nameof(EventoModificacion.IdentificadorEquipo));
     }
 }
