@@ -1,0 +1,23 @@
+@model ProyectoConexionRed.Web.Models.AltaUsuarioViewModel
+@{
+    ViewData["Title"] = "Crear técnico";
+}
+<section class="panel-formulario">
+    <p class="sobrelinea">Administración</p>
+    <h1>Crear cuenta técnica</h1>
+    <p>El técnico podrá consultar y modificar el inventario cuando esas funciones estén habilitadas.</p>
+    <form asp-action="Crear" method="post">
+        <div asp-validation-summary="ModelOnly" class="mensaje-error"></div>
+        <label asp-for="NombreUsuario">Nombre de usuario</label>
+        <input asp-for="NombreUsuario" autocomplete="username" />
+        <span asp-validation-for="NombreUsuario" class="mensaje-error"></span>
+        <label asp-for="Contrasena">Contraseña inicial</label>
+        <input asp-for="Contrasena" autocomplete="new-password" />
+        <span asp-validation-for="Contrasena" class="mensaje-error"></span>
+        <p class="texto-ayuda">Usa al menos 12 caracteres. La aplicación guarda un hash, no la contraseña.</p>
+        <div class="acciones-formulario">
+            <button class="boton-principal" type="submit">Crear cuenta</button>
+            <a asp-action="Index">Volver a usuarios</a>
+        </div>
+    </form>
+</section>
