@@ -1,3 +1,4 @@
+using System.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ProyectoConexionRed.Web.Models;
@@ -54,6 +55,7 @@ public static class InicializadorInventario
                 "NombreUsuario" TEXT NOT NULL,
                 "NombreUsuarioNormalizado" TEXT NOT NULL,
                 "HashContrasena" TEXT NOT NULL,
+                "Rol" TEXT NOT NULL DEFAULT 'Administrador',
                 "Activo" INTEGER NOT NULL,
                 "FechaCreacionUtc" TEXT NOT NULL
             );
@@ -71,6 +73,57 @@ public static class InicializadorInventario
             """;
 
         await contextoInventario.Database.ExecuteSqlRawAsync(comandosSql, cancelacion);
+        await AgregarColumnaRolSiFaltaAsync(contextoInventario, cancelacion);
+    }
+
+    /// <summary>
+    /// Agrega el rol a bases SQLite anteriores y conserva como administradoras las cuentas existentes.
+    /// </summary>
+    /// <param name="contextoInventario">Contexto de base; cambiarlo aplica el ajuste en otra base.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla interrumpe la lectura del esquema o la alteración.</param>
+    private static async Task AgregarColumnaRolSiFaltaAsync(
+        InventarioDbContext contextoInventario,
+        CancellationToken cancelacion)
+    {
+        // conexionBase representa la conexión actual de EF; cambiarla inspecciona otra base.
+        var conexionBase = contextoInventario.Database.GetDbConnection();
+        // cerrarAlFinal indica si esta función abrió la conexión; cambiarlo altera si la conexión se cierra al terminar.
+        var cerrarAlFinal = conexionBase.State != ConnectionState.Open;
+        if (cerrarAlFinal)
+        {
+            await conexionBase.OpenAsync(cancelacion);
+        }
+
+        // existeColumnaRol evita repetir ALTER TABLE; cambiar su resultado decide si se amplía el esquema.
+        var existeColumnaRol = false;
+        await using (var comandoEsquema = conexionBase.CreateCommand())
+        {
+            comandoEsquema.CommandText = "PRAGMA table_info(\"UsuariosAplicacion\")";
+            await using var lectorEsquema = await comandoEsquema.ExecuteReaderAsync(cancelacion);
+            while (await lectorEsquema.ReadAsync(cancelacion))
+            {
+                // nombreColumna contiene el nombre leído del esquema; cambiar el índice cambia qué dato se compara.
+                var nombreColumna = lectorEsquema.GetString(1);
+                if (nombreColumna == "Rol")
+                {
+                    existeColumnaRol = true;
+                    break;
+                }
+            }
+        }
+
+        if (!existeColumnaRol)
+        {
+            // ALTER TABLE asigna un rol administrador predeterminado a cuentas previas para conservar el acceso.
+            await contextoInventario.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE \"UsuariosAplicacion\" ADD COLUMN \"Rol\" TEXT NOT NULL DEFAULT 'Administrador'",
+                cancelacion);
+        }
+
+        if (cerrarAlFinal)
+        {
+            await conexionBase.CloseAsync();
+        }
     }
 
     /// <summary>
@@ -134,6 +187,7 @@ public static class InicializadorInventario
         {
             NombreUsuario = usuarioInicial.Trim(),
             NombreUsuarioNormalizado = nombreNormalizado,
+            Rol = "Administrador",
             Activo = true,
             FechaCreacionUtc = DateTime.UtcNow
         };
