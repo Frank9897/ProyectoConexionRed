@@ -12,7 +12,7 @@ Reunir en un inventario navegable los dispositivos, IP, puertos, enlaces, áreas
 
 El acceso requiere sesión. La cuenta administradora inicial solo se crea cuando la base todavía no contiene usuarios y se configuran las variables de entorno `INVENTARIO_ADMIN_USUARIO` y `INVENTARIO_ADMIN_CLAVE`. La clave se guarda como hash. La cuenta inicial recibe rol Administrador. El administrador puede crear cuentas Técnicas, hasta cinco cuentas en total, y activar o desactivar cuentas. Las cuentas existentes reciben rol Administrador al actualizar una base anterior, para no quitar el acceso que ya tenían. El administrador no puede desactivar su propia cuenta activa ni la última cuenta administradora activa. La pantalla «Accesos» muestra los últimos cien inicios de sesión y cierres de sesión, con hora UTC y resultado; no registra contraseñas.
 
-Esta etapa todavía no permite editar equipos ni registrar auditoría de modificaciones. Tampoco tiene topología gráfica, conexiones modeladas, ficha SFP ni exportación gráfica. La administración de cuentas y roles ya está incorporada, pero falta aplicar límites a intentos de acceso, verificar la aplicación y completar HTTPS antes de considerar un despliegue de producción.
+La aplicación permite editar los campos documentales de cada equipo y guarda en un historial el usuario, la fecha UTC, el campo y los valores anterior y nuevo. El historial es de solo lectura desde la web. Estos cambios actualizan SQLite y no ejecutan acciones sobre la red. Todavía no tiene topología gráfica, conexiones modeladas, ficha SFP ni exportación gráfica. Falta aplicar límites a intentos de acceso, verificar la aplicación y completar HTTPS antes de considerar un despliegue de producción.
 
 El archivo **DIAGRAMA RED V2.vsdx** es la fuente base. El usuario confirmó que los dispositivos, IP y datos de los equipos de usuario están vigentes. Algunas conexiones del rack necesitan revisión y algunos SFP están pendientes de actualizar. Se esperan otros dos Visios para incorporar nombres de PC, usuarioPC y nombres de usuario.
 
@@ -52,7 +52,7 @@ Al iniciar, se crea `proyecto-conexion-red.db` y se agregan los registros inicia
 - Entity Framework Core con proveedor SQLite.
 - Cookie de autenticación HTTP Only; en producción se requiere HTTPS.
 - El servidor web es la vía de acceso a SQLite; no compartir directamente el archivo de base por una unidad de red.
-- Se espera un técnico actualmente y hasta cinco cuentas de técnicos. La administración de usuarios está limitada al rol Administrador; las altas nuevas reciben rol Técnico. La aplicación no aplica todavía un vencimiento inmediato a sesiones ya abiertas cuando se desactiva una cuenta.
+- Se espera un técnico actualmente y hasta cinco cuentas de técnicos. La administración de usuarios está limitada al rol Administrador; las altas nuevas reciben rol Técnico. La cookie se valida contra SQLite en cada solicitud; una cuenta desactivada pierde acceso en la siguiente solicitud.
 
 ## Próximas etapas
 
