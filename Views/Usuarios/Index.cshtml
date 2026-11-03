@@ -1,0 +1,42 @@
+@model IReadOnlyList<ProyectoConexionRed.Web.Models.UsuarioAplicacion>
+@{
+    ViewData["Title"] = "Administrar usuarios";
+}
+<section class="encabezado-pagina">
+    <div>
+        <p class="sobrelinea">Administración</p>
+        <h1>Cuentas de acceso</h1>
+        <p>Hasta cinco cuentas locales. Las nuevas cuentas se crean con permisos de técnico.</p>
+    </div>
+    <a class="boton-principal" asp-action="Crear">Crear técnico</a>
+</section>
+@if (TempData["Mensaje"] is string mensaje)
+{
+    <p class="mensaje-exito" role="status">@mensaje</p>
+}
+@if (TempData["Error"] is string error)
+{
+    <p class="mensaje-error" role="alert">@error</p>
+}
+<div class="tabla-contenedor">
+    <table>
+        <thead><tr><th>Usuario</th><th>Rol</th><th>Estado</th><th>Creación (UTC)</th><th>Acción</th></tr></thead>
+        <tbody>
+        @foreach (var cuenta in Model)
+        {
+            <tr>
+                <td>@cuenta.NombreUsuario</td>
+                <td>@cuenta.Rol</td>
+                <td>@(cuenta.Activo ? "Activa" : "Desactivada")</td>
+                <td>@cuenta.FechaCreacionUtc.ToString("yyyy-MM-dd HH:mm")</td>
+                <td>
+                    <form asp-action="CambiarEstado" method="post">
+                        <input type="hidden" name="id" value="@cuenta.Identificador" />
+                        <button class="boton-secundario" type="submit">@(cuenta.Activo ? "Desactivar" : "Activar")</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
