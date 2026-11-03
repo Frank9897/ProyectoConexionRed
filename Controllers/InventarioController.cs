@@ -228,7 +228,10 @@ public class InventarioController : Controller
         string? valorAnterior,
         string? valorNuevo)
     {
-        if (string.Equals(valorAnterior, valorNuevo, StringComparison.Ordinal))
+        // valorAnteriorNormalizado y valorNuevoNormalizado coinciden con el recorte aplicado al guardar la ficha.
+        var valorAnteriorNormalizado = NormalizarTextoOpcional(valorAnterior);
+        var valorNuevoNormalizado = NormalizarTextoOpcional(valorNuevo);
+        if (string.Equals(valorAnteriorNormalizado, valorNuevoNormalizado, StringComparison.Ordinal))
         {
             return;
         }
@@ -241,8 +244,8 @@ public class InventarioController : Controller
             NombreUsuario = usuarioEditor,
             FechaUtc = DateTime.UtcNow,
             Campo = campo,
-            ValorAnterior = valorAnterior,
-            ValorNuevo = valorNuevo
+            ValorAnterior = valorAnteriorNormalizado,
+            ValorNuevo = valorNuevoNormalizado
         };
         cambios.Add(eventoCambio);
     }
