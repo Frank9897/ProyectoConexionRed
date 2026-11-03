@@ -37,6 +37,16 @@ public class InventarioDbContext : DbContext
     public DbSet<EventoModificacion> EventosModificacion => Set<EventoModificacion>();
 
     /// <summary>
+    /// Conjunto de interfaces físicas documentadas; cambiar sus filas modifica los puertos registrados.
+    /// </summary>
+    public DbSet<InterfazEquipo> InterfacesEquipo => Set<InterfazEquipo>();
+
+    /// <summary>
+    /// Conjunto de enlaces físicos registrados; cambiar sus filas modifica las conexiones dibujables.
+    /// </summary>
+    public DbSet<EnlaceFisico> EnlacesFisicos => Set<EnlaceFisico>();
+
+    /// <summary>
     /// Define nombres y límites de columnas; cambiar estas reglas requiere actualizar el esquema de la base.
     /// </summary>
     /// <param name="constructorModelo">Constructor de metadatos; cambiar su configuración altera el esquema generado.</param>
@@ -92,5 +102,40 @@ public class InventarioDbContext : DbContext
         configuracionCambio.Property(nameof(EventoModificacion.ValorNuevo)).HasMaxLength(2000);
         configuracionCambio.HasIndex(nameof(EventoModificacion.FechaUtc));
         configuracionCambio.HasIndex(nameof(EventoModificacion.IdentificadorEquipo));
+
+        // configuracionInterfaz define puertos y equipo propietario; cambiar límites altera las etiquetas admitidas.
+        var configuracionInterfaz = constructorModelo.Entity<InterfazEquipo>();
+        configuracionInterfaz.ToTable("InterfacesEquipo");
+        configuracionInterfaz.HasKey(nameof(InterfazEquipo.Identificador));
+        configuracionInterfaz.Property(nameof(InterfazEquipo.EtiquetaPuerto)).HasMaxLength(100).IsRequired();
+        configuracionInterfaz.Property(nameof(InterfazEquipo.TipoInterfaz)).HasMaxLength(100).IsRequired();
+        configuracionInterfaz.Property(nameof(InterfazEquipo.EstadoDatos)).HasMaxLength(60).IsRequired();
+        configuracionInterfaz.Property(nameof(InterfazEquipo.Observaciones)).HasMaxLength(1000);
+        configuracionInterfaz.HasIndex(nameof(InterfazEquipo.IdentificadorEquipo), nameof(InterfazEquipo.EtiquetaPuerto)).IsUnique();
+        configuracionInterfaz.HasOne<EquipoRed>()
+            .WithMany()
+            .HasForeignKey(nameof(InterfazEquipo.IdentificadorEquipo))
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // configuracionEnlace une dos interfaces; cambiar sus claves cambia los puertos conectados en el inventario.
+        var configuracionEnlace = constructorModelo.Entity<EnlaceFisico>();
+        configuracionEnlace.ToTable("EnlacesFisicos");
+        configuracionEnlace.HasKey(nameof(EnlaceFisico.Identificador));
+        configuracionEnlace.Property(nameof(EnlaceFisico.Medio)).HasMaxLength(60).IsRequired();
+        configuracionEnlace.Property(nameof(EnlaceFisico.ModuloOrigen)).HasMaxLength(120);
+        configuracionEnlace.Property(nameof(EnlaceFisico.ModuloDestino)).HasMaxLength(120);
+        configuracionEnlace.Property(nameof(EnlaceFisico.EstadoDatos)).HasMaxLength(60).IsRequired();
+        configuracionEnlace.Property(nameof(EnlaceFisico.Fuente)).HasMaxLength(300);
+        configuracionEnlace.Property(nameof(EnlaceFisico.Observaciones)).HasMaxLength(1000);
+        configuracionEnlace.HasIndex(nameof(EnlaceFisico.IdentificadorPuertoOrigen));
+        configuracionEnlace.HasIndex(nameof(EnlaceFisico.IdentificadorPuertoDestino));
+        configuracionEnlace.HasOne<InterfazEquipo>()
+            .WithMany()
+            .HasForeignKey(nameof(EnlaceFisico.IdentificadorPuertoOrigen))
+            .OnDelete(DeleteBehavior.Restrict);
+        configuracionEnlace.HasOne<InterfazEquipo>()
+            .WithMany()
+            .HasForeignKey(nameof(EnlaceFisico.IdentificadorPuertoDestino))
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
