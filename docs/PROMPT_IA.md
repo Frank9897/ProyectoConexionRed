@@ -11,10 +11,10 @@ Crear una aplicación web en español para inventariar, consultar y visualizar l
 - Las claves se almacenan como hash. La tabla de accesos registra ingresos correctos/fallidos y cierres con hora UTC; no guarda contraseñas.
 - La tabla de accesos tiene una página para consultar los últimos cien eventos.
 - Las tablas de usuarios e historial se crean con SQL IF NOT EXISTS para compatibilidad con la base prototipo creada en la primera versión. El resto del modelo usa EnsureCreated; emplear migraciones en futuras evoluciones del esquema.
-- No están implementados la gestión de usuarios/permisos diferenciados, edición de inventario, auditoría de modificaciones, topología gráfica, enlaces, SFP, simulaciones, exportación gráfica ni imágenes. No desplegar en producción hasta implementar gestión de usuarios, autorización adecuada y HTTPS.
+- La gestión básica de cuentas está incorporada: rol Administrador/Tecnico, alta de técnicos (máximo cinco cuentas totales) y activación/desactivación. Las cuentas previas reciben rol Administrador por compatibilidad al agregar la nueva columna SQLite; el alta por la interfaz siempre asigna Tecnico. Se protege la última cuenta administradora activa y no se permite auto desactivación.\n- No están implementados edición de inventario, auditoría de modificaciones, topología gráfica, enlaces, SFP, simulaciones, exportación gráfica ni imágenes. Las cookies de sesiones ya abiertas no se revocan inmediatamente al desactivar una cuenta. No desplegar en producción antes de validar la gestión de sesiones, controles de acceso, HTTPS y pruebas.
 - El usuario compartirá posteriormente otros dos Visios con nombres de PC, usuarioPC y nombres de usuario. No inventar esos datos antes de revisar las fuentes.
 - Al modificar el código, actualizar siempre README.md y docs/PROMPT_IA.md.
-- No se ha confirmado con el usuario que el programa compile ni se han verificado las páginas en ejecución; no afirmar que están verificadas.
+- No se ha confirmado con el usuario que el programa compile ni se han verificado las páginas en ejecución; no afirmar que están verificadas. La administración de cuentas y el manejo de bases anteriores requieren esa verificación pendiente.
 
 ## Fuentes y calidad de datos
 - Fuente base: DIAGRAMA RED V2.vsdx.
@@ -73,7 +73,7 @@ Los datos de la lista se transcriben del Visio y las IP son vigentes según el u
 - El servidor web será la vía de acceso a SQLite; no compartir el archivo directamente por una unidad de red.
 - Las vistas física, switching y red serán perspectivas del mismo inventario.
 - La impresión disponible en el MVP corresponde solo al inventario tabular; no presentarla como exportación de topología.
-- La cookie de autenticación es HTTP Only; en producción se requiere HTTPS. No hay alta pública de usuarios.
+- La cookie de autenticación es HTTP Only; en producción se requiere HTTPS. No hay alta pública de usuarios. La pantalla Usuarios solo es visible y accesible para Administrador; las altas nuevas son Tecnico y el total de cuentas queda limitado a cinco.
 - Secciones futuras: inventario, topología, puertos/conexiones, switching/VLAN, IP/subredes, PCs/usuarios, auditoría, simulaciones, informes/impresión y administración.
 - Simulaciones solo sobre el modelo de datos de la aplicación. No mandar pings, comandos ni cambios a la red real.
 - Las imágenes deben corresponder a un modelo identificado y registrar su fuente; no presentarlas como verificadas por similitud de nombre.
