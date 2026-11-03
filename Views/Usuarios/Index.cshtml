@@ -10,10 +10,12 @@
     </div>
     <a class="boton-principal" asp-action="Crear">Crear técnico</a>
 </section>
+@* mensaje muestra el resultado de la última operación; cambiarlo cambia el aviso visible. *@
 @if (TempData["Mensaje"] is string mensaje)
 {
     <p class="mensaje-exito" role="status">@mensaje</p>
 }
+@* error muestra un rechazo de seguridad; cambiarlo cambia el aviso de bloqueo visible. *@
 @if (TempData["Error"] is string error)
 {
     <p class="mensaje-error" role="alert">@error</p>
@@ -22,6 +24,7 @@
     <table>
         <thead><tr><th>Usuario</th><th>Rol</th><th>Estado</th><th>Creación (UTC)</th><th>Acción</th></tr></thead>
         <tbody>
+        @* cuenta representa cada registro listado; cambiar el modelo cambia las filas presentadas. *@
         @foreach (var cuenta in Model)
         {
             <tr>
