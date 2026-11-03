@@ -26,6 +26,11 @@ public class UsuarioAplicacion
     public string HashContrasena { get; set; } = string.Empty;
 
     /// <summary>
+    /// Rol de acceso; cambiarlo entre Administrador y Tecnico modifica qué secciones protegidas puede administrar la cuenta.
+    /// </summary>
+    public string Rol { get; set; } = "Tecnico";
+
+    /// <summary>
     /// Indica si la cuenta puede iniciar sesión; cambiarlo habilita o bloquea su acceso a la aplicación.
     /// </summary>
     public bool Activo { get; set; } = true;
