@@ -13,7 +13,7 @@ Crear una aplicación web en español para inventariar, consultar y visualizar l
 - Las tablas de usuarios e historial se crean con SQL IF NOT EXISTS para compatibilidad con la base prototipo creada en la primera versión. El resto del modelo usa EnsureCreated; emplear migraciones en futuras evoluciones del esquema.
 - La gestión básica de cuentas está incorporada: rol Administrador/Tecnico, alta de técnicos (máximo cinco cuentas totales) y activación/desactivación. Las cuentas previas reciben rol Administrador por compatibilidad al agregar la nueva columna SQLite; el alta por la interfaz siempre asigna Tecnico. Se protege la última cuenta administradora activa y no se permite auto desactivación.
 - La edición controlada de equipos y la auditoría por campo están implementadas en el código: se guardan cuenta, fecha UTC, equipo, campo, valor anterior y valor nuevo. La pantalla Cambios muestra los últimos doscientos eventos. La edición solo modifica la base documental y no actúa sobre la red real.
-- No están implementados topología gráfica, conexiones y puertos modelados, SFP, simulaciones, exportación gráfica ni imágenes. La cookie se valida contra SQLite en cada solicitud: una cuenta desactivada pierde acceso en la siguiente solicitud y un cambio de rol se renueva en la sesión. No desplegar en producción antes de verificar la aplicación, controles de acceso, HTTPS y pruebas.
+- Hay un esquema SQLite para interfaces físicas y enlaces entre puertos, más una página Topología con las vistas física, switching y acceso/IP. La tabla de enlaces permanece vacía: no se infirieron conexiones y aún no existe un formulario para cargar interfaces/enlaces. La topología gráfica interactiva, relaciones de switching/VLAN, simulaciones, ficha SFP, exportación gráfica e imágenes siguen pendientes. La cookie se valida contra SQLite en cada solicitud: una cuenta desactivada pierde acceso en la siguiente solicitud y un cambio de rol se renueva en la sesión. No desplegar en producción antes de verificar la aplicación, controles de acceso, HTTPS y pruebas.
 - El usuario compartirá posteriormente otros dos Visios con nombres de PC, usuarioPC y nombres de usuario. No inventar esos datos antes de revisar las fuentes.
 - Al modificar el código, actualizar siempre README.md y docs/PROMPT_IA.md.
 - No se ha confirmado con el usuario que el programa compile ni se han verificado las páginas en ejecución; no afirmar que están verificadas. La administración de cuentas y el manejo de bases anteriores requieren esa verificación pendiente.
@@ -82,10 +82,10 @@ Los datos de la lista se transcriben del Visio y las IP son vigentes según el u
 
 ## Orden de trabajo
 
-1. Verificar edición, auditoría por campo y compatibilidad con bases SQLite previas.
-2. Modelar ubicaciones, puertos, enlaces y jerarquía de switches con estados de validación.
-3. Crear topología y vistas por capa.
-4. Revisar los dos Visios pendientes para enriquecer PCs y usuarios.
+1. Verificar edición, auditoría y compatibilidad con bases SQLite previas.
+2. Agregar pantallas para registrar interfaces y enlaces con fuente, estado de revisión e historial.
+3. Incorporar relaciones de switching y revisar los dos Visios pendientes para PCs y usuarios.
+4. Dibujar topología gráfica por vistas física, switching y acceso/IP.
 5. Agregar simulaciones aisladas, imágenes y exportación/impresión gráfica.
 6. Completar despliegue HTTPS, respaldos y migraciones.
 
