@@ -46,8 +46,10 @@ public class Program
                     var identificadorCuenta = contextoValidacion.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
                     // baseDeCuentas consulta el estado persistido; cambiar el contexto cambia la fuente de validación.
                     var baseDeCuentas = contextoValidacion.HttpContext.RequestServices.GetRequiredService<InventarioDbContext>();
+                    // idCuenta convierte el identificador firmado; cambiarlo modifica la cuenta que se consulta.
+                    var idCuenta = 0;
                     // cuentaActualizada determina si la cuenta sigue activa y qué rol debe tener la sesión.
-                    var cuentaActualizada = int.TryParse(identificadorCuenta, out var idCuenta)
+                    var cuentaActualizada = int.TryParse(identificadorCuenta, out idCuenta)
                         ? await baseDeCuentas.Usuarios.AsNoTracking()
                             .SingleOrDefaultAsync(cuenta => cuenta.Identificador == idCuenta)
                         : null;
@@ -65,8 +67,13 @@ public class Program
                     {
                         // identidadActualizada conserva la sesión y reemplaza sus datos por los vigentes.
                         var identidadActualizada = (ClaimsIdentity)contextoValidacion.Principal!.Identity!;
-                        identidadActualizada.RemoveClaim(
-                            identidadActualizada.FindFirst(ClaimTypes.Role)!);
+                        // reclamoRolAnterior permite reemplazar el rol si existía; cambiarlo altera qué reclamo se retira.
+                        var reclamoRolAnterior = identidadActualizada.FindFirst(ClaimTypes.Role);
+                        if (reclamoRolAnterior is not null)
+                        {
+                            identidadActualizada.RemoveClaim(reclamoRolAnterior);
+                        }
+
                         identidadActualizada.AddClaim(new Claim(ClaimTypes.Role, cuentaActualizada.Rol));
                         contextoValidacion.ShouldRenew = true;
                     }
