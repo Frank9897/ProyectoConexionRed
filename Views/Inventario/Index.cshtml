@@ -10,7 +10,10 @@
         <p>Consulta equipos e IP confirmados. El estado administrativo no representa disponibilidad de red.</p>
     </div>
 </section>
-
+@if (TempData["Mensaje"] is string mensajeInventario)
+{
+    <p class="mensaje-exito" role="status">@mensajeInventario</p>
+}
 <form method="get" class="busqueda">
     <label for="busqueda">Buscar por equipo, IP, área, modelo o fabricante</label>
     <div class="fila-busqueda">
@@ -42,6 +45,7 @@
                 <th>Rol</th>
                 <th>Acceso administrativo</th>
                 <th>Vigencia</th>
+                <th class="columna-accion">Acción</th>
             </tr>
         </thead>
         <tbody>
@@ -62,6 +66,7 @@
                 <td>@equipo.RolEnArea</td>
                 <td><span class="estado @(equipo.EstadoAdministrativo.StartsWith("Inaccesible") ? "estado-alerta" : "")">@equipo.EstadoAdministrativo</span></td>
                 <td><span class="estado estado-vigente">@equipo.EstadoDatos</span></td>
+                <td class="columna-accion"><a class="boton boton-secundario" asp-controller="Inventario" asp-action="Editar" asp-route-id="@equipo.Identificador">Editar</a></td>
             </tr>
         }
         </tbody>
