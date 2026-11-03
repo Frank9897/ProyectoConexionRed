@@ -70,6 +70,20 @@ public static class InicializadorInventario
             );
             CREATE INDEX IF NOT EXISTS "IX_EventosAcceso_FechaUtc"
                 ON "EventosAcceso" ("FechaUtc");
+            CREATE TABLE IF NOT EXISTS "EventosModificacion" (
+                "Identificador" INTEGER NOT NULL CONSTRAINT "PK_EventosModificacion" PRIMARY KEY AUTOINCREMENT,
+                "IdentificadorEquipo" INTEGER NOT NULL,
+                "NombreEquipo" TEXT NOT NULL,
+                "NombreUsuario" TEXT NOT NULL,
+                "FechaUtc" TEXT NOT NULL,
+                "Campo" TEXT NOT NULL,
+                "ValorAnterior" TEXT NULL,
+                "ValorNuevo" TEXT NULL
+            );
+            CREATE INDEX IF NOT EXISTS "IX_EventosModificacion_FechaUtc"
+                ON "EventosModificacion" ("FechaUtc");
+            CREATE INDEX IF NOT EXISTS "IX_EventosModificacion_IdentificadorEquipo"
+                ON "EventosModificacion" ("IdentificadorEquipo");
             """;
 
         await contextoInventario.Database.ExecuteSqlRawAsync(comandosSql, cancelacion);
