@@ -12,7 +12,8 @@ Crear una aplicación web en español para inventariar, consultar y visualizar l
 - La tabla de accesos tiene una página para consultar los últimos cien eventos.
 - Las tablas de usuarios e historial se crean con SQL IF NOT EXISTS para compatibilidad con la base prototipo creada en la primera versión. El resto del modelo usa EnsureCreated; emplear migraciones en futuras evoluciones del esquema.
 - La gestión básica de cuentas está incorporada: rol Administrador/Tecnico, alta de técnicos (máximo cinco cuentas totales) y activación/desactivación. Las cuentas previas reciben rol Administrador por compatibilidad al agregar la nueva columna SQLite; el alta por la interfaz siempre asigna Tecnico. Se protege la última cuenta administradora activa y no se permite auto desactivación.
-- La edición controlada de equipos y la auditoría por campo están implementadas en el código: se guardan cuenta, fecha UTC, equipo, campo, valor anterior y valor nuevo. La pantalla Cambios muestra los últimos doscientos eventos. La edición solo modifica la base documental y no actúa sobre la red real.\n- No están implementados topología gráfica, enlaces, puertos, SFP, simulaciones, exportación gráfica ni imágenes. La cookie se valida contra SQLite en cada solicitud: una cuenta desactivada pierde acceso en la siguiente solicitud y un cambio de rol se renueva en la sesión. No desplegar en producción antes de verificar la aplicación, controles de acceso, HTTPS y pruebas.
+- La edición controlada de equipos y la auditoría por campo están implementadas en el código: se guardan cuenta, fecha UTC, equipo, campo, valor anterior y valor nuevo. La pantalla Cambios muestra los últimos doscientos eventos. La edición solo modifica la base documental y no actúa sobre la red real.
+- No están implementados topología gráfica, conexiones y puertos modelados, SFP, simulaciones, exportación gráfica ni imágenes. La cookie se valida contra SQLite en cada solicitud: una cuenta desactivada pierde acceso en la siguiente solicitud y un cambio de rol se renueva en la sesión. No desplegar en producción antes de verificar la aplicación, controles de acceso, HTTPS y pruebas.
 - El usuario compartirá posteriormente otros dos Visios con nombres de PC, usuarioPC y nombres de usuario. No inventar esos datos antes de revisar las fuentes.
 - Al modificar el código, actualizar siempre README.md y docs/PROMPT_IA.md.
 - No se ha confirmado con el usuario que el programa compile ni se han verificado las páginas en ejecución; no afirmar que están verificadas. La administración de cuentas y el manejo de bases anteriores requieren esa verificación pendiente.
@@ -80,17 +81,17 @@ Los datos de la lista se transcriben del Visio y las IP son vigentes según el u
 - Las imágenes deben corresponder a un modelo identificado y registrar su fuente; no presentarlas como verificadas por similitud de nombre.
 
 ## Orden de trabajo
-1. Gestionar cuentas y permisos para el máximo previsto de cinco técnicos.
-2. Agregar fichas editables y auditoría de modificaciones.
-3. Modelar ubicaciones, puertos, enlaces y jerarquía de switches.
-4. Crear topología y vistas por capa.
-5. Revisar los dos Visios pendientes para enriquecer PCs y usuarios.
-6. Agregar simulaciones aisladas, imágenes y exportación/impresión gráfica.
-7. Completar despliegue HTTPS, respaldos y migraciones.
+
+1. Verificar edición, auditoría por campo y compatibilidad con bases SQLite previas.
+2. Modelar ubicaciones, puertos, enlaces y jerarquía de switches con estados de validación.
+3. Crear topología y vistas por capa.
+4. Revisar los dos Visios pendientes para enriquecer PCs y usuarios.
+5. Agregar simulaciones aisladas, imágenes y exportación/impresión gráfica.
+6. Completar despliegue HTTPS, respaldos y migraciones.
 
 ## Auditoría requerida
 - El MVP registra accesos correctos/fallidos y cierres de sesión con usuario, evento, resultado y fecha UTC.
-- Próxima extensión de auditoría: usuario, fecha/hora, entidad, campo, valor anterior y nuevo para modificaciones.
+- Las fichas de equipos registran usuario, fecha UTC, equipo, campo, valor anterior y nuevo; la pantalla Cambios presenta hasta doscientos eventos recientes.
 - Cambios: usuario, fecha/hora, entidad, campo, valor anterior y nuevo.
 - Ejemplo visible: «Usuario modificó IP de Equipo: 192.168.0.120 → 192.168.0.127».
 - Nunca registrar contraseñas en texto claro ni incluirlas en ejemplos o historial.
