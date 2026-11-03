@@ -84,6 +84,39 @@ public static class InicializadorInventario
                 ON "EventosModificacion" ("FechaUtc");
             CREATE INDEX IF NOT EXISTS "IX_EventosModificacion_IdentificadorEquipo"
                 ON "EventosModificacion" ("IdentificadorEquipo");
+            CREATE TABLE IF NOT EXISTS "InterfacesEquipo" (
+                "Identificador" INTEGER NOT NULL CONSTRAINT "PK_InterfacesEquipo" PRIMARY KEY AUTOINCREMENT,
+                "IdentificadorEquipo" INTEGER NOT NULL,
+                "EtiquetaPuerto" TEXT NOT NULL,
+                "TipoInterfaz" TEXT NOT NULL,
+                "EstadoDatos" TEXT NOT NULL,
+                "FechaUltimaRevision" TEXT NULL,
+                "Observaciones" TEXT NULL,
+                CONSTRAINT "FK_InterfacesEquipo_EquiposRed_IdentificadorEquipo"
+                    FOREIGN KEY ("IdentificadorEquipo") REFERENCES "EquiposRed" ("Identificador") ON DELETE RESTRICT
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_InterfacesEquipo_IdentificadorEquipo_EtiquetaPuerto"
+                ON "InterfacesEquipo" ("IdentificadorEquipo", "EtiquetaPuerto");
+            CREATE TABLE IF NOT EXISTS "EnlacesFisicos" (
+                "Identificador" INTEGER NOT NULL CONSTRAINT "PK_EnlacesFisicos" PRIMARY KEY AUTOINCREMENT,
+                "IdentificadorPuertoOrigen" INTEGER NOT NULL,
+                "IdentificadorPuertoDestino" INTEGER NOT NULL,
+                "Medio" TEXT NOT NULL,
+                "ModuloOrigen" TEXT NULL,
+                "ModuloDestino" TEXT NULL,
+                "EstadoDatos" TEXT NOT NULL,
+                "FechaUltimaRevision" TEXT NULL,
+                "Fuente" TEXT NULL,
+                "Observaciones" TEXT NULL,
+                CONSTRAINT "FK_EnlacesFisicos_InterfacesEquipo_IdentificadorPuertoOrigen"
+                    FOREIGN KEY ("IdentificadorPuertoOrigen") REFERENCES "InterfacesEquipo" ("Identificador") ON DELETE RESTRICT,
+                CONSTRAINT "FK_EnlacesFisicos_InterfacesEquipo_IdentificadorPuertoDestino"
+                    FOREIGN KEY ("IdentificadorPuertoDestino") REFERENCES "InterfacesEquipo" ("Identificador") ON DELETE RESTRICT
+            );
+            CREATE INDEX IF NOT EXISTS "IX_EnlacesFisicos_IdentificadorPuertoOrigen"
+                ON "EnlacesFisicos" ("IdentificadorPuertoOrigen");
+            CREATE INDEX IF NOT EXISTS "IX_EnlacesFisicos_IdentificadorPuertoDestino"
+                ON "EnlacesFisicos" ("IdentificadorPuertoDestino");
             """;
 
         await contextoInventario.Database.ExecuteSqlRawAsync(comandosSql, cancelacion);
