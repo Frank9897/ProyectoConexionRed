@@ -64,6 +64,7 @@ public class InventarioDbContext : DbContext
         configuracionUsuario.Property(nameof(UsuarioAplicacion.NombreUsuario)).HasMaxLength(100).IsRequired();
         configuracionUsuario.Property(nameof(UsuarioAplicacion.NombreUsuarioNormalizado)).HasMaxLength(100).IsRequired();
         configuracionUsuario.Property(nameof(UsuarioAplicacion.HashContrasena)).HasMaxLength(500).IsRequired();
+        configuracionUsuario.Property(nameof(UsuarioAplicacion.Rol)).HasMaxLength(30).IsRequired();
         configuracionUsuario.HasIndex(nameof(UsuarioAplicacion.NombreUsuarioNormalizado)).IsUnique();
 
         // configuracionEvento reúne el historial de acceso; cambiar sus límites altera los datos que pueden registrarse.
