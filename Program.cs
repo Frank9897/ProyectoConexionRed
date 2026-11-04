@@ -102,6 +102,18 @@ public class Program
         // La inicialización crea el esquema, carga equipos y crea el primer administrador si las variables están configuradas.
         await InicializadorInventario.InicializarAsync(aplicacionWeb.Services);
 
+        // cuentaParaHash identifica al usuario asociado al hash generado.
+var cuentaParaHash = new UsuarioAplicacion { NombreUsuario = "fvasquez" };
+
+// claveParaHash recibe la contraseña desde el entorno, sin escribirla en el código.
+var claveParaHash = Environment.GetEnvironmentVariable("INVENTARIO_ADMIN_CLAVE")
+    ?? throw new InvalidOperationException("Falta la variable de contraseña.");
+
+// codificadorHash genera el formato compatible con el inicio de sesión de la aplicación.
+var codificadorHash = new PasswordHasher<UsuarioAplicacion>();
+
+Console.WriteLine(codificadorHash.HashPassword(cuentaParaHash, claveParaHash));
+
         await aplicacionWeb.RunAsync();
     }
 }
