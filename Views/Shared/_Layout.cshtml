@@ -9,6 +9,11 @@
 <body>
     <header class="barra-superior">
         <a class="marca" asp-controller="Home" asp-action="Index">ProyectoConexionRed</a>
+        @*
+        MODO TEMPORAL SIN LOGIN.
+        Se conserva comentada la navegación que dependía de una sesión.
+        Al restaurar el login, reemplaza la navegación pública con este bloque.
+
         @if (User.Identity?.IsAuthenticated == true)
         {
             <nav aria-label="Navegación principal">
@@ -27,6 +32,14 @@
                 </form>
             </nav>
         }
+        *@
+        @* La navegación de usuarios y el cierre quedan ocultos mientras el acceso está deshabilitado. *@
+        <nav aria-label="Navegación principal">
+            <a asp-controller="Home" asp-action="Index">Inicio</a>
+            <a asp-controller="Inventario" asp-action="Index">Inventario</a>
+            <a asp-controller="Topologia" asp-action="Index">Topología</a>
+            <a asp-controller="Cambios" asp-action="Index">Cambios</a>
+        </nav>
     </header>
     <main class="contenedor">
         @RenderBody()

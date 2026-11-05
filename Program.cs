@@ -100,8 +100,11 @@ public class Program
         constructorWeb.Services.AddScoped<IPasswordHasher<UsuarioAplicacion>, PasswordHasher<UsuarioAplicacion>>();
 
         // opcionesMvc exige sesión válida para los controladores; cambiar el filtro global altera el acceso a las páginas.
-        constructorWeb.Services.AddControllersWithViews(opcionesMvc =>
-            opcionesMvc.Filters.Add(new AuthorizeFilter()));
+        // MODO TEMPORAL SIN LOGIN: el filtro global queda comentado para abrir los módulos durante las pruebas.
+        // Al finalizar, descomenta estas líneas para volver a exigir una identidad autenticada.
+        // constructorWeb.Services.AddControllersWithViews(opcionesMvc =>
+        //     opcionesMvc.Filters.Add(new AuthorizeFilter()));
+        constructorWeb.Services.AddControllersWithViews();
 
         // aplicacionWeb representa el servidor construido; cambiar su canalización modifica cómo se atienden las solicitudes.
         var aplicacionWeb = constructorWeb.Build();

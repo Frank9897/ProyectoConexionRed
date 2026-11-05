@@ -45,6 +45,8 @@ public class CuentaController : Controller
     /// </summary>
     /// <param name="urlRetorno">Dirección solicitada antes del ingreso; cambiarla cambia el destino local posterior.</param>
     /// <returns>Formulario vacío de acceso con destino seguro, si corresponde.</returns>
+    // MODO TEMPORAL SIN LOGIN: quita [NonAction] al restaurar el ingreso al final del proyecto.
+    [NonAction]
     [AllowAnonymous]
     [HttpGet]
     public IActionResult Ingresar(string? urlRetorno = null)
@@ -64,6 +66,8 @@ public class CuentaController : Controller
     /// <param name="formulario">Usuario y contraseña ingresados; cambiarlos modifica qué credenciales se verifican.</param>
     /// <param name="cancelacion">Señal de cancelación; activarla interrumpe la consulta o escritura de auditoría.</param>
     /// <returns>Redirección local tras un ingreso válido o el formulario con error.</returns>
+    // MODO TEMPORAL SIN LOGIN: quita [NonAction] al restaurar el ingreso al final del proyecto.
+    [NonAction]
     [AllowAnonymous]
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -134,6 +138,8 @@ public class CuentaController : Controller
     /// </summary>
     /// <param name="cancelacion">Señal de cancelación; activarla interrumpe el registro del evento.</param>
     /// <returns>Redirección al formulario de ingreso tras cerrar la sesión.</returns>
+    // MODO TEMPORAL SIN LOGIN: quita [NonAction] al restaurar el cierre junto con la autenticación.
+    [NonAction]
     [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
