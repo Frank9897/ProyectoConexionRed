@@ -32,7 +32,7 @@ public class EditarEquipoViewModel
     public string? Modelo { get; set; }
 
     /// <summary>
-    /// IP de administración documentada; cambiarla modifica solo el inventario.
+    /// Dirección IP documentada; cambiarla modifica solo el inventario, sin configurar el dispositivo.
     /// </summary>
     [StringLength(45)]
     public string? IpAdministracion { get; set; }
@@ -48,6 +48,24 @@ public class EditarEquipoViewModel
     /// </summary>
     [StringLength(120)]
     public string? Area { get; set; }
+
+    /// <summary>
+    /// Piso o sector físico; cambiarlo actualiza la ubicación que muestra el inventario.
+    /// </summary>
+    [StringLength(80)]
+    public string? Piso { get; set; }
+
+    /// <summary>
+    /// Usuario asignado según la fuente; cambiarlo modifica el vínculo registrado, no una cuenta de acceso.
+    /// </summary>
+    [StringLength(160)]
+    public string? UsuarioAsignado { get; set; }
+
+    /// <summary>
+    /// Fuente documental; cambiarla modifica la referencia utilizada para revisar el dato.
+    /// </summary>
+    [StringLength(240)]
+    public string? FuenteDatos { get; set; }
 
     /// <summary>
     /// Función jerárquica documentada; cambiarla modifica la clasificación principal o secundaria.

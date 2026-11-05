@@ -26,7 +26,7 @@ public class EquipoRed
     public string? Modelo { get; set; }
 
     /// <summary>
-    /// Dirección IP de administración; cambiarla modifica el dato de conexión documentado, no configura el equipo real.
+    /// Dirección IP documentada; cambiarla modifica el dato guardado, pero no configura el equipo real.
     /// </summary>
     public string? IpAdministracion { get; set; }
 
@@ -39,6 +39,21 @@ public class EquipoRed
     /// Área o ubicación lógica; cambiarla traslada el equipo a otra agrupación del inventario.
     /// </summary>
     public string? Area { get; set; }
+
+    /// <summary>
+    /// Piso o sector físico documentado; cambiarlo mueve el equipo a otra ubicación dentro del edificio.
+    /// </summary>
+    public string? Piso { get; set; }
+
+    /// <summary>
+    /// Usuario vinculado al puesto según la fuente disponible; cambiarlo modifica solo la asignación documental.
+    /// </summary>
+    public string? UsuarioAsignado { get; set; }
+
+    /// <summary>
+    /// Documento que respalda la ficha; cambiarlo modifica la referencia que permite revisar su procedencia.
+    /// </summary>
+    public string? FuenteDatos { get; set; }
 
     /// <summary>
     /// Función jerárquica conocida; cambiarla puede presentar al equipo como principal o secundario en vistas futuras.

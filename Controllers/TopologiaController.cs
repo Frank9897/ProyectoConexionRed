@@ -34,6 +34,22 @@ public class TopologiaController : Controller
         var totalInterfaces = await contextoInventario.InterfacesEquipo.CountAsync(cancelacion);
         // totalEnlaces resume vínculos físicos guardados; cambiar la tabla consultada modifica el conteo mostrado.
         var totalEnlaces = await contextoInventario.EnlacesFisicos.CountAsync(cancelacion);
+        // totalEquipos cuenta las fichas disponibles; cambiar el inventario modifica el indicador global.
+        var totalEquipos = await contextoInventario.Equipos.CountAsync(cancelacion);
+        // totalSwitches cuenta solo los registros clasificados explícitamente como switches.
+        var totalSwitches = await contextoInventario.Equipos
+            .CountAsync(equipo => equipo.TipoDispositivo == "Switch", cancelacion);
+        // totalPuestos cuenta solo las fichas que usan el tipo documental de puesto de usuario.
+        var totalPuestos = await contextoInventario.Equipos
+            .CountAsync(equipo => equipo.TipoDispositivo == "Puesto de usuario", cancelacion);
+        // puestosConIp cuenta puestos con IP cargada; no comprueba conectividad en la red real.
+        var puestosConIp = await contextoInventario.Equipos
+            .CountAsync(equipo => equipo.TipoDispositivo == "Puesto de usuario"
+                && equipo.IpAdministracion != null && equipo.IpAdministracion != "", cancelacion);
+        // switchesInaccesibles diferencia el acceso administrativo de la disponibilidad física.
+        var switchesInaccesibles = await contextoInventario.Equipos
+            .CountAsync(equipo => equipo.TipoDispositivo == "Switch"
+                && equipo.EstadoAdministrativo.StartsWith("Inaccesible"), cancelacion);
 
         // enlacesDocumentados une extremos con sus equipos; cambiar las uniones cambia qué conexiones aparecen.
         var enlacesDocumentados = await (
@@ -55,6 +71,7 @@ public class TopologiaController : Controller
                 PuertoDestino = puertoDestino.EtiquetaPuerto,
                 Medio = enlace.Medio,
                 EstadoDatos = enlace.EstadoDatos,
+                Fuente = enlace.Fuente,
                 FechaUltimaRevision = enlace.FechaUltimaRevision
             })
             .ToListAsync(cancelacion);
@@ -62,6 +79,11 @@ public class TopologiaController : Controller
         // resumenTopologia agrupa los datos para la página; cambiar sus conteos modifica los indicadores visibles.
         var resumenTopologia = new TopologiaViewModel
         {
+            TotalEquipos = totalEquipos,
+            TotalSwitches = totalSwitches,
+            TotalPuestos = totalPuestos,
+            PuestosConIp = puestosConIp,
+            SwitchesInaccesibles = switchesInaccesibles,
             TotalInterfaces = totalInterfaces,
             TotalEnlaces = totalEnlaces,
             Enlaces = enlacesDocumentados

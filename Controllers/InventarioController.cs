@@ -25,9 +25,9 @@ public class InventarioController : Controller
     }
 
     /// <summary>
-    /// Lista equipos y aplica una búsqueda opcional por nombre, IP, área, modelo o fabricante.
+    /// Lista equipos y aplica una búsqueda opcional por nombre, IP, área, usuario, tipo, modelo o fabricante.
     /// </summary>
-    /// <param name="busqueda">Texto de búsqueda; cambiarlo filtra qué equipos aparecen en la vista.</param>
+    /// <param name="busqueda">Texto de búsqueda; cambiarlo filtra qué equipos aparecen por sus datos de inventario.</param>
     /// <param name="cancelacion">Señal de cancelación; activarla interrumpe la consulta pendiente.</param>
     /// <returns>Vista con los equipos coincidentes; modificar la búsqueda cambia el conjunto mostrado.</returns>
     [HttpGet]
@@ -36,6 +36,92 @@ public class InventarioController : Controller
         // equiposEncontrados contiene la búsqueda actual; cambiar su contenido cambia las filas de la página.
         var equiposEncontrados = await ObtenerEquiposAsync(busqueda, cancelacion);
         return View(equiposEncontrados);
+    }
+
+    /// <summary>
+    /// Presenta un formulario vacío para registrar un equipo de red o un puesto de usuario.
+    /// </summary>
+    /// <returns>Formulario con valores documentales iniciales; cambiar los valores predeterminados cambia cómo comienza el alta.</returns>
+    [HttpGet]
+    public IActionResult Crear()
+    {
+        // formularioNuevo define valores iniciales seguros; modificarlos cambia los valores que verá el técnico al abrir el alta.
+        var formularioNuevo = new EditarEquipoViewModel
+        {
+            RolEnArea = "No indicado",
+            TipoDispositivo = "Puesto de usuario",
+            EstadoAdministrativo = "No aplica",
+            EstadoDatos = "Pendiente de validación"
+        };
+
+        return View(formularioNuevo);
+    }
+
+    /// <summary>
+    /// Crea una ficha documental y registra sus valores iniciales en el historial.
+    /// </summary>
+    /// <param name="formulario">Datos del nuevo equipo; cambiar sus propiedades modifica solo el inventario local.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla interrumpe la escritura antes de confirmar la transacción.</param>
+    /// <returns>Redirección al inventario o formulario con los errores de validación.</returns>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Crear(EditarEquipoViewModel formulario, CancellationToken cancelacion)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(formulario);
+        }
+
+        // usuarioEditor atribuye el alta; cambiar su identidad cambia el autor del historial.
+        var usuarioEditor = User.Identity?.Name ?? "Usuario desconocido";
+        // equipoNuevo contiene la ficha normalizada; cambiar su asignación cambia únicamente el registro local.
+        var equipoNuevo = new EquipoRed
+        {
+            Nombre = formulario.Nombre.Trim(),
+            Fabricante = NormalizarTextoOpcional(formulario.Fabricante),
+            Modelo = NormalizarTextoOpcional(formulario.Modelo),
+            IpAdministracion = NormalizarTextoOpcional(formulario.IpAdministracion),
+            DireccionMac = NormalizarTextoOpcional(formulario.DireccionMac),
+            Area = NormalizarTextoOpcional(formulario.Area),
+            Piso = NormalizarTextoOpcional(formulario.Piso),
+            UsuarioAsignado = NormalizarTextoOpcional(formulario.UsuarioAsignado),
+            FuenteDatos = NormalizarTextoOpcional(formulario.FuenteDatos),
+            RolEnArea = formulario.RolEnArea.Trim(),
+            TipoDispositivo = formulario.TipoDispositivo.Trim(),
+            EstadoAdministrativo = formulario.EstadoAdministrativo.Trim(),
+            EstadoDatos = formulario.EstadoDatos.Trim(),
+            FechaUltimaRevision = formulario.FechaUltimaRevision,
+            Observaciones = NormalizarTextoOpcional(formulario.Observaciones)
+        };
+
+        // transaccionAlta confirma la ficha y el historial juntos para evitar registros sin trazabilidad.
+        await using var transaccionAlta = await contextoInventario.Database.BeginTransactionAsync(cancelacion);
+        await contextoInventario.Equipos.AddAsync(equipoNuevo, cancelacion);
+        await contextoInventario.SaveChangesAsync(cancelacion);
+
+        // cambiosIniciales contiene los campos cargados al crear el equipo; cambiar estos pares altera el detalle del evento.
+        var cambiosIniciales = new List<EventoModificacion>();
+        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Alta de ficha", null, "Equipo registrado");
+        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Fabricante", null, equipoNuevo.Fabricante);
+        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Modelo", null, equipoNuevo.Modelo);
+        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "IP documentada", null, equipoNuevo.IpAdministracion);
+        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "MAC", null, equipoNuevo.DireccionMac);
+        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Área", null, equipoNuevo.Area);
+        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Piso o sector", null, equipoNuevo.Piso);
+        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Usuario asignado", null, equipoNuevo.UsuarioAsignado);
+        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Fuente documental", null, equipoNuevo.FuenteDatos);
+        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Rol en el área", null, equipoNuevo.RolEnArea);
+        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Tipo de dispositivo", null, equipoNuevo.TipoDispositivo);
+        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Acceso administrativo", null, equipoNuevo.EstadoAdministrativo);
+        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Vigencia de datos", null, equipoNuevo.EstadoDatos);
+        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Observaciones", null, equipoNuevo.Observaciones);
+
+        await contextoInventario.EventosModificacion.AddRangeAsync(cambiosIniciales, cancelacion);
+        await contextoInventario.SaveChangesAsync(cancelacion);
+        await transaccionAlta.CommitAsync(cancelacion);
+
+        TempData["Mensaje"] = "Se creó la ficha y se registró su origen en el historial.";
+        return RedirectToAction(nameof(Index));
     }
 
     /// <summary>
@@ -52,7 +138,7 @@ public class InventarioController : Controller
 
         // contenidoCsv acumula el archivo; cambiar encabezados o separadores modifica cómo se interpreta en hojas de cálculo.
         var contenidoCsv = new StringBuilder();
-        contenidoCsv.AppendLine("Equipo;Fabricante;Modelo;Área;IP de administración;MAC;Rol;Tipo;Acceso administrativo;Vigencia");
+        contenidoCsv.AppendLine("Equipo;Fabricante;Modelo;Área;Piso;Usuario asignado;Fuente;IP documentada;MAC;Rol;Tipo;Acceso administrativo;Vigencia");
 
         // equipo recorre cada fila exportada; cambiar los registros de entrada cambia las filas del archivo.
         foreach (var equipo in equiposExportados)
@@ -64,6 +150,9 @@ public class InventarioController : Controller
                 equipo.Fabricante,
                 equipo.Modelo,
                 equipo.Area,
+                equipo.Piso,
+                equipo.UsuarioAsignado,
+                equipo.FuenteDatos,
                 equipo.IpAdministracion,
                 equipo.DireccionMac,
                 equipo.RolEnArea,
@@ -123,6 +212,9 @@ public class InventarioController : Controller
             IpAdministracion = equipoEncontrado.IpAdministracion,
             DireccionMac = equipoEncontrado.DireccionMac,
             Area = equipoEncontrado.Area,
+            Piso = equipoEncontrado.Piso,
+            UsuarioAsignado = equipoEncontrado.UsuarioAsignado,
+            FuenteDatos = equipoEncontrado.FuenteDatos,
             RolEnArea = equipoEncontrado.RolEnArea,
             TipoDispositivo = equipoEncontrado.TipoDispositivo,
             EstadoAdministrativo = equipoEncontrado.EstadoAdministrativo,
@@ -167,9 +259,12 @@ public class InventarioController : Controller
         AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Nombre", equipoGuardado.Nombre, formulario.Nombre);
         AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Fabricante", equipoGuardado.Fabricante, formulario.Fabricante);
         AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Modelo", equipoGuardado.Modelo, formulario.Modelo);
-        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "IP de administración", equipoGuardado.IpAdministracion, formulario.IpAdministracion);
+        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "IP documentada", equipoGuardado.IpAdministracion, formulario.IpAdministracion);
         AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Dirección MAC", equipoGuardado.DireccionMac, formulario.DireccionMac);
         AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Área", equipoGuardado.Area, formulario.Area);
+        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Piso o sector", equipoGuardado.Piso, formulario.Piso);
+        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Usuario asignado", equipoGuardado.UsuarioAsignado, formulario.UsuarioAsignado);
+        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Fuente documental", equipoGuardado.FuenteDatos, formulario.FuenteDatos);
         AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Rol en el área", equipoGuardado.RolEnArea, formulario.RolEnArea);
         AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Tipo de dispositivo", equipoGuardado.TipoDispositivo, formulario.TipoDispositivo);
         AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Acceso administrativo", equipoGuardado.EstadoAdministrativo, formulario.EstadoAdministrativo);
@@ -190,6 +285,9 @@ public class InventarioController : Controller
         equipoGuardado.IpAdministracion = NormalizarTextoOpcional(formulario.IpAdministracion);
         equipoGuardado.DireccionMac = NormalizarTextoOpcional(formulario.DireccionMac);
         equipoGuardado.Area = NormalizarTextoOpcional(formulario.Area);
+        equipoGuardado.Piso = NormalizarTextoOpcional(formulario.Piso);
+        equipoGuardado.UsuarioAsignado = NormalizarTextoOpcional(formulario.UsuarioAsignado);
+        equipoGuardado.FuenteDatos = NormalizarTextoOpcional(formulario.FuenteDatos);
         equipoGuardado.RolEnArea = formulario.RolEnArea.Trim();
         equipoGuardado.TipoDispositivo = formulario.TipoDispositivo.Trim();
         equipoGuardado.EstadoAdministrativo = formulario.EstadoAdministrativo.Trim();
@@ -263,11 +361,11 @@ public class InventarioController : Controller
     }
 
     /// <summary>
-    /// Obtiene todos los equipos o filtra por nombre, IP, área, modelo y fabricante.
+    /// Obtiene todos los equipos o filtra por nombre, IP, área, usuario, modelo y fabricante.
     /// </summary>
     /// <param name="busqueda">Texto opcional; cambiarlo modifica el subconjunto devuelto.</param>
     /// <param name="cancelacion">Señal que cancela la consulta; cambiarla afecta la duración permitida.</param>
-    /// <returns>Lista de equipos coincidentes; modificar datos o búsqueda modifica los elementos devueltos.</returns>
+    /// <returns>Lista de equipos coincidentes; cambiar la búsqueda también compara usuario, piso y fuente documental.</returns>
     private async Task<List<EquipoRed>> ObtenerEquiposAsync(string? busqueda, CancellationToken cancelacion)
     {
         // equiposCargados conserva los datos de SQLite para filtrar; cambiar la fuente cambia el inventario consultado.
@@ -332,6 +430,10 @@ public class InventarioController : Controller
         return Contiene(equipo.Nombre, busqueda)
             || Contiene(equipo.IpAdministracion, busqueda)
             || Contiene(equipo.Area, busqueda)
+            || Contiene(equipo.Piso, busqueda)
+            || Contiene(equipo.UsuarioAsignado, busqueda)
+            || Contiene(equipo.FuenteDatos, busqueda)
+            || Contiene(equipo.TipoDispositivo, busqueda)
             || Contiene(equipo.Modelo, busqueda)
             || Contiene(equipo.Fabricante, busqueda);
     }

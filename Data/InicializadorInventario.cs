@@ -32,6 +32,9 @@ public static class InicializadorInventario
         // CargarEquiposInicialesAsync agrega el catálogo documental una sola vez.
         await CargarEquiposInicialesAsync(contextoInventario, cancelacion);
 
+        // IncorporarDatosV3Async completa MAC confirmadas y agrega el equipo de reserva documentado sin duplicarlo.
+        await IncorporarDatosV3Async(contextoInventario, cancelacion);
+
         // CargarAdministradorInicialAsync utiliza variables de entorno y nunca escribe la contraseña en los registros.
         await CargarAdministradorInicialAsync(
             contextoInventario,
@@ -121,6 +124,70 @@ public static class InicializadorInventario
 
         await contextoInventario.Database.ExecuteSqlRawAsync(comandosSql, cancelacion);
         await AgregarColumnaRolSiFaltaAsync(contextoInventario, cancelacion);
+        await AgregarColumnaEquipoSiFaltaAsync(contextoInventario, "Piso", "TEXT NULL", cancelacion);
+        await AgregarColumnaEquipoSiFaltaAsync(contextoInventario, "UsuarioAsignado", "TEXT NULL", cancelacion);
+        await AgregarColumnaEquipoSiFaltaAsync(contextoInventario, "FuenteDatos", "TEXT NULL", cancelacion);
+    }
+
+    /// <summary>
+    /// Agrega una columna documental a EquiposRed si la base SQLite anterior todavía no la contiene.
+    /// </summary>
+    /// <param name="contextoInventario">Base donde se revisa el esquema; cambiarlo aplica el ajuste a otra conexión.</param>
+    /// <param name="nombreColumna">Nombre interno de columna; cambiarlo revisa otra propiedad del equipo.</param>
+    /// <param name="tipoColumna">Definición SQLite; cambiarla altera el tipo y la nulabilidad de la columna agregada.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla interrumpe la lectura o alteración del esquema.</param>
+    private static async Task AgregarColumnaEquipoSiFaltaAsync(
+        InventarioDbContext contextoInventario,
+        string nombreColumna,
+        string tipoColumna,
+        CancellationToken cancelacion)
+    {
+        // conexionBase representa la conexión activa; cambiarla inspecciona otra base configurada.
+        var conexionBase = contextoInventario.Database.GetDbConnection();
+        // cerrarAlFinal conserva el estado inicial de la conexión tras la revisión de esquema.
+        var cerrarAlFinal = conexionBase.State != ConnectionState.Open;
+        if (cerrarAlFinal)
+        {
+            await conexionBase.OpenAsync(cancelacion);
+        }
+
+        try
+        {
+            // existeColumna indica si la propiedad ya fue agregada en un inicio anterior.
+            var existeColumna = false;
+            await using (var comandoEsquema = conexionBase.CreateCommand())
+            {
+                // nombreTabla identifica la tabla consultada; mantenerlo fijo evita revisar una tabla arbitraria.
+                const string nombreTabla = "EquiposRed";
+                comandoEsquema.CommandText = $"PRAGMA table_info(\"{nombreTabla}\")";
+                await using var lectorEsquema = await comandoEsquema.ExecuteReaderAsync(cancelacion);
+                while (await lectorEsquema.ReadAsync(cancelacion))
+                {
+                    // columnaRevisada contiene el nombre recuperado del esquema SQLite.
+                    var columnaRevisada = lectorEsquema.GetString(1);
+                    if (columnaRevisada == nombreColumna)
+                    {
+                        existeColumna = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!existeColumna)
+            {
+                // La columna solo se añade si ya no existe; los nombres se reciben de llamadas constantes internas.
+                await contextoInventario.Database.ExecuteSqlRawAsync(
+                    $"ALTER TABLE \"EquiposRed\" ADD COLUMN \"{nombreColumna}\" {tipoColumna}",
+                    cancelacion);
+            }
+        }
+        finally
+        {
+            if (cerrarAlFinal)
+            {
+                await conexionBase.CloseAsync();
+            }
+        }
     }
 
     /// <summary>
@@ -195,6 +262,196 @@ public static class InicializadorInventario
         // Guardar esta lista carga el inventario documental; no cambia ningún dispositivo de la red real.
         await contextoInventario.Equipos.AddRangeAsync(equiposIniciales, cancelacion);
         await contextoInventario.SaveChangesAsync(cancelacion);
+    }
+
+    /// <summary>
+    /// Integra MAC confirmadas del V3 solo cuando la IP coincide y agrega el Aruba de reserva 2 si todavía no existe.
+    /// </summary>
+    /// <param name="contextoInventario">Contexto SQLite; cambiarlo determina qué inventario recibe la actualización documental.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla revierte la importación pendiente.</param>
+    private static async Task IncorporarDatosV3Async(
+        InventarioDbContext contextoInventario,
+        CancellationToken cancelacion)
+    {
+        // datosMacConfirmados reúne pares nombre/IP/MAC transcritos de V3; cambiar una fila modifica el dato candidato de ese equipo.
+        var datosMacConfirmados = CrearCatalogoMacV3();
+        // cambiosAuditados reúne los datos que se agregarán al historial dentro de la misma transacción.
+        var cambiosAuditados = new List<EventoModificacion>();
+        // usuarioImportacion identifica el origen automático de la carga; cambiarlo modifica la atribución visible en auditoría.
+        const string usuarioImportacion = "Carga documental DIAGRAMA RED V3.0";
+
+        // transaccionImportacion asegura que los datos y su historial se confirmen o reviertan juntos.
+        await using var transaccionImportacion = await contextoInventario.Database.BeginTransactionAsync(cancelacion);
+
+        // datoMac recorre los pares documentados; cambiar el catálogo cambia qué MAC pueden completarse.
+        foreach (var datoMac in datosMacConfirmados)
+        {
+            // equipoExistente busca la etiqueta exacta; cambiar el nombre consulta otro registro del inventario.
+            var equipoExistente = await contextoInventario.Equipos
+                .SingleOrDefaultAsync(equipo => equipo.Nombre == datoMac.Nombre, cancelacion);
+
+            if (equipoExistente is null
+                || !string.Equals(equipoExistente.IpAdministracion, datoMac.IpAdministracion, StringComparison.Ordinal)
+                || !string.IsNullOrWhiteSpace(equipoExistente.DireccionMac))
+            {
+                continue;
+            }
+
+            // macAnterior conserva el valor previo para mostrar el antes en el historial.
+            var macAnterior = equipoExistente.DireccionMac;
+            equipoExistente.DireccionMac = datoMac.DireccionMac;
+
+            // eventoMac registra solo una MAC incorporada desde la fuente; cambiar sus campos altera la línea de auditoría.
+            cambiosAuditados.Add(new EventoModificacion
+            {
+                IdentificadorEquipo = equipoExistente.Identificador,
+                NombreEquipo = equipoExistente.Nombre,
+                NombreUsuario = usuarioImportacion,
+                FechaUtc = DateTime.UtcNow,
+                Campo = "Dirección MAC",
+                ValorAnterior = macAnterior,
+                ValorNuevo = datoMac.DireccionMac
+            });
+        }
+
+        // datosFabricanteV3 reúne fabricantes explícitos; cambiar sus filas modifica qué fabricantes vacíos pueden completarse.
+        var datosFabricanteV3 = CrearCatalogoFabricantesV3();
+
+        // datoFabricante recorre etiquetas de fabricante identificadas en V3 sin asignar un modelo no indicado.
+        foreach (var datoFabricante in datosFabricanteV3)
+        {
+            // equipoDeArea busca la etiqueta existente; cambiar el nombre selecciona otra ficha candidata.
+            var equipoDeArea = await contextoInventario.Equipos
+                .SingleOrDefaultAsync(equipo => equipo.Nombre == datoFabricante.Nombre, cancelacion);
+
+            if (equipoDeArea is null
+                || equipoDeArea.IpAdministracion != datoFabricante.IpAdministracion
+                || !string.IsNullOrWhiteSpace(equipoDeArea.Fabricante))
+            {
+                continue;
+            }
+
+            // fabricanteAnterior conserva el campo vacío o previo para registrar el antes en auditoría.
+            var fabricanteAnterior = equipoDeArea.Fabricante;
+            equipoDeArea.Fabricante = datoFabricante.Fabricante;
+
+            // eventoFabricante documenta el fabricante añadido desde V3 sin inferir el modelo.
+            cambiosAuditados.Add(new EventoModificacion
+            {
+                IdentificadorEquipo = equipoDeArea.Identificador,
+                NombreEquipo = equipoDeArea.Nombre,
+                NombreUsuario = usuarioImportacion,
+                FechaUtc = DateTime.UtcNow,
+                Campo = "Fabricante",
+                ValorAnterior = fabricanteAnterior,
+                ValorNuevo = datoFabricante.Fabricante
+            });
+        }
+
+        // equipoReservaDos identifica el equipo nuevo del V3; cambiar estos valores actualiza solo la ficha documental.
+        var equipoReservaDos = await contextoInventario.Equipos
+            .SingleOrDefaultAsync(equipo => equipo.Nombre == "Switch Aruba 1930 (Reserva 2)", cancelacion);
+
+        if (equipoReservaDos is null)
+        {
+            equipoReservaDos = new EquipoRed
+            {
+                Nombre = "Switch Aruba 1930 (Reserva 2)",
+                Fabricante = "Aruba",
+                Modelo = "Aruba 1930",
+                IpAdministracion = "192.168.1.201",
+                DireccionMac = "94:60:D5:36:DF:4C",
+                Area = "Reserva",
+                RolEnArea = "Reserva",
+                TipoDispositivo = "Switch",
+                EstadoAdministrativo = "Sin información",
+                EstadoDatos = "Vigente",
+                Observaciones = "DIAGRAMA RED V3.0 indica cuatro puertos SFP+ de 10 Gbps; esta nota describe puertos del equipo y no confirma módulos instalados."
+            };
+            await contextoInventario.Equipos.AddAsync(equipoReservaDos, cancelacion);
+            await contextoInventario.SaveChangesAsync(cancelacion);
+
+            // eventoAltaReserva deja constancia del alta basada en V3 sin incluir ningún dato de credenciales.
+            cambiosAuditados.Add(new EventoModificacion
+            {
+                IdentificadorEquipo = equipoReservaDos.Identificador,
+                NombreEquipo = equipoReservaDos.Nombre,
+                NombreUsuario = usuarioImportacion,
+                FechaUtc = DateTime.UtcNow,
+                Campo = "Alta de equipo",
+                ValorAnterior = null,
+                ValorNuevo = "IP 192.168.1.201; MAC 94:60:D5:36:DF:4C; Aruba 1930 de reserva"
+            });
+        }
+        else if (equipoReservaDos.IpAdministracion == "192.168.1.201"
+            && string.IsNullOrWhiteSpace(equipoReservaDos.DireccionMac))
+        {
+            // macAnteriorReserva conserva la MAC previa para documentar la incorporación desde la fuente.
+            var macAnteriorReserva = equipoReservaDos.DireccionMac;
+            equipoReservaDos.DireccionMac = "94:60:D5:36:DF:4C";
+
+            // eventoMacReserva audita la MAC de Reserva 2 sin reemplazar valores ya cargados.
+            cambiosAuditados.Add(new EventoModificacion
+            {
+                IdentificadorEquipo = equipoReservaDos.Identificador,
+                NombreEquipo = equipoReservaDos.Nombre,
+                NombreUsuario = usuarioImportacion,
+                FechaUtc = DateTime.UtcNow,
+                Campo = "Dirección MAC",
+                ValorAnterior = macAnteriorReserva,
+                ValorNuevo = equipoReservaDos.DireccionMac
+            });
+        }
+
+        if (cambiosAuditados.Count > 0)
+        {
+            // Guardar en conjunto mantiene los eventos de la importación agrupados en la transacción.
+            await contextoInventario.EventosModificacion.AddRangeAsync(cambiosAuditados, cancelacion);
+            await contextoInventario.SaveChangesAsync(cancelacion);
+        }
+
+        await transaccionImportacion.CommitAsync(cancelacion);
+    }
+
+    /// <summary>
+    /// Devuelve las MAC del V3 asociadas a sus etiquetas e IP explícitas.
+    /// </summary>
+    /// <returns>Pares documentados; modificar una fila altera qué ficha puede completarse si aún no tiene MAC.</returns>
+    private static List<(string Nombre, string IpAdministracion, string DireccionMac)> CrearCatalogoMacV3()
+    {
+        return
+        [
+            ("Switch HP 5500", "192.168.1.218", "2C:23:3A:28:1C:25"),
+            ("Switch HP 1920", "192.168.1.115", "40:B9:3C:2A:C0:7D"),
+            ("Switch HP 1920S", "192.168.1.217", "20:67:7C:4E:9E:54"),
+            ("Dell S4148U-ON 48G", "192.168.1.44", "E4:F0:04:A4:83:BD"),
+            ("Switch Agrimensura 1 HP", "192.168.1.23", "5C:8A:38:9F:19:92"),
+            ("Switch Agrimensura 3Com", "192.168.1.24", "00:24:73:CA:75:04"),
+            ("Asuntos Jurídicos", "192.168.1.30", "78:48:59:72:6C:C5"),
+            ("Cartografía", "192.168.1.51", "44:5B:ED:12:3E:25"),
+            ("Inmuebles", "192.168.1.26", "B8:AF:67:9B:8E:DD"),
+            ("Mesa de Entrada (No principal)", "192.168.1.18", "5C:8A:38:9F:1A:32"),
+            ("Puerta Agrimensura", "192.168.1.19", "5C:8A:38:9E:80:52"),
+            ("Regularización Dominial", "192.168.1.40", "B8:AF:67:9A:C5:9E"),
+            ("Secretaría", "192.168.1.28", "40:B9:3C:2A:BF:7D"),
+            ("Sistemas", "192.168.1.216", "20:67:7C:4C:44:A8"),
+            ("Valuación R0", "192.168.1.32", "78:48:59:73:47:83"),
+            ("Valuación R1", "192.168.1.29", "78:48:59:7C:E6:33"),
+            ("Valuación R2", "192.168.1.20", "44:31:92:9E:54:20")
+        ];
+    }
+
+    /// <summary>
+    /// Devuelve fabricantes expresamente indicados junto a las IP de switches de área.
+    /// </summary>
+    /// <returns>Pares documentados; cambiar una fila modifica qué ficha puede recibir fabricante si aún está vacío.</returns>
+    private static List<(string Nombre, string IpAdministracion, string Fabricante)> CrearCatalogoFabricantesV3()
+    {
+        return
+        [
+            ("Switch de área sin identificar (1)", "192.168.1.1", "Aruba"),
+            ("Switch de área sin identificar (2)", "192.168.1.17", "Aruba")
+        ];
     }
 
     /// <summary>

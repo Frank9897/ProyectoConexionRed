@@ -6,6 +6,31 @@ namespace ProyectoConexionRed.Web.Models;
 public class TopologiaViewModel
 {
     /// <summary>
+    /// Total de fichas de equipo; cambiarlo actualiza el indicador global de inventario en topología.
+    /// </summary>
+    public int TotalEquipos { get; set; }
+
+    /// <summary>
+    /// Total de switches clasificados; cambiarlo actualiza el resumen de la capa de switching.
+    /// </summary>
+    public int TotalSwitches { get; set; }
+
+    /// <summary>
+    /// Total de puestos de usuario registrados; cambiarlo actualiza el resumen de acceso.
+    /// </summary>
+    public int TotalPuestos { get; set; }
+
+    /// <summary>
+    /// Puestos de usuario que tienen una IP documentada; cambiarlo actualiza el indicador de asignación IP.
+    /// </summary>
+    public int PuestosConIp { get; set; }
+
+    /// <summary>
+    /// Switches cuyo acceso administrativo está marcado inaccesible; cambiarlo actualiza el aviso de gestión.
+    /// </summary>
+    public int SwitchesInaccesibles { get; set; }
+
+    /// <summary>
     /// Cantidad de interfaces registradas; cambiarla actualiza el resumen de puertos documentados.
     /// </summary>
     public int TotalInterfaces { get; set; }
@@ -55,6 +80,11 @@ public class EnlaceTopologiaViewModel
     /// Estado de validación; cambiarlo modifica el aviso de confianza de la relación.
     /// </summary>
     public string EstadoDatos { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Fuente del enlace; cambiarla modifica la referencia documental mostrada junto a la conexión.
+    /// </summary>
+    public string? Fuente { get; set; }
 
     /// <summary>
     /// Fecha real de revisión; cambiarla altera la fecha visible del enlace.

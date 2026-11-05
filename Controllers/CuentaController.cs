@@ -21,17 +21,23 @@ public class CuentaController : Controller
     // codificadorContrasenas verifica hashes sin recuperar la contraseña original; cambiarlo altera el algoritmo de verificación.
     private readonly IPasswordHasher<UsuarioAplicacion> codificadorContrasenas;
 
+    // identificadorInicioAplicacion limita cada cookie al proceso actual; cambiarlo altera cuándo se exige volver a ingresar.
+    private readonly IdentificadorInicioAplicacion identificadorInicioAplicacion;
+
     /// <summary>
     /// Prepara el controlador con el inventario y el verificador de contraseñas.
     /// </summary>
     /// <param name="contexto">Contexto de datos; cambiarlo selecciona otra base de cuentas e historial.</param>
     /// <param name="codificador">Verificador de contraseñas; cambiarlo modifica cómo se validan los hashes.</param>
+    /// <param name="marcaInicio">Marca del proceso actual; cambiarla vincula el nuevo ingreso a otra ejecución de la aplicación.</param>
     public CuentaController(
         InventarioDbContext contexto,
-        IPasswordHasher<UsuarioAplicacion> codificador)
+        IPasswordHasher<UsuarioAplicacion> codificador,
+        IdentificadorInicioAplicacion marcaInicio)
     {
         contextoInventario = contexto;
         codificadorContrasenas = codificador;
+        identificadorInicioAplicacion = marcaInicio;
     }
 
     /// <summary>
@@ -106,7 +112,8 @@ public class CuentaController : Controller
         [
             new Claim(ClaimTypes.NameIdentifier, usuarioEncontrado.Identificador.ToString()),
             new Claim(ClaimTypes.Name, usuarioEncontrado.NombreUsuario),
-            new Claim(ClaimTypes.Role, usuarioEncontrado.Rol)
+            new Claim(ClaimTypes.Role, usuarioEncontrado.Rol),
+            new Claim(IdentificadorInicioAplicacion.TipoReclamo, identificadorInicioAplicacion.Valor)
         ],
         CookieAuthenticationDefaults.AuthenticationScheme);
 

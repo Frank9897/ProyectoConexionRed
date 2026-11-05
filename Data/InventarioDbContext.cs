@@ -64,6 +64,9 @@ public class InventarioDbContext : DbContext
         configuracionEquipo.Property(nameof(EquipoRed.IpAdministracion)).HasMaxLength(45);
         configuracionEquipo.Property(nameof(EquipoRed.DireccionMac)).HasMaxLength(32);
         configuracionEquipo.Property(nameof(EquipoRed.Area)).HasMaxLength(120);
+        configuracionEquipo.Property(nameof(EquipoRed.Piso)).HasMaxLength(80);
+        configuracionEquipo.Property(nameof(EquipoRed.UsuarioAsignado)).HasMaxLength(160);
+        configuracionEquipo.Property(nameof(EquipoRed.FuenteDatos)).HasMaxLength(240);
         configuracionEquipo.Property(nameof(EquipoRed.RolEnArea)).HasMaxLength(60).IsRequired();
         configuracionEquipo.Property(nameof(EquipoRed.TipoDispositivo)).HasMaxLength(100).IsRequired();
         configuracionEquipo.Property(nameof(EquipoRed.EstadoAdministrativo)).HasMaxLength(100).IsRequired();

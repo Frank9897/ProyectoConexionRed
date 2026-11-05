@@ -16,7 +16,7 @@
     <p class="mensaje-exito" role="status">@mensajeInventario</p>
 }
 <form method="get" class="busqueda">
-    <label for="busqueda">Buscar por equipo, IP, área, modelo o fabricante</label>
+    <label for="busqueda">Buscar por equipo, IP, área, usuario, piso, modelo o fabricante</label>
     <div class="fila-busqueda">
         <input id="busqueda" name="busqueda" value="@Context.Request.Query["busqueda"]" placeholder="Ej.: 192.168.1.44 o Agrimensura" />
         <button class="boton" type="submit">Buscar</button>
@@ -27,6 +27,10 @@
 <div class="resumen">
     <span>@Model.Count equipos mostrados</span>
     <span>Datos de equipos e IP confirmados por el usuario</span>
+</div>
+
+<div class="acciones-tabla">
+    <a class="boton" asp-controller="Inventario" asp-action="Crear">Agregar equipo o puesto</a>
 </div>
 
 <div class="acciones-tabla">
@@ -41,8 +45,10 @@
             <tr>
                 <th>Equipo</th>
                 <th>Fabricante / modelo</th>
-                <th>Área</th>
-                <th>IP de administración</th>
+                <th>Área / piso</th>
+                <th>Usuario asignado</th>
+                <th>Fuente</th>
+                <th>IP documentada</th>
                 <th>Rol</th>
                 <th>Acceso administrativo</th>
                 <th>Vigencia</th>
@@ -62,11 +68,13 @@
                     }
                 </td>
                 <td>@(equipo.Fabricante ?? "—")<br /><small>@(equipo.Modelo ?? "Modelo no indicado")</small></td>
-                <td>@(equipo.Area ?? "—")</td>
+                <td>@(equipo.Area ?? "—")<br /><small>@(equipo.Piso ?? "Piso no indicado")</small></td>
+                <td>@(equipo.UsuarioAsignado ?? "Sin asignación documentada")</td>
+                <td>@(equipo.FuenteDatos ?? "No indicada")</td>
                 <td><span class="ip">@(equipo.IpAdministracion ?? "No indicada")</span></td>
                 <td>@equipo.RolEnArea</td>
                 <td><span class="estado @(equipo.EstadoAdministrativo.StartsWith("Inaccesible") ? "estado-alerta" : "")">@equipo.EstadoAdministrativo</span></td>
-                <td><span class="estado estado-vigente">@equipo.EstadoDatos</span></td>
+                <td><span class="estado @(equipo.EstadoDatos.Equals("Vigente", StringComparison.OrdinalIgnoreCase) ? "estado-vigente" : "estado-alerta")">@equipo.EstadoDatos</span></td>
                 <td class="columna-accion"><a class="boton boton-secundario" asp-controller="Inventario" asp-action="Editar" asp-route-id="@equipo.Identificador">Editar</a></td>
             </tr>
         }

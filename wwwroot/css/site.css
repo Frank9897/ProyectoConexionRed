@@ -200,3 +200,234 @@ td small { margin-top: 3px; color: var(--secundario); line-height: 1.35; }
 @media (max-width: 850px) {
     .rejilla-capas { grid-template-columns: 1fr; }
 }
+
+/* estilosNavegacion mejoran lectura y acceso; cambiar sus fondos o espacios altera la orientación entre secciones. */
+.barra-superior {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    box-shadow: 0 4px 18px #172b3a0a;
+}
+nav { align-items: center; flex-wrap: wrap; gap: 7px; }
+nav a {
+    padding: 8px 11px;
+    border-radius: 8px;
+    transition: background-color .16s ease, color .16s ease;
+}
+nav a:hover { background: #eaf2f5; color: var(--azul-oscuro); }
+a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible {
+    outline: 3px solid #126b8355;
+    outline-offset: 2px;
+}
+.panel, .busqueda, .tabla-contenedor, .panel-formulario, .acceso-formulario {
+    box-shadow: 0 8px 24px #172b3a08;
+}
+.boton, .boton-principal, .boton-secundario { transition: transform .16s ease, background-color .16s ease, box-shadow .16s ease; }
+.boton:hover, .boton-principal:hover, .boton-secundario:hover { transform: translateY(-1px); box-shadow: 0 5px 12px #172b3a18; }
+tbody tr { transition: background-color .14s ease; }
+tbody tr:hover { background: #f7fafb; }
+
+/* estilosInicio orientan el acceso a módulos; cambiar el orden de tarjetas cambia su prioridad visual. */
+.hero-inicio { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(220px, .7fr); align-items: center; gap: 22px; }
+.hero-contenido { position: relative; z-index: 1; }
+.hero-inicio h1 { max-width: 700px; }
+.hero-inicio .boton { display: inline-flex; gap: 9px; }
+.hero-sello { position: relative; width: 240px; height: 190px; justify-self: center; }
+.nodo-red {
+    position: absolute;
+    z-index: 1;
+    display: grid;
+    width: 58px;
+    height: 48px;
+    place-items: center;
+    border: 1px solid #ffffff45;
+    border-radius: 12px;
+    background: #ffffff18;
+    color: #fff;
+    font-size: .75rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    box-shadow: 0 8px 24px #051a2b20;
+    backdrop-filter: blur(4px);
+}
+.nodo-central { top: 70px; left: 91px; width: 66px; height: 54px; background: #ffffff2a; }
+.nodo-superior { top: 6px; left: 95px; }
+.nodo-izquierdo { top: 130px; left: 17px; }
+.nodo-derecho { top: 130px; right: 17px; }
+.conexion-red { position: absolute; height: 2px; background: #9de2e888; transform-origin: left center; }
+.conexion-uno { top: 54px; left: 120px; width: 40px; transform: rotate(90deg); }
+.conexion-dos { top: 99px; left: 70px; width: 48px; transform: rotate(34deg); }
+.conexion-tres { top: 99px; left: 122px; width: 48px; transform: rotate(146deg); }
+.inicio-secciones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+.tarjeta-inicio {
+    display: flex;
+    min-height: 98px;
+    align-items: center;
+    gap: 13px;
+    padding: 17px;
+    border: 1px solid var(--borde);
+    border-radius: 13px;
+    background: #fff;
+    color: var(--tinta);
+    text-decoration: none;
+    box-shadow: 0 8px 24px #172b3a08;
+    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+.tarjeta-inicio:hover { transform: translateY(-2px); border-color: #b7cbd4; box-shadow: 0 12px 26px #172b3a12; }
+.icono-seccion { display: grid; width: 44px; height: 44px; flex: 0 0 auto; place-items: center; border-radius: 12px; background: #eaf3f6; color: #24758b; font-size: .75rem; font-weight: 800; }
+.icono-topologia { background: #e9f5f1; color: #18806e; }
+.icono-historial { background: #f0ecf8; color: #7556ad; }
+.texto-seccion { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.texto-seccion strong { font-size: .95rem; }
+.texto-seccion small { color: var(--secundario); font-size: .78rem; }
+.flecha-seccion { margin-left: auto; color: var(--azul); font-size: 1.1rem; }
+.estado-proyecto { display: flex; align-items: flex-start; justify-content: space-between; gap: 28px; margin-top: 18px; }
+.estado-proyecto .sobrelinea { margin: 0 0 3px; }
+.estado-proyecto h2 { margin: 0; font-size: 1.1rem; }
+.estado-proyecto > p { max-width: 650px; margin: 0; }
+
+/* estilosTopologia ordenan los indicadores y capas; cambiar la rejilla ajusta su lectura en cada pantalla. */
+.encabezado-topologia { margin-bottom: 25px; }
+.encabezado-topologia > div:first-child { max-width: 740px; }
+.estado-fuente {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 13px;
+    border: 1px solid #dcece6;
+    border-radius: 999px;
+    background: #f1f8f5;
+    color: #28634f;
+    font-size: .84rem;
+    font-weight: 650;
+}
+.punto-estado { width: 8px; height: 8px; border-radius: 50%; background: #39a77b; box-shadow: 0 0 0 4px #39a77b1c; }
+.metricas-topologia {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin: 20px 0 26px;
+}
+.metrica-topologia {
+    display: flex;
+    min-height: 126px;
+    flex-direction: column;
+    justify-content: center;
+    padding: 18px 20px;
+    border: 1px solid var(--borde);
+    border-radius: 13px;
+    background: #fff;
+    box-shadow: 0 8px 24px #172b3a08;
+}
+.etiqueta-metrica { color: var(--secundario); font-size: .8rem; font-weight: 650; }
+.metrica-topologia strong { margin: 4px 0 0; color: var(--tinta); font-size: 2rem; line-height: 1.15; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.metrica-topologia small { margin-top: 5px; color: var(--secundario); font-size: .78rem; }
+.capas-topologia { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.tarjeta-capa {
+    position: relative;
+    display: flex;
+    min-height: 286px;
+    flex-direction: column;
+    padding: 22px;
+    overflow: hidden;
+    border: 1px solid var(--borde);
+    border-top: 4px solid #2785b9;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 10px 28px #172b3a0a;
+}
+.tarjeta-capa::after {
+    position: absolute;
+    right: -34px;
+    bottom: -48px;
+    width: 128px;
+    height: 128px;
+    border: 20px solid #2785b90a;
+    border-radius: 50%;
+    content: "";
+    pointer-events: none;
+}
+.capa-switching { border-top-color: #168576; }
+.capa-switching::after { border-color: #1685760b; }
+.capa-acceso { border-top-color: #7556ad; }
+.capa-acceso::after { border-color: #7556ad0b; }
+.cabecera-capa { display: flex; align-items: center; gap: 11px; }
+.numero-capa { color: #2785b9; font-size: 1.25rem; font-weight: 800; letter-spacing: -.04em; }
+.capa-switching .numero-capa { color: #168576; }
+.capa-acceso .numero-capa { color: #7556ad; }
+.etiqueta-capa { color: var(--secundario); font-size: .69rem; font-weight: 750; letter-spacing: .09em; }
+.tarjeta-capa h2 { margin: 19px 0 5px; font-size: 1.18rem; letter-spacing: -.02em; }
+.tarjeta-capa > p { margin: 0; color: var(--secundario); font-size: .88rem; }
+.dato-capa { display: flex; align-items: baseline; gap: 9px; margin-top: auto; padding: 19px 0 13px; }
+.dato-capa strong { color: var(--tinta); font-size: 1.55rem; font-variant-numeric: tabular-nums; }
+.dato-capa span { color: var(--secundario); font-size: .8rem; }
+.dato-capa .total-secundario { font-size: 1rem; }
+.enlace-capa { align-self: flex-start; color: var(--azul); font-size: .85rem; font-weight: 700; text-decoration: none; }
+.enlace-capa:hover { color: var(--azul-oscuro); text-decoration: underline; }
+.enlace-capa span { padding-left: 3px; }
+.nota-topologia {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 20px 0;
+    padding: 15px 18px;
+    border: 1px solid #dbe7eb;
+    border-radius: 12px;
+    background: #f5fafb;
+}
+.icono-nota { display: grid; width: 23px; height: 23px; flex: 0 0 auto; place-items: center; border-radius: 50%; background: #dceef2; color: #176c7c; font-size: .85rem; font-weight: 800; }
+.nota-topologia strong { color: var(--tinta); font-size: .9rem; }
+.nota-topologia p { margin: 3px 0 0; color: var(--secundario); font-size: .84rem; }
+.vacio-topologia {
+    display: flex;
+    min-height: 310px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 18px;
+    padding: 32px 24px;
+    border: 1px dashed #cbd9df;
+    border-radius: 15px;
+    background: linear-gradient(180deg, #fff, #f9fbfc);
+    text-align: center;
+}
+.icono-vacio { display: grid; width: 62px; height: 62px; place-items: center; margin-bottom: 12px; border-radius: 18px; background: #eaf3f6; }
+.icono-vacio svg { width: 36px; fill: none; stroke: #28778c; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.5; }
+.vacio-topologia .sobrelinea { margin: 3px 0; }
+.vacio-topologia h2 { margin: 4px 0 7px; font-size: 1.3rem; letter-spacing: -.025em; }
+.vacio-topologia > p:not(.sobrelinea) { max-width: 590px; margin: 0 0 16px; color: var(--secundario); font-size: .9rem; }
+.panel-enlaces { margin-top: 20px; padding: 22px; }
+.encabezado-seccion-topologia { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 15px; }
+.encabezado-seccion-topologia .sobrelinea { margin: 0 0 3px; }
+.encabezado-seccion-topologia h2 { margin: 0; font-size: 1.25rem; }
+.contador-enlaces { padding: 6px 10px; border-radius: 999px; background: #eaf2f5; color: #355565; font-size: .78rem; font-weight: 700; white-space: nowrap; }
+
+@media (max-width: 1000px) {
+    .metricas-topologia { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .capas-topologia { grid-template-columns: 1fr; }
+    .tarjeta-capa { min-height: 245px; }
+}
+@media (max-width: 720px) {
+    .barra-superior { position: static; flex-direction: column; }
+    nav { width: 100%; gap: 4px; }
+    nav a { padding: 7px 9px; font-size: .87rem; }
+    .metricas-topologia { gap: 9px; }
+    .metrica-topologia { min-height: 112px; padding: 14px; }
+    .estado-fuente { align-self: flex-start; }
+    .tarjeta-capa { min-height: 230px; padding: 19px; }
+    .panel-enlaces { padding: 16px; }
+    .hero-inicio { grid-template-columns: 1fr; }
+    .hero-sello { display: none; }
+    .inicio-secciones { grid-template-columns: 1fr; }
+    .estado-proyecto { flex-direction: column; gap: 8px; }
+}
+@media (max-width: 460px) {
+    .metricas-topologia { grid-template-columns: 1fr 1fr; }
+    .metrica-topologia strong { font-size: 1.7rem; }
+    .metrica-topologia small { font-size: .72rem; }
+    .encabezado-seccion-topologia { align-items: flex-start; flex-direction: column; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}

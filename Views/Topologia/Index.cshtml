@@ -2,54 +2,137 @@
 @{
     ViewData["Title"] = "Topología";
 }
-<section class="encabezado-pagina">
+
+<section class="encabezado-pagina encabezado-topologia">
     <div>
-        <p class="sobrelinea">MAPA DE RED</p>
+        <p class="sobrelinea">MAPA DOCUMENTAL DE RED</p>
         <h1>Topología</h1>
-        <p>Las conexiones aparecen cuando sus puertos y extremos están documentados.</p>
+        <p>Explora la infraestructura por capas. Cada relación se muestra según los datos documentados en el inventario.</p>
+    </div>
+    <div class="estado-fuente">
+        <span class="punto-estado" aria-hidden="true"></span>
+        <span>Vista de solo lectura</span>
     </div>
 </section>
-<section class="rejilla-capas" aria-label="Vistas de la red por capa">
-    <article class="panel">
-        <p class="sobrelinea">CAPA 1 · FÍSICA</p>
-        <h2>Interfaces y enlaces</h2>
-        <p>@Model.TotalInterfaces interfaces · @Model.TotalEnlaces enlaces registrados</p>
-        <p>Cables, puertos y módulos ópticos. Los enlaces del rack marcados para revisión no deben darse por confirmados.</p>
+
+<section class="metricas-topologia" aria-label="Resumen de infraestructura">
+    <article class="metrica-topologia">
+        <span class="etiqueta-metrica">Equipos inventariados</span>
+        <strong>@Model.TotalEquipos</strong>
+        <small>Fichas documentales</small>
     </article>
-    <article class="panel">
-        <p class="sobrelinea">CAPA 2 · SWITCHING</p>
-        <h2>Switches y jerarquía</h2>
-        <p>La jerarquía y administración de switches se mostrará aquí cuando se documenten sus relaciones.</p>
+    <article class="metrica-topologia">
+            <span class="etiqueta-metrica">Switches clasificados</span>
+        <strong>@Model.TotalSwitches</strong>
+        <small>@Model.SwitchesInaccesibles con acceso administrativo inaccesible</small>
     </article>
-    <article class="panel">
-        <p class="sobrelinea">CAPA 3 · ACCESO E IP</p>
-        <h2>Equipos de usuario</h2>
-        <p>Los dispositivos de usuario y sus IP se incorporarán desde los Visios previstos. Esta vista no presume asociaciones que aún no estén cargadas.</p>
+    <article class="metrica-topologia">
+        <span class="etiqueta-metrica">Puestos de usuario</span>
+        <strong>@Model.TotalPuestos</strong>
+        <small>@Model.PuestosConIp con IP documentada</small>
+    </article>
+    <article class="metrica-topologia">
+        <span class="etiqueta-metrica">Enlaces físicos</span>
+        <strong>@Model.TotalEnlaces</strong>
+        <small>@Model.TotalInterfaces interfaces registradas</small>
     </article>
 </section>
+
+<section class="capas-topologia" aria-label="Capas de la red">
+    <article class="tarjeta-capa capa-fisica">
+        <div class="cabecera-capa">
+            <span class="numero-capa">01</span>
+            <span class="etiqueta-capa">CAPA 1 · FÍSICA</span>
+        </div>
+        <h2>Puertos y medios</h2>
+        <p>Interfaces, cableado y módulos ópticos documentados entre equipos.</p>
+        <div class="dato-capa">
+            <strong>@Model.TotalEnlaces</strong>
+            <span>enlaces registrados</span>
+        </div>
+        <a class="enlace-capa" href="#enlaces-fisicos">Ver detalle de capa <span aria-hidden="true">→</span></a>
+    </article>
+
+    <article class="tarjeta-capa capa-switching">
+        <div class="cabecera-capa">
+            <span class="numero-capa">02</span>
+            <span class="etiqueta-capa">CAPA 2 · SWITCHING</span>
+        </div>
+        <h2>Switches y áreas</h2>
+        <p>Jerarquía de switches, funciones principal/secundario y gestión administrativa.</p>
+        <div class="dato-capa">
+            <strong>@Model.TotalSwitches</strong>
+            <span>switches inventariados</span>
+        </div>
+        <a class="enlace-capa" asp-controller="Inventario" asp-action="Index" asp-route-busqueda="Switch">Consultar switches <span aria-hidden="true">→</span></a>
+    </article>
+
+    <article class="tarjeta-capa capa-acceso">
+        <div class="cabecera-capa">
+            <span class="numero-capa">03</span>
+            <span class="etiqueta-capa">CAPA 3 · ACCESO E IP</span>
+        </div>
+        <h2>Puestos y direcciones</h2>
+        <p>Equipos de usuario, asignaciones y direcciones IP registradas por área.</p>
+        <div class="dato-capa">
+            <strong>@Model.PuestosConIp<span class="total-secundario"> / @Model.TotalPuestos</span></strong>
+            <span>puestos con IP documentada</span>
+        </div>
+        <a class="enlace-capa" asp-controller="Inventario" asp-action="Index" asp-route-busqueda="Puesto de usuario">Consultar puestos <span aria-hidden="true">→</span></a>
+    </article>
+</section>
+
+<aside class="nota-topologia">
+    <span class="icono-nota" aria-hidden="true">i</span>
+    <div>
+        <strong>La topología es documental</strong>
+        <p>No se realizan pings, consultas ni cambios sobre la red real. Las conexiones solo aparecen cuando están registradas con sus extremos y puertos.</p>
+    </div>
+</aside>
+
 @if (Model.Enlaces.Count == 0)
 {
-    <div class="panel aviso-topologia">
-        <strong>No hay enlaces físicos cargados todavía.</strong>
-        <p>La página no infiere conexiones a partir del inventario. Primero se incorporarán puertos y enlaces con estado de verificación y fuente documental.</p>
-    </div>
+    <section class="vacio-topologia" id="enlaces-fisicos">
+        <div class="icono-vacio" aria-hidden="true">
+            <svg viewBox="0 0 64 64" focusable="false">
+                <rect x="5" y="10" width="20" height="15" rx="3"></rect>
+                <rect x="39" y="39" width="20" height="15" rx="3"></rect>
+                <path d="M25 17h8a8 8 0 0 1 8 8v6a8 8 0 0 0 8 8"></path>
+                <circle cx="15" cy="18" r="1.5"></circle>
+                <circle cx="49" cy="47" r="1.5"></circle>
+            </svg>
+        </div>
+        <p class="sobrelinea">CAPA FÍSICA</p>
+        <h2>Todavía no hay enlaces para dibujar</h2>
+        <p>El inventario conserva equipos e IP confirmados. Los enlaces se incorporarán cuando estén registrados con puerto de origen, puerto de destino, medio y fuente.</p>
+        <a class="boton boton-secundario" asp-controller="Inventario" asp-action="Index">Revisar inventario</a>
+    </section>
 }
 else
 {
-    <section class="panel">
-        <h2>Enlaces físicos documentados</h2>
+    <section class="panel panel-enlaces" id="enlaces-fisicos">
+        <div class="encabezado-seccion-topologia">
+            <div>
+                <p class="sobrelinea">CAPA 1 · DETALLE DE CONEXIONES</p>
+                <h2>Enlaces físicos documentados</h2>
+            </div>
+            <span class="contador-enlaces">@Model.Enlaces.Count enlaces</span>
+        </div>
         <div class="tabla-contenedor">
             <table>
-                <thead><tr><th>Origen</th><th>Destino</th><th>Medio</th><th>Estado</th><th>Última revisión</th></tr></thead>
+                <thead>
+                    <tr><th>Origen</th><th>Destino</th><th>Medio</th><th>Estado</th><th>Fuente</th><th>Última revisión</th></tr>
+                </thead>
                 <tbody>
                 @* enlace representa cada relación física guardada; cambiar la lista de datos cambia las filas mostradas. *@
                 @foreach (var enlace in Model.Enlaces)
                 {
                     <tr>
-                        <td>@enlace.EquipoOrigen <small>Puerto @enlace.PuertoOrigen</small></td>
-                        <td>@enlace.EquipoDestino <small>Puerto @enlace.PuertoDestino</small></td>
+                        <td><strong>@enlace.EquipoOrigen</strong><small>Puerto @enlace.PuertoOrigen</small></td>
+                        <td><strong>@enlace.EquipoDestino</strong><small>Puerto @enlace.PuertoDestino</small></td>
                         <td>@enlace.Medio</td>
-                        <td>@enlace.EstadoDatos</td>
+                        <td><span class="estado @(enlace.EstadoDatos.Equals("Vigente", StringComparison.OrdinalIgnoreCase) ? "estado-vigente" : "estado-alerta")">@enlace.EstadoDatos</span></td>
+                        <td>@(enlace.Fuente ?? "No indicada")</td>
                         <td>@(enlace.FechaUltimaRevision?.ToString("yyyy-MM-dd") ?? "Sin fecha confirmada")</td>
                     </tr>
                 }

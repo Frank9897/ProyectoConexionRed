@@ -2,15 +2,55 @@
     ViewData["Title"] = "Inicio";
 }
 
-<section class="hero">
-    <p class="sobrelinea">DOCUMENTACIÓN DE INFRAESTRUCTURA</p>
-    <h1>La red, organizada y consultable.</h1>
-    <p>Primer módulo disponible: inventario de equipos con IP, área, vigencia documental y estado de acceso.</p>
-    <a class="boton" asp-controller="Inventario" asp-action="Index">Abrir inventario</a>
+<section class="hero hero-inicio">
+    <div class="hero-contenido">
+        <p class="sobrelinea">DOCUMENTACIÓN DE INFRAESTRUCTURA</p>
+        <h1>Una vista clara de la red empresarial.</h1>
+        <p>Consulta los equipos, sus ubicaciones y los datos de red respaldados por los documentos de referencia.</p>
+        <a class="boton" asp-controller="Inventario" asp-action="Index">Abrir inventario <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="hero-sello" aria-hidden="true">
+        <div class="nodo-red nodo-central">RED</div>
+        <div class="nodo-red nodo-superior">L2</div>
+        <div class="nodo-red nodo-izquierdo">L1</div>
+        <div class="nodo-red nodo-derecho">L3</div>
+        <span class="conexion-red conexion-uno"></span>
+        <span class="conexion-red conexion-dos"></span>
+        <span class="conexion-red conexion-tres"></span>
+    </div>
 </section>
 
-<section class="panel">
-    <h2>Estado del proyecto</h2>
-    <p>Esta versión inicial consulta los equipos documentados. Las conexiones del rack, los SFP sin confirmar y los datos de PCs/usuarios que llegarán en otros Visios se incorporarán en etapas posteriores.</p>
-    <p>La información es documental: esta página no ejecuta pruebas ni cambios sobre la red de producción.</p>
+<section class="inicio-secciones" aria-label="Secciones principales">
+    <a class="tarjeta-inicio" asp-controller="Inventario" asp-action="Index">
+        <span class="icono-seccion icono-inventario" aria-hidden="true">01</span>
+        <span class="texto-seccion">
+            <strong>Inventario</strong>
+            <small>Equipos, IP, usuarios y ubicación</small>
+        </span>
+        <span class="flecha-seccion" aria-hidden="true">→</span>
+    </a>
+    <a class="tarjeta-inicio" asp-controller="Topologia" asp-action="Index">
+        <span class="icono-seccion icono-topologia" aria-hidden="true">02</span>
+        <span class="texto-seccion">
+            <strong>Topología</strong>
+            <small>Infraestructura organizada por capas</small>
+        </span>
+        <span class="flecha-seccion" aria-hidden="true">→</span>
+    </a>
+    <a class="tarjeta-inicio" asp-controller="Cambios" asp-action="Index">
+        <span class="icono-seccion icono-historial" aria-hidden="true">03</span>
+        <span class="texto-seccion">
+            <strong>Historial</strong>
+            <small>Modificaciones y procedencia de datos</small>
+        </span>
+        <span class="flecha-seccion" aria-hidden="true">→</span>
+    </a>
+</section>
+
+<section class="panel estado-proyecto">
+    <div>
+        <p class="sobrelinea">ESTADO DEL PROYECTO</p>
+        <h2>Inventario en construcción</h2>
+    </div>
+    <p>El sitio organiza información documental. Los enlaces físicos se mostrarán cuando estén cargados con sus puertos y fuentes; la aplicación no ejecuta pruebas ni cambios sobre la red de producción.</p>
 </section>

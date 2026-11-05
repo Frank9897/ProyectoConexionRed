@@ -6,15 +6,20 @@ Crear una aplicación web en español para inventariar, consultar y visualizar l
 ## Estado actual del proyecto
 - Repositorio público por decisión explícita del usuario.
 - Hay un MVP inicial en C# / ASP.NET Core MVC con EF Core y SQLite.
-- Incluye página de inicio, inventario con búsqueda por nombre/IP/área/modelo/fabricante, CSV de resultados filtrados, impresión de la tabla y 25 registros semilla.
-- Requiere autenticación por cookie para ver las páginas. El administrador inicial se crea solo cuando la base no tiene usuarios y se configuran INVENTARIO_ADMIN_USUARIO e INVENTARIO_ADMIN_CLAVE fuera del repositorio.
+- Incluye página de inicio, inventario con búsqueda por nombre/IP/área/usuario/piso/modelo/fabricante, CSV de resultados filtrados, impresión de la tabla y 25 registros semilla.
+- El inventario admite alta y edición de equipos/puestos, usuario asignado, piso y fuente documental. Las fichas nuevas y sus valores iniciales quedan auditados. Las propiedades nuevas se agregan con una actualización de esquema compatible con bases SQLite anteriores. Todavía no se cargaron masivamente los puestos del PDF.
+- Requiere autenticación por cookie para ver las páginas. En pruebas, cada cookie lleva una marca aleatoria del proceso actual y se invalida al reiniciar la aplicación, por lo que hay que ingresar de nuevo. La gestión final de duración y políticas de sesión queda postergada. El administrador inicial se crea solo cuando la base no tiene usuarios y se configuran INVENTARIO_ADMIN_USUARIO e INVENTARIO_ADMIN_CLAVE fuera del repositorio.
 - Las claves se almacenan como hash. La tabla de accesos registra ingresos correctos/fallidos y cierres con hora UTC; no guarda contraseñas.
 - La tabla de accesos tiene una página para consultar los últimos cien eventos.
 - Las tablas de usuarios e historial se crean con SQL IF NOT EXISTS para compatibilidad con la base prototipo creada en la primera versión. El resto del modelo usa EnsureCreated; emplear migraciones en futuras evoluciones del esquema.
 - La gestión básica de cuentas está incorporada: rol Administrador/Tecnico, alta de técnicos (máximo cinco cuentas totales) y activación/desactivación. Las cuentas previas reciben rol Administrador por compatibilidad al agregar la nueva columna SQLite; el alta por la interfaz siempre asigna Tecnico. Se protege la última cuenta administradora activa y no se permite auto desactivación.
 - La edición controlada de equipos y la auditoría por campo están implementadas en el código: se guardan cuenta, fecha UTC, equipo, campo, valor anterior y valor nuevo. La pantalla Cambios muestra los últimos doscientos eventos. La edición solo modifica la base documental y no actúa sobre la red real.
-- Hay un esquema SQLite para interfaces físicas y enlaces entre puertos, más una página Topología con las vistas física, switching y acceso/IP. La tabla de enlaces permanece vacía: no se infirieron conexiones y aún no existe un formulario para cargar interfaces/enlaces. La topología gráfica interactiva, relaciones de switching/VLAN, simulaciones, ficha SFP, exportación gráfica e imágenes siguen pendientes. La cookie se valida contra SQLite en cada solicitud: una cuenta desactivada pierde acceso en la siguiente solicitud y un cambio de rol se renueva en la sesión. No desplegar en producción antes de verificar la aplicación, controles de acceso, HTTPS y pruebas.
-- El usuario compartirá posteriormente otros dos Visios con nombres de PC, usuarioPC y nombres de usuario. No inventar esos datos antes de revisar las fuentes.
+- Hay un esquema SQLite para interfaces físicas y enlaces entre puertos. Topología presenta indicadores de equipos, switches clasificados, puestos e interfaces, tarjetas para las capas física/switching/acceso, estado vacío sin enlaces y tabla de enlaces con puertos, medio, estado, fuente y fecha. La tabla se alimenta solo de relaciones guardadas; aún no existe formulario para cargar interfaces/enlaces. La topología gráfica interactiva, relaciones de switching/VLAN, simulaciones, ficha SFP, exportación gráfica e imágenes siguen pendientes. La cookie se valida contra SQLite en cada solicitud: una cuenta desactivada pierde acceso en la siguiente solicitud y un cambio de rol se renueva en la sesión. La marca aleatoria del proceso invalida las cookies anteriores tras un reinicio. No desplegar en producción antes de verificar la aplicación, controles de acceso, HTTPS y pruebas.
+- El 4 de noviembre de 2026 se recibieron y revisaron `DIAGRAMA RED V3.0.vsdx` y `Diagrama UPS.vsdx`. El inicializador incorpora de forma idempotente las MAC explícitas del V3 cuando coinciden la etiqueta/IP y el campo MAC está vacío; completa Aruba como fabricante para los dos switches de área con IP `192.168.1.1` y `192.168.1.17` si el campo está vacío; y da de alta una sola vez el Aruba 1930 Reserva 2. Registra estos cambios en `EventosModificacion` bajo «Carga documental DIAGRAMA RED V3.0». No reemplaza IP, MAC ni fabricante preexistentes. El usuario confirmó que V3.0 fue verificado switch por switch e interfaz por interfaz: usarlo como fuente principal para enlaces, interfaces e IP que documente. No inventar conexiones de rack ausentes o ambiguas. Los datos de UPS, almacenamiento y servidores todavía no se importaron.
+- Se recibió `UBICACION-EQUIPOS-OCTUBRE 2026.pdf` y se revisaron sus 14 páginas. Contiene puestos con etiquetas de equipo, asignaciones de usuario y ubicación por área/piso. El usuario aclaró que el número entre paréntesis es el último octeto de la IP de usuario dentro de `192.168.0.0/24`; por ejemplo, `(69)` representa `192.168.0.69`, no un número de inventario. El PDF es fuente de ubicación/usuario y puede estar menos actualizado que V3.0; si ambos contienen datos de red distintos, prevalece V3.0. Los puestos aún no se han importado. Guardar el nombre de usuario tal como aparece y anotar la fuente; no inventar asociaciones de switch derivadas de la posición gráfica.
+- El usuario anticipó otros dos Visios para completar o validar nombres de PC, identificadores usuarioPC y nombres reales de usuario; incorporarlos cuando los entregue y conservar procedencia por dato.
+- Una página de `DIAGRAMA RED V3.0.vsdx` contiene credenciales escritas. Nunca transcribirlas a código, inventario, historial, README, prompt ni commits. El usuario fue advertido y debe cambiar las claves que correspondan antes de volver a distribuir el diagrama.
+- Se retiró de `Program.cs` el bloque temporal que imprimía un hash y detenía el arranque cuando faltaba la variable de contraseña. La generación de contraseñas continúa únicamente en el alta inicial y en la creación de cuentas mediante los servicios de la aplicación.
 - Al modificar el código, actualizar siempre README.md y docs/PROMPT_IA.md.
 - No se ha confirmado con el usuario que el programa compile ni se han verificado las páginas en ejecución; no afirmar que están verificadas. La administración de cuentas y el manejo de bases anteriores requieren esa verificación pendiente.
 
@@ -68,6 +73,45 @@ Los datos de la lista se transcriben del Visio y las IP son vigentes según el u
 - El Visio repite 192.168.1.19 en dos etiquetas. Preservar ambas etiquetas y sus datos como aparecen. No deducir que es un error ni asumir si se trata de un equipo duplicado.
 - El Visio también muestra un módem Claro y patcheras; no están cargados como registros en el MVP actual. No asignarles IP ni enlace sin fuente.
 - No incluir credenciales del Visio en registros semilla, código, comentarios o documentación.
+
+## Fuentes actualizadas de noviembre de 2026
+
+`DIAGRAMA RED V3.0.vsdx` fue indicado por el usuario como la fuente vigente al 4 de noviembre de 2026. Los dispositivos e IP son reales. Algunas conexiones de rack siguen pendientes de revisión. La lectura de texto del archivo permite recuperar etiquetas y conectores explícitos, pero no confirma todas las líneas dibujadas; no completar enlaces a partir de posiciones o de la apariencia sin validación.
+
+### MAC confirmadas en DIAGRAMA RED V3.0
+
+| Etiqueta del equipo | IP | Dirección MAC |
+|---|---|---|
+| Switch HP 5500 | 192.168.1.218 | 2C:23:3A:28:1C:25 |
+| Switch HP 1920 | 192.168.1.115 | 40:B9:3C:2A:C0:7D |
+| Switch HP 1920S | 192.168.1.217 | 20:67:7C:4E:9E:54 |
+| Dell S4148U-ON 48G | 192.168.1.44 | E4:F0:04:A4:83:BD |
+| Switch Agrimensura 1 HP | 192.168.1.23 | 5C:8A:38:9F:19:92 |
+| Switch Agrimensura 3Com | 192.168.1.24 | 00:24:73:CA:75:04 |
+| Asuntos Jurídicos | 192.168.1.30 | 78:48:59:72:6C:C5 |
+| Cartografía | 192.168.1.51 | 44:5B:ED:12:3E:25 |
+| Inmuebles | 192.168.1.26 | B8:AF:67:9B:8E:DD |
+| Mesa de Entrada (No principal) | 192.168.1.18 | 5C:8A:38:9F:1A:32 |
+| Puerta Agrimensura | 192.168.1.19 | 5C:8A:38:9E:80:52 |
+| Regularización Dominial | 192.168.1.40 | B8:AF:67:9A:C5:9E |
+| Secretaría | 192.168.1.28 | 40:B9:3C:2A:BF:7D |
+| Sistemas | 192.168.1.216 | 20:67:7C:4C:44:A8 |
+| Valuación R0 | 192.168.1.32 | 78:48:59:73:47:83 |
+| Valuación R1 | 192.168.1.29 | 78:48:59:7C:E6:33 |
+| Valuación R2 | 192.168.1.20 | 44:31:92:9E:54:20 |
+| Switch Aruba 1930 (Reserva 2) | 192.168.1.201 | 94:60:D5:36:DF:4C |
+
+La dirección `192.168.1.19` continúa apareciendo para dos etiquetas distintas, Switch Aruba 1930 (WDGC) y Puerta Agrimensura. Preservar ambas filas; no resolver ni corregir el duplicado por inferencia. El Aruba 1930 de reserva 2 es un registro adicional al equipo de reserva ya listado con IP `192.168.1.200`.
+
+En la página de switches de área, V3 identifica como Aruba los equipos con IP `192.168.1.1` y `192.168.1.17`, pero no especifica sus modelos. Completar solo el fabricante cuando esté vacío; dejar modelo sin identificar.
+
+El V3 etiqueta el HP ProCurve 29100I-24G con IP `10.0.1.1`, acceso SSH y credenciales desconocidas. Mantener su acceso administrativo como pendiente/no confirmado hasta que el usuario aclare si actualmente es inaccesible. No confundirlo con los dos switches previamente confirmados como inaccesibles (Régimen y Mesa de Entradas Principal).
+
+### Equipos de rack y energía observados
+
+`DIAGRAMA RED V3.0.vsdx` y `Diagrama UPS.vsdx` incluyen etiquetas para módem Claro, módem Personal, equipos INTELLINET, patcheras y equipos Dell identificados como servidores, almacenamiento y switches de rack. Los modelos o etiquetas visibles incluyen Dell R740 (variantes rotuladas O y P), R770, R920, SCV320, SCV300, SCV3000, Dell DS 6610B y Dell DS 300B. Registrar solo campos expresamente legibles y conservar la fuente; IP, MAC, cantidades y enlaces no indicados quedan vacíos o pendientes. No interpretar identificadores de forma como cantidad de unidades hasta resolver si corresponden a vistas frontal/trasera o a elementos duplicados.
+
+El diagrama UPS identifica UPS 1 a UPS 12 y marca UPS 10 como «NO OPERATIVA». También aparecen etiquetas de modelos o familias `SRV3KRI-AR`, `APC RC2000`, `APC RT 10000`, `SUA3000RMI2U`, `SRV1KRLAR`, `SMT3000RMRU`, `UPS EATON`, `UPS APC EASY` y `TRV`. El texto extraído no permite asociar con certeza todos esos modelos a un número de UPS; no inventar esa correspondencia. Hay varias zapatillas de rack con posiciones/etiquetas, pero sus tomas y cargas requieren revisión visual antes de cargar circuitos eléctricos.
 
 ## Arquitectura y alcance acordados
 - Backend: C# con ASP.NET Core MVC y Entity Framework Core.
