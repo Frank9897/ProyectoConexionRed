@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ProyectoConexionRed.Web.Data;
 using ProyectoConexionRed.Web.Models;
+using ProyectoConexionRed.Web.Services;
 
 namespace ProyectoConexionRed.Web.Controllers;
 
@@ -97,7 +97,7 @@ public class ConexionesController : Controller
         var formularioInterfaz = new NuevaInterfazViewModel
         {
             IdentificadorEquipo = identificadorEquipo ?? 0,
-            EquiposDisponibles = await ObtenerEquiposDisponiblesAsync(identificadorEquipo, cancelacion)
+            EquiposDisponibles = await UtilidadesConexiones.ObtenerEquiposDisponiblesAsync(contextoInventario, identificadorEquipo, cancelacion)
         };
 
         return View(formularioInterfaz);
@@ -137,7 +137,7 @@ public class ConexionesController : Controller
 
         if (!ModelState.IsValid)
         {
-            formulario.EquiposDisponibles = await ObtenerEquiposDisponiblesAsync(
+            formulario.EquiposDisponibles = await UtilidadesConexiones.ObtenerEquiposDisponiblesAsync(contextoInventario, 
                 formulario.IdentificadorEquipo,
                 cancelacion);
             return View(formulario);
@@ -155,7 +155,7 @@ public class ConexionesController : Controller
             TipoInterfaz = formulario.TipoInterfaz,
             EstadoDatos = formulario.EstadoDatos,
             FechaUltimaRevision = formulario.FechaUltimaRevision,
-            Observaciones = NormalizarTextoOpcional(formulario.Observaciones)
+            Observaciones = UtilidadesConexiones.NormalizarTexto(formulario.Observaciones)
         };
 
         // eventoCambio registra el alta del puerto; cambiar sus datos altera la línea que queda en el historial.
@@ -188,7 +188,7 @@ public class ConexionesController : Controller
         // formularioEnlace contiene opciones basadas en interfaces existentes; cambiar la consulta altera ambos selectores.
         var formularioEnlace = new NuevoEnlaceViewModel
         {
-            InterfacesDisponibles = await ObtenerInterfacesDisponiblesAsync(null, cancelacion)
+            InterfacesDisponibles = await UtilidadesConexiones.ObtenerInterfacesDisponiblesAsync(contextoInventario, null, cancelacion)
         };
 
         return View(formularioEnlace);
@@ -238,7 +238,7 @@ public class ConexionesController : Controller
 
         if (!ModelState.IsValid)
         {
-            formulario.InterfacesDisponibles = await ObtenerInterfacesDisponiblesAsync(
+            formulario.InterfacesDisponibles = await UtilidadesConexiones.ObtenerInterfacesDisponiblesAsync(contextoInventario, 
                 formulario.IdentificadorPuertoOrigen,
                 cancelacion);
             return View(formulario);
@@ -271,12 +271,12 @@ public class ConexionesController : Controller
             IdentificadorPuertoOrigen = interfazOrigen.IdentificadorInterfaz,
             IdentificadorPuertoDestino = interfazDestino.IdentificadorInterfaz,
             Medio = formulario.Medio,
-            ModuloOrigen = NormalizarTextoOpcional(formulario.ModuloOrigen),
-            ModuloDestino = NormalizarTextoOpcional(formulario.ModuloDestino),
+            ModuloOrigen = UtilidadesConexiones.NormalizarTexto(formulario.ModuloOrigen),
+            ModuloDestino = UtilidadesConexiones.NormalizarTexto(formulario.ModuloDestino),
             EstadoDatos = formulario.EstadoDatos,
             FechaUltimaRevision = formulario.FechaUltimaRevision,
-            Fuente = NormalizarTextoOpcional(formulario.Fuente),
-            Observaciones = NormalizarTextoOpcional(formulario.Observaciones)
+            Fuente = UtilidadesConexiones.NormalizarTexto(formulario.Fuente),
+            Observaciones = UtilidadesConexiones.NormalizarTexto(formulario.Observaciones)
         };
 
         // eventoCambio describe la conexión completa; cambiar el extremo inicial cambia a qué equipo se atribuye el evento.
@@ -299,87 +299,6 @@ public class ConexionesController : Controller
     }
 
     /// <summary>
-    /// Prepara opciones de equipos para los selectores.
-    /// </summary>
-    /// <param name="identificadorSeleccionado">Equipo que debe aparecer seleccionado; cambiarlo modifica el valor marcado.</param>
-    /// <param name="cancelacion">Señal de cancelación; activarla interrumpe la consulta.</param>
-    /// <returns>Opciones ordenadas con nombre, modelo e IP de administración.</returns>
-    private async Task<List<SelectListItem>> ObtenerEquiposDisponiblesAsync(
-        int? identificadorSeleccionado,
-        CancellationToken cancelacion)
-    {
-        // equiposDisponibles limita las opciones a fichas existentes; cambiar el orden altera su presentación.
-        var equiposDisponibles = await contextoInventario.Equipos
-            .AsNoTracking()
-            .OrderBy(equipo => equipo.Nombre)
-            .Select(equipo => new
-            {
-                equipo.Identificador,
-                equipo.Nombre,
-                equipo.Modelo,
-                equipo.IpAdministracion
-            })
-            .ToListAsync(cancelacion);
-
-        // opcionesEquipos construye las etiquetas legibles; cambiar el formato altera qué información ve el técnico.
-        var opcionesEquipos = equiposDisponibles.Select(equipo => new SelectListItem
-        {
-            Value = equipo.Identificador.ToString(),
-            Text = string.Join(" · ", new[]
-            {
-                equipo.Nombre,
-                equipo.Modelo,
-                equipo.IpAdministracion
-            }.Where(texto => !string.IsNullOrWhiteSpace(texto))),
-            Selected = identificadorSeleccionado == equipo.Identificador
-        }).ToList();
-
-        return opcionesEquipos;
-    }
-
-    /// <summary>
-    /// Prepara opciones de interfaces para los dos extremos del formulario de enlace.
-    /// </summary>
-    /// <param name="identificadorSeleccionado">Interfaz que debe aparecer seleccionada; cambiarlo modifica el valor marcado.</param>
-    /// <param name="cancelacion">Señal de cancelación; activarla interrumpe la consulta.</param>
-    /// <returns>Opciones ordenadas con equipo, puerto e IP.</returns>
-    private async Task<List<SelectListItem>> ObtenerInterfacesDisponiblesAsync(
-        int? identificadorSeleccionado,
-        CancellationToken cancelacion)
-    {
-        // interfacesDisponibles obtiene cada equipo y puerto; cambiar las columnas cambia las etiquetas generadas.
-        var interfacesDisponibles = await (
-            from interfaz in contextoInventario.InterfacesEquipo.AsNoTracking()
-            join equipo in contextoInventario.Equipos.AsNoTracking()
-                on interfaz.IdentificadorEquipo equals equipo.Identificador
-            orderby equipo.Nombre, interfaz.EtiquetaPuerto
-            select new
-            {
-                interfaz.Identificador,
-                interfaz.EtiquetaPuerto,
-                equipo.Nombre,
-                equipo.IpAdministracion,
-                interfaz.EstadoDatos
-            }).ToListAsync(cancelacion);
-
-        // opcionesInterfaces incluye ID y estado visible; cambiar el formato modifica las opciones del selector.
-        var opcionesInterfaces = interfacesDisponibles.Select(interfaz => new SelectListItem
-        {
-            Value = interfaz.Identificador.ToString(),
-            Text = string.Join(" · ", new[]
-            {
-                interfaz.Nombre,
-                interfaz.IpAdministracion,
-                interfaz.EtiquetaPuerto,
-                interfaz.EstadoDatos
-            }.Where(texto => !string.IsNullOrWhiteSpace(texto))),
-            Selected = identificadorSeleccionado == interfaz.Identificador
-        }).ToList();
-
-        return opcionesInterfaces;
-    }
-
-    /// <summary>
     /// Obtiene el nombre disponible para atribuir cambios manuales.
     /// </summary>
     /// <returns>Nombre autenticado o etiqueta explícita del modo de pruebas sin sesión.</returns>
@@ -390,15 +309,4 @@ public class ConexionesController : Controller
         return nombreEditor;
     }
 
-    /// <summary>
-    /// Recorta textos opcionales y devuelve nulo cuando quedan vacíos.
-    /// </summary>
-    /// <param name="texto">Texto del formulario; cambiarlo modifica el valor guardado.</param>
-    /// <returns>Texto normalizado o nulo si no contiene caracteres útiles.</returns>
-    private static string? NormalizarTextoOpcional(string? texto)
-    {
-        // textoNormalizado elimina espacios externos; cambiar esta regla altera el dato persistido.
-        var textoNormalizado = texto?.Trim();
-        return string.IsNullOrEmpty(textoNormalizado) ? null : textoNormalizado;
-    }
 }

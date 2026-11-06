@@ -23,6 +23,12 @@ Crear una aplicación web en español para inventariar, consultar y visualizar l
 - Al modificar el código, actualizar siempre README.md y docs/PROMPT_IA.md.
 - No se ha confirmado con el usuario que el programa compile ni se han verificado las páginas en ejecución; no afirmar que están verificadas. La administración de cuentas y el manejo de bases anteriores requieren esa verificación pendiente.
 
+### Refactor de código aplicado
+- `Services/UtilidadesConexiones.cs` concentra normalización de texto, auditoría por campo y consultas para selectores de equipos/interfaces.
+- Los formularios de puertos y enlaces comparten modelos base con las validaciones y parciales Razor de alta y corrección.
+- Se corrigieron las llamadas de auditoría para pasar identificador y nombre del equipo de forma uniforme.
+- La revisión fue estática sobre la rama GitHub; no se confirmó compilación .NET en esta sesión.
+
 ## Fuentes y calidad de datos
 - Fuente base: DIAGRAMA RED V2.vsdx.
 - Confirmación del usuario: todos los dispositivos y las IP asignadas en el Visio son reales y están actualizados.

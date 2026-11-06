@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProyectoConexionRed.Web.Data;
 using ProyectoConexionRed.Web.Models;
+using ProyectoConexionRed.Web.Services;
 
 namespace ProyectoConexionRed.Web.Controllers;
 
@@ -78,20 +79,20 @@ public class InventarioController : Controller
         var equipoNuevo = new EquipoRed
         {
             Nombre = formulario.Nombre.Trim(),
-            Fabricante = NormalizarTextoOpcional(formulario.Fabricante),
-            Modelo = NormalizarTextoOpcional(formulario.Modelo),
-            IpAdministracion = NormalizarTextoOpcional(formulario.IpAdministracion),
-            DireccionMac = NormalizarTextoOpcional(formulario.DireccionMac),
-            Area = NormalizarTextoOpcional(formulario.Area),
-            Piso = NormalizarTextoOpcional(formulario.Piso),
-            UsuarioAsignado = NormalizarTextoOpcional(formulario.UsuarioAsignado),
-            FuenteDatos = NormalizarTextoOpcional(formulario.FuenteDatos),
+            Fabricante = UtilidadesConexiones.NormalizarTexto(formulario.Fabricante),
+            Modelo = UtilidadesConexiones.NormalizarTexto(formulario.Modelo),
+            IpAdministracion = UtilidadesConexiones.NormalizarTexto(formulario.IpAdministracion),
+            DireccionMac = UtilidadesConexiones.NormalizarTexto(formulario.DireccionMac),
+            Area = UtilidadesConexiones.NormalizarTexto(formulario.Area),
+            Piso = UtilidadesConexiones.NormalizarTexto(formulario.Piso),
+            UsuarioAsignado = UtilidadesConexiones.NormalizarTexto(formulario.UsuarioAsignado),
+            FuenteDatos = UtilidadesConexiones.NormalizarTexto(formulario.FuenteDatos),
             RolEnArea = formulario.RolEnArea.Trim(),
             TipoDispositivo = formulario.TipoDispositivo.Trim(),
             EstadoAdministrativo = formulario.EstadoAdministrativo.Trim(),
             EstadoDatos = formulario.EstadoDatos.Trim(),
             FechaUltimaRevision = formulario.FechaUltimaRevision,
-            Observaciones = NormalizarTextoOpcional(formulario.Observaciones)
+            Observaciones = UtilidadesConexiones.NormalizarTexto(formulario.Observaciones)
         };
 
         // transaccionAlta confirma la ficha y el historial juntos para evitar registros sin trazabilidad.
@@ -101,20 +102,20 @@ public class InventarioController : Controller
 
         // cambiosIniciales contiene los campos cargados al crear el equipo; cambiar estos pares altera el detalle del evento.
         var cambiosIniciales = new List<EventoModificacion>();
-        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Alta de ficha", null, "Equipo registrado");
-        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Fabricante", null, equipoNuevo.Fabricante);
-        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Modelo", null, equipoNuevo.Modelo);
-        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "IP documentada", null, equipoNuevo.IpAdministracion);
-        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "MAC", null, equipoNuevo.DireccionMac);
-        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Área", null, equipoNuevo.Area);
-        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Piso o sector", null, equipoNuevo.Piso);
-        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Usuario asignado", null, equipoNuevo.UsuarioAsignado);
-        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Fuente documental", null, equipoNuevo.FuenteDatos);
-        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Rol en el área", null, equipoNuevo.RolEnArea);
-        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Tipo de dispositivo", null, equipoNuevo.TipoDispositivo);
-        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Acceso administrativo", null, equipoNuevo.EstadoAdministrativo);
-        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Vigencia de datos", null, equipoNuevo.EstadoDatos);
-        AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Observaciones", null, equipoNuevo.Observaciones);
+        UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Alta de ficha", null, "Equipo registrado");
+        UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Fabricante", null, equipoNuevo.Fabricante);
+        UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Modelo", null, equipoNuevo.Modelo);
+        UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "IP documentada", null, equipoNuevo.IpAdministracion);
+        UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "MAC", null, equipoNuevo.DireccionMac);
+        UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Área", null, equipoNuevo.Area);
+        UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Piso o sector", null, equipoNuevo.Piso);
+        UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Usuario asignado", null, equipoNuevo.UsuarioAsignado);
+        UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Fuente documental", null, equipoNuevo.FuenteDatos);
+        UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Rol en el área", null, equipoNuevo.RolEnArea);
+        UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Tipo de dispositivo", null, equipoNuevo.TipoDispositivo);
+        UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Acceso administrativo", null, equipoNuevo.EstadoAdministrativo);
+        UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Vigencia de datos", null, equipoNuevo.EstadoDatos);
+        UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Observaciones", null, equipoNuevo.Observaciones);
 
         await contextoInventario.EventosModificacion.AddRangeAsync(cambiosIniciales, cancelacion);
         await contextoInventario.SaveChangesAsync(cancelacion);
@@ -256,20 +257,20 @@ public class InventarioController : Controller
         // nombreEquipoAnterior conserva la etiqueta previa para identificar el registro aunque se renombre.
         var nombreEquipoAnterior = equipoGuardado.Nombre;
 
-        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Nombre", equipoGuardado.Nombre, formulario.Nombre);
-        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Fabricante", equipoGuardado.Fabricante, formulario.Fabricante);
-        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Modelo", equipoGuardado.Modelo, formulario.Modelo);
-        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "IP documentada", equipoGuardado.IpAdministracion, formulario.IpAdministracion);
-        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Dirección MAC", equipoGuardado.DireccionMac, formulario.DireccionMac);
-        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Área", equipoGuardado.Area, formulario.Area);
-        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Piso o sector", equipoGuardado.Piso, formulario.Piso);
-        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Usuario asignado", equipoGuardado.UsuarioAsignado, formulario.UsuarioAsignado);
-        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Fuente documental", equipoGuardado.FuenteDatos, formulario.FuenteDatos);
-        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Rol en el área", equipoGuardado.RolEnArea, formulario.RolEnArea);
-        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Tipo de dispositivo", equipoGuardado.TipoDispositivo, formulario.TipoDispositivo);
-        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Acceso administrativo", equipoGuardado.EstadoAdministrativo, formulario.EstadoAdministrativo);
-        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Vigencia de datos", equipoGuardado.EstadoDatos, formulario.EstadoDatos);
-        AgregarCambio(
+        UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Nombre", equipoGuardado.Nombre, formulario.Nombre);
+        UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Fabricante", equipoGuardado.Fabricante, formulario.Fabricante);
+        UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Modelo", equipoGuardado.Modelo, formulario.Modelo);
+        UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "IP documentada", equipoGuardado.IpAdministracion, formulario.IpAdministracion);
+        UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Dirección MAC", equipoGuardado.DireccionMac, formulario.DireccionMac);
+        UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Área", equipoGuardado.Area, formulario.Area);
+        UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Piso o sector", equipoGuardado.Piso, formulario.Piso);
+        UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Usuario asignado", equipoGuardado.UsuarioAsignado, formulario.UsuarioAsignado);
+        UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Fuente documental", equipoGuardado.FuenteDatos, formulario.FuenteDatos);
+        UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Rol en el área", equipoGuardado.RolEnArea, formulario.RolEnArea);
+        UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Tipo de dispositivo", equipoGuardado.TipoDispositivo, formulario.TipoDispositivo);
+        UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Acceso administrativo", equipoGuardado.EstadoAdministrativo, formulario.EstadoAdministrativo);
+        UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Vigencia de datos", equipoGuardado.EstadoDatos, formulario.EstadoDatos);
+        UtilidadesConexiones.AgregarCambio(
             cambiosRegistrados,
             equipoGuardado.Identificador,
             nombreEquipoAnterior,
@@ -277,23 +278,23 @@ public class InventarioController : Controller
             "Última revisión",
             equipoGuardado.FechaUltimaRevision?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             formulario.FechaUltimaRevision?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
-        AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Observaciones", equipoGuardado.Observaciones, formulario.Observaciones);
+        UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Observaciones", equipoGuardado.Observaciones, formulario.Observaciones);
 
         equipoGuardado.Nombre = formulario.Nombre.Trim();
-        equipoGuardado.Fabricante = NormalizarTextoOpcional(formulario.Fabricante);
-        equipoGuardado.Modelo = NormalizarTextoOpcional(formulario.Modelo);
-        equipoGuardado.IpAdministracion = NormalizarTextoOpcional(formulario.IpAdministracion);
-        equipoGuardado.DireccionMac = NormalizarTextoOpcional(formulario.DireccionMac);
-        equipoGuardado.Area = NormalizarTextoOpcional(formulario.Area);
-        equipoGuardado.Piso = NormalizarTextoOpcional(formulario.Piso);
-        equipoGuardado.UsuarioAsignado = NormalizarTextoOpcional(formulario.UsuarioAsignado);
-        equipoGuardado.FuenteDatos = NormalizarTextoOpcional(formulario.FuenteDatos);
+        equipoGuardado.Fabricante = UtilidadesConexiones.NormalizarTexto(formulario.Fabricante);
+        equipoGuardado.Modelo = UtilidadesConexiones.NormalizarTexto(formulario.Modelo);
+        equipoGuardado.IpAdministracion = UtilidadesConexiones.NormalizarTexto(formulario.IpAdministracion);
+        equipoGuardado.DireccionMac = UtilidadesConexiones.NormalizarTexto(formulario.DireccionMac);
+        equipoGuardado.Area = UtilidadesConexiones.NormalizarTexto(formulario.Area);
+        equipoGuardado.Piso = UtilidadesConexiones.NormalizarTexto(formulario.Piso);
+        equipoGuardado.UsuarioAsignado = UtilidadesConexiones.NormalizarTexto(formulario.UsuarioAsignado);
+        equipoGuardado.FuenteDatos = UtilidadesConexiones.NormalizarTexto(formulario.FuenteDatos);
         equipoGuardado.RolEnArea = formulario.RolEnArea.Trim();
         equipoGuardado.TipoDispositivo = formulario.TipoDispositivo.Trim();
         equipoGuardado.EstadoAdministrativo = formulario.EstadoAdministrativo.Trim();
         equipoGuardado.EstadoDatos = formulario.EstadoDatos.Trim();
         equipoGuardado.FechaUltimaRevision = formulario.FechaUltimaRevision;
-        equipoGuardado.Observaciones = NormalizarTextoOpcional(formulario.Observaciones);
+        equipoGuardado.Observaciones = UtilidadesConexiones.NormalizarTexto(formulario.Observaciones);
 
         if (cambiosRegistrados.Count > 0)
         {
@@ -317,55 +318,6 @@ public class InventarioController : Controller
     /// <param name="campo">Nombre del campo; cambiarlo cambia la propiedad descrita.</param>
     /// <param name="valorAnterior">Dato previo; cambiarlo altera el antes documentado.</param>
     /// <param name="valorNuevo">Dato posterior; cambiarlo altera el después documentado.</param>
-    private static void AgregarCambio(
-        List<EventoModificacion> cambios,
-        int identificadorEquipo,
-        string nombreEquipo,
-        string usuarioEditor,
-        string campo,
-        string? valorAnterior,
-        string? valorNuevo)
-    {
-        // valorAnteriorNormalizado y valorNuevoNormalizado coinciden con el recorte aplicado al guardar la ficha.
-        var valorAnteriorNormalizado = NormalizarTextoOpcional(valorAnterior);
-        var valorNuevoNormalizado = NormalizarTextoOpcional(valorNuevo);
-        if (string.Equals(valorAnteriorNormalizado, valorNuevoNormalizado, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        // eventoCambio almacena la diferencia textual; cambiar estos campos modifica la línea de auditoría.
-        var eventoCambio = new EventoModificacion
-        {
-            IdentificadorEquipo = identificadorEquipo,
-            NombreEquipo = nombreEquipo,
-            NombreUsuario = usuarioEditor,
-            FechaUtc = DateTime.UtcNow,
-            Campo = campo,
-            ValorAnterior = valorAnteriorNormalizado,
-            ValorNuevo = valorNuevoNormalizado
-        };
-        cambios.Add(eventoCambio);
-    }
-
-    /// <summary>
-    /// Convierte textos opcionales compuestos por espacios en valor nulo.
-    /// </summary>
-    /// <param name="texto">Texto recibido; cambiarlo cambia el valor almacenado.</param>
-    /// <returns>Texto recortado o nulo cuando no tiene contenido.</returns>
-    private static string? NormalizarTextoOpcional(string? texto)
-    {
-        // textoRecortado elimina espacios externos; cambiar esta regla altera la forma guardada.
-        var textoRecortado = texto?.Trim();
-        return string.IsNullOrEmpty(textoRecortado) ? null : textoRecortado;
-    }
-
-    /// <summary>
-    /// Obtiene todos los equipos o filtra por nombre, IP, área, usuario, modelo y fabricante.
-    /// </summary>
-    /// <param name="busqueda">Texto opcional; cambiarlo modifica el subconjunto devuelto.</param>
-    /// <param name="cancelacion">Señal que cancela la consulta; cambiarla afecta la duración permitida.</param>
-    /// <returns>Lista de equipos coincidentes; cambiar la búsqueda también compara usuario, piso y fuente documental.</returns>
     private async Task<List<EquipoRed>> ObtenerEquiposAsync(string? busqueda, CancellationToken cancelacion)
     {
         // equiposCargados conserva los datos de SQLite para filtrar; cambiar la fuente cambia el inventario consultado.

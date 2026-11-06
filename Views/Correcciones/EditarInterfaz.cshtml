@@ -9,14 +9,7 @@
     <form asp-action="EditarInterfaz" method="post">
         <input asp-for="Identificador" type="hidden" />
         <div asp-validation-summary="ModelOnly" class="mensaje-error"></div>
-        <div class="rejilla-formulario">
-            <div><label asp-for="IdentificadorEquipo">Equipo propietario</label><select asp-for="IdentificadorEquipo" asp-items="Model.EquiposDisponibles"><option value="0">Selecciona un equipo</option></select><span asp-validation-for="IdentificadorEquipo" class="mensaje-error"></span></div>
-            <div><label asp-for="EtiquetaPuerto">Etiqueta exacta</label><input asp-for="EtiquetaPuerto" /><span asp-validation-for="EtiquetaPuerto" class="mensaje-error"></span></div>
-            <div><label asp-for="TipoInterfaz">Tipo</label><select asp-for="TipoInterfaz"><option>No confirmado</option><option>RJ45</option><option>SFP</option><option>SFP+</option><option>QSFP</option><option>Otro</option></select><span asp-validation-for="TipoInterfaz" class="mensaje-error"></span></div>
-            <div><label asp-for="EstadoDatos">Estado del dato</label><select asp-for="EstadoDatos"><option>Pendiente de revisión</option><option>Confirmado</option><option>A verificar</option><option>Desactualizado</option></select><span asp-validation-for="EstadoDatos" class="mensaje-error"></span></div>
-            <div><label asp-for="FechaUltimaRevision">Última revisión</label><input asp-for="FechaUltimaRevision" type="date" /><span asp-validation-for="FechaUltimaRevision" class="mensaje-error"></span></div>
-            <div class="campo-ancho"><label asp-for="Observaciones">Observaciones</label><textarea asp-for="Observaciones" rows="3"></textarea><span asp-validation-for="Observaciones" class="mensaje-error"></span></div>
-        </div>
+        <partial name="~/Views/Conexiones/_CamposInterfaz.cshtml" model="Model" />
         <div class="acciones-formulario"><button class="boton" type="submit">Guardar corrección</button><a class="boton boton-secundario" asp-controller="Conexiones" asp-action="Index">Cancelar</a></div>
     </form>
 </section>

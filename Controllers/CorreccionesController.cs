@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ProyectoConexionRed.Web.Data;
 using ProyectoConexionRed.Web.Models;
+using ProyectoConexionRed.Web.Services;
 
 namespace ProyectoConexionRed.Web.Controllers;
 
@@ -47,7 +47,7 @@ public class CorreccionesController : Controller
             EstadoDatos = interfazGuardada.EstadoDatos,
             FechaUltimaRevision = interfazGuardada.FechaUltimaRevision,
             Observaciones = interfazGuardada.Observaciones,
-            EquiposDisponibles = await ObtenerEquiposAsync(interfazGuardada.IdentificadorEquipo, cancelacion)
+            EquiposDisponibles = await UtilidadesConexiones.ObtenerEquiposDisponiblesAsync(contextoInventario, interfazGuardada.IdentificadorEquipo, cancelacion)
         };
         return View(formularioEdicion);
     }
@@ -88,7 +88,7 @@ public class CorreccionesController : Controller
 
         if (!ModelState.IsValid)
         {
-            formulario.EquiposDisponibles = await ObtenerEquiposAsync(formulario.IdentificadorEquipo, cancelacion);
+            formulario.EquiposDisponibles = await UtilidadesConexiones.ObtenerEquiposDisponiblesAsync(contextoInventario, formulario.IdentificadorEquipo, cancelacion);
             return View(formulario);
         }
 
@@ -103,21 +103,21 @@ public class CorreccionesController : Controller
         // cambiosInterfaz acumula únicamente diferencias reales.
         var cambiosInterfaz = new List<EventoModificacion>();
 
-        AgregarCambio(cambiosInterfaz, equipoAnterior, usuarioEditor, "Equipo del puerto", $"{equipoAnterior.Identificador} · {equipoAnterior.Nombre}", $"{equipoNuevo.Identificador} · {equipoNuevo.Nombre}");
-        AgregarCambio(cambiosInterfaz, equipoAnterior, usuarioEditor, "Etiqueta del puerto", interfazGuardada.EtiquetaPuerto, etiquetaNueva);
-        AgregarCambio(cambiosInterfaz, equipoAnterior, usuarioEditor, "Tipo de interfaz", interfazGuardada.TipoInterfaz, formulario.TipoInterfaz);
-        AgregarCambio(cambiosInterfaz, equipoAnterior, usuarioEditor, "Estado de interfaz", interfazGuardada.EstadoDatos, formulario.EstadoDatos);
-        AgregarCambio(cambiosInterfaz, equipoAnterior, usuarioEditor, "Fecha de revisión",
+        UtilidadesConexiones.AgregarCambio(cambiosInterfaz, equipoAnterior.Identificador, equipoAnterior.Nombre, usuarioEditor, "Equipo del puerto", $"{equipoAnterior.Identificador} · {equipoAnterior.Nombre}", $"{equipoNuevo.Identificador} · {equipoNuevo.Nombre}");
+        UtilidadesConexiones.AgregarCambio(cambiosInterfaz, equipoAnterior.Identificador, equipoAnterior.Nombre, usuarioEditor, "Etiqueta del puerto", interfazGuardada.EtiquetaPuerto, etiquetaNueva);
+        UtilidadesConexiones.AgregarCambio(cambiosInterfaz, equipoAnterior.Identificador, equipoAnterior.Nombre, usuarioEditor, "Tipo de interfaz", interfazGuardada.TipoInterfaz, formulario.TipoInterfaz);
+        UtilidadesConexiones.AgregarCambio(cambiosInterfaz, equipoAnterior.Identificador, equipoAnterior.Nombre, usuarioEditor, "Estado de interfaz", interfazGuardada.EstadoDatos, formulario.EstadoDatos);
+        UtilidadesConexiones.AgregarCambio(cambiosInterfaz, equipoAnterior.Identificador, equipoAnterior.Nombre, usuarioEditor, "Fecha de revisión",
             interfazGuardada.FechaUltimaRevision?.ToString("yyyy-MM-dd"),
             formulario.FechaUltimaRevision?.ToString("yyyy-MM-dd"));
-        AgregarCambio(cambiosInterfaz, equipoAnterior, usuarioEditor, "Observaciones", interfazGuardada.Observaciones, formulario.Observaciones);
+        UtilidadesConexiones.AgregarCambio(cambiosInterfaz, equipoAnterior.Identificador, equipoAnterior.Nombre, usuarioEditor, "Observaciones", interfazGuardada.Observaciones, formulario.Observaciones);
 
         interfazGuardada.IdentificadorEquipo = equipoNuevo.Identificador;
         interfazGuardada.EtiquetaPuerto = etiquetaNueva;
         interfazGuardada.TipoInterfaz = formulario.TipoInterfaz;
         interfazGuardada.EstadoDatos = formulario.EstadoDatos;
         interfazGuardada.FechaUltimaRevision = formulario.FechaUltimaRevision;
-        interfazGuardada.Observaciones = NormalizarTexto(formulario.Observaciones);
+        interfazGuardada.Observaciones = UtilidadesConexiones.NormalizarTexto(formulario.Observaciones);
         await contextoInventario.EventosModificacion.AddRangeAsync(cambiosInterfaz, cancelacion);
         await contextoInventario.SaveChangesAsync(cancelacion);
 
@@ -154,7 +154,7 @@ public class CorreccionesController : Controller
             FechaUltimaRevision = enlaceGuardado.FechaUltimaRevision,
             Fuente = enlaceGuardado.Fuente,
             Observaciones = enlaceGuardado.Observaciones,
-            InterfacesDisponibles = await ObtenerInterfacesAsync(enlaceGuardado.IdentificadorPuertoOrigen, cancelacion)
+            InterfacesDisponibles = await UtilidadesConexiones.ObtenerInterfacesDisponiblesAsync(contextoInventario, enlaceGuardado.IdentificadorPuertoOrigen, cancelacion)
         };
         return View(formularioEdicion);
     }
@@ -200,7 +200,7 @@ public class CorreccionesController : Controller
 
         if (!ModelState.IsValid)
         {
-            formulario.InterfacesDisponibles = await ObtenerInterfacesAsync(formulario.IdentificadorPuertoOrigen, cancelacion);
+            formulario.InterfacesDisponibles = await UtilidadesConexiones.ObtenerInterfacesDisponiblesAsync(contextoInventario, formulario.IdentificadorPuertoOrigen, cancelacion);
             return View(formulario);
         }
 
@@ -235,37 +235,37 @@ public class CorreccionesController : Controller
         // cambiosEnlace agrupa una entrada de historial por campo modificado.
         var cambiosEnlace = new List<EventoModificacion>();
 
-        AgregarCambio(cambiosEnlace, origenAnterior.IdEquipo, origenAnterior.Nombre, usuarioEditor,
+        UtilidadesConexiones.AgregarCambio(cambiosEnlace, origenAnterior.IdEquipo, origenAnterior.Nombre, usuarioEditor,
             "Puerto de origen", $"[{origenAnterior.IdInterfaz}] {origenAnterior.Nombre} · {origenAnterior.EtiquetaPuerto}",
             $"[{origenNuevo.IdInterfaz}] {origenNuevo.Nombre} · {origenNuevo.EtiquetaPuerto}");
-        AgregarCambio(cambiosEnlace, origenAnterior.IdEquipo, origenAnterior.Nombre, usuarioEditor,
+        UtilidadesConexiones.AgregarCambio(cambiosEnlace, origenAnterior.IdEquipo, origenAnterior.Nombre, usuarioEditor,
             "Puerto de destino", $"[{destinoAnterior.IdInterfaz}] {destinoAnterior.Nombre} · {destinoAnterior.EtiquetaPuerto}",
             $"[{destinoNuevo.IdInterfaz}] {destinoNuevo.Nombre} · {destinoNuevo.EtiquetaPuerto}");
-        AgregarCambio(cambiosEnlace, origenAnterior.IdEquipo, origenAnterior.Nombre, usuarioEditor,
+        UtilidadesConexiones.AgregarCambio(cambiosEnlace, origenAnterior.IdEquipo, origenAnterior.Nombre, usuarioEditor,
             "Medio", enlaceGuardado.Medio, formulario.Medio);
-        AgregarCambio(cambiosEnlace, origenAnterior.IdEquipo, origenAnterior.Nombre, usuarioEditor,
+        UtilidadesConexiones.AgregarCambio(cambiosEnlace, origenAnterior.IdEquipo, origenAnterior.Nombre, usuarioEditor,
             "Módulo origen", enlaceGuardado.ModuloOrigen, formulario.ModuloOrigen);
-        AgregarCambio(cambiosEnlace, origenAnterior.IdEquipo, origenAnterior.Nombre, usuarioEditor,
+        UtilidadesConexiones.AgregarCambio(cambiosEnlace, origenAnterior.IdEquipo, origenAnterior.Nombre, usuarioEditor,
             "Módulo destino", enlaceGuardado.ModuloDestino, formulario.ModuloDestino);
-        AgregarCambio(cambiosEnlace, origenAnterior.IdEquipo, origenAnterior.Nombre, usuarioEditor,
+        UtilidadesConexiones.AgregarCambio(cambiosEnlace, origenAnterior.IdEquipo, origenAnterior.Nombre, usuarioEditor,
             "Estado", enlaceGuardado.EstadoDatos, formulario.EstadoDatos);
-        AgregarCambio(cambiosEnlace, origenAnterior.IdEquipo, origenAnterior.Nombre, usuarioEditor,
+        UtilidadesConexiones.AgregarCambio(cambiosEnlace, origenAnterior.IdEquipo, origenAnterior.Nombre, usuarioEditor,
             "Fecha revisión", enlaceGuardado.FechaUltimaRevision?.ToString("yyyy-MM-dd"),
             formulario.FechaUltimaRevision?.ToString("yyyy-MM-dd"));
-        AgregarCambio(cambiosEnlace, origenAnterior.IdEquipo, origenAnterior.Nombre, usuarioEditor,
+        UtilidadesConexiones.AgregarCambio(cambiosEnlace, origenAnterior.IdEquipo, origenAnterior.Nombre, usuarioEditor,
             "Fuente", enlaceGuardado.Fuente, formulario.Fuente);
-        AgregarCambio(cambiosEnlace, origenAnterior.IdEquipo, origenAnterior.Nombre, usuarioEditor,
+        UtilidadesConexiones.AgregarCambio(cambiosEnlace, origenAnterior.IdEquipo, origenAnterior.Nombre, usuarioEditor,
             "Observaciones", enlaceGuardado.Observaciones, formulario.Observaciones);
 
         enlaceGuardado.IdentificadorPuertoOrigen = formulario.IdentificadorPuertoOrigen;
         enlaceGuardado.IdentificadorPuertoDestino = formulario.IdentificadorPuertoDestino;
         enlaceGuardado.Medio = formulario.Medio;
-        enlaceGuardado.ModuloOrigen = NormalizarTexto(formulario.ModuloOrigen);
-        enlaceGuardado.ModuloDestino = NormalizarTexto(formulario.ModuloDestino);
+        enlaceGuardado.ModuloOrigen = UtilidadesConexiones.NormalizarTexto(formulario.ModuloOrigen);
+        enlaceGuardado.ModuloDestino = UtilidadesConexiones.NormalizarTexto(formulario.ModuloDestino);
         enlaceGuardado.EstadoDatos = formulario.EstadoDatos;
         enlaceGuardado.FechaUltimaRevision = formulario.FechaUltimaRevision;
-        enlaceGuardado.Fuente = NormalizarTexto(formulario.Fuente);
-        enlaceGuardado.Observaciones = NormalizarTexto(formulario.Observaciones);
+        enlaceGuardado.Fuente = UtilidadesConexiones.NormalizarTexto(formulario.Fuente);
+        enlaceGuardado.Observaciones = UtilidadesConexiones.NormalizarTexto(formulario.Observaciones);
         await contextoInventario.EventosModificacion.AddRangeAsync(cambiosEnlace, cancelacion);
         await contextoInventario.SaveChangesAsync(cancelacion);
 
@@ -275,97 +275,4 @@ public class CorreccionesController : Controller
         return RedirectToAction("Index", "Conexiones");
     }
 
-    /// <summary>
-    /// Carga equipos existentes para el selector del puerto.
-    /// </summary>
-    /// <param name="identificadorSeleccionado">ID inicial; cambiarlo cambia la opción preseleccionada.</param>
-    /// <param name="cancelacion">Señal que cancela la consulta.</param>
-    /// <returns>Opciones ordenadas por nombre de equipo.</returns>
-    private async Task<List<SelectListItem>> ObtenerEquiposAsync(int identificadorSeleccionado, CancellationToken cancelacion)
-    {
-        // equiposDisponibles trae nombres e IP; cambiar el orden altera la presentación del selector.
-        var equiposDisponibles = await contextoInventario.Equipos.AsNoTracking()
-            .OrderBy(equipo => equipo.Nombre)
-            .Select(equipo => new { equipo.Identificador, equipo.Nombre, equipo.Modelo, equipo.IpAdministracion })
-            .ToListAsync(cancelacion);
-        // opcionesEquipos convierte los registros existentes en valores seguros del selector.
-        var opcionesEquipos = equiposDisponibles.Select(equipo => new SelectListItem
-        {
-            Value = equipo.Identificador.ToString(),
-            Text = string.Join(" · ", new[] { equipo.Nombre, equipo.Modelo, equipo.IpAdministracion }
-                .Where(texto => !string.IsNullOrWhiteSpace(texto))),
-            Selected = equipo.Identificador == identificadorSeleccionado
-        }).ToList();
-        return opcionesEquipos;
-    }
-
-    /// <summary>
-    /// Carga interfaces existentes con sus equipos para elegir extremos de enlace.
-    /// </summary>
-    /// <param name="identificadorSeleccionado">ID inicial; cambiarlo cambia la opción marcada.</param>
-    /// <param name="cancelacion">Señal que cancela la consulta.</param>
-    /// <returns>Opciones con equipo, IP y puerto.</returns>
-    private async Task<List<SelectListItem>> ObtenerInterfacesAsync(int identificadorSeleccionado, CancellationToken cancelacion)
-    {
-        // interfacesDisponibles combina equipos y puertos; cambiar sus columnas modifica las etiquetas disponibles.
-        var interfacesDisponibles = await (
-            from interfaz in contextoInventario.InterfacesEquipo.AsNoTracking()
-            join equipo in contextoInventario.Equipos.AsNoTracking()
-                on interfaz.IdentificadorEquipo equals equipo.Identificador
-            orderby equipo.Nombre, interfaz.EtiquetaPuerto
-            select new { interfaz.Identificador, interfaz.EtiquetaPuerto, equipo.Nombre, equipo.IpAdministracion }
-        ).ToListAsync(cancelacion);
-        // opcionesInterfaces usa IDs de SQLite y una etiqueta legible.
-        var opcionesInterfaces = interfacesDisponibles.Select(interfaz => new SelectListItem
-        {
-            Value = interfaz.Identificador.ToString(),
-            Text = string.Join(" · ", new[] { interfaz.Nombre, interfaz.IpAdministracion, interfaz.EtiquetaPuerto }
-                .Where(texto => !string.IsNullOrWhiteSpace(texto))),
-            Selected = interfaz.Identificador == identificadorSeleccionado
-        }).ToList();
-        return opcionesInterfaces;
-    }
-
-    /// <summary>
-    /// Registra una diferencia real de una ficha documental.
-    /// </summary>
-    /// <param name="eventos">Lista de cambios; cambiarla modifica dónde se agrega la fila.</param>
-    /// <param name="equipo">Equipo al que se asocia la auditoría; cambiarlo atribuye el cambio a otro equipo.</param>
-    /// <param name="usuario">Cuenta editora; cambiarla modifica la atribución histórica.</param>
-    /// <param name="campo">Nombre del campo; cambiarlo modifica la descripción de la fila.</param>
-    /// <param name="anterior">Valor anterior; cambiarlo modifica el dato previo del historial.</param>
-    /// <param name="nuevo">Valor nuevo; cambiarlo modifica el dato posterior del historial.</param>
-    private static void AgregarCambio(List<EventoModificacion> eventos, EquipoRed equipo, string usuario,
-        string campo, string? anterior, string? nuevo)
-    {
-        // anteriorNormalizado y nuevoNormalizado quitan espacios externos y convierten vacío a nulo.
-        var anteriorNormalizado = NormalizarTexto(anterior);
-        var nuevoNormalizado = NormalizarTexto(nuevo);
-        if (string.Equals(anteriorNormalizado, nuevoNormalizado, StringComparison.Ordinal)) return;
-
-        // eventoCambio describe una propiedad; cambiar sus valores altera la línea del historial.
-        var eventoCambio = new EventoModificacion
-        {
-            IdentificadorEquipo = equipo.Identificador,
-            NombreEquipo = equipo.Nombre,
-            NombreUsuario = usuario,
-            FechaUtc = DateTime.UtcNow,
-            Campo = campo,
-            ValorAnterior = anteriorNormalizado,
-            ValorNuevo = nuevoNormalizado
-        };
-        eventos.Add(eventoCambio);
-    }
-
-    /// <summary>
-    /// Normaliza textos opcionales antes de guardarlos.
-    /// </summary>
-    /// <param name="texto">Valor recibido; cambiarlo modifica el texto almacenado.</param>
-    /// <returns>Texto recortado o nulo si queda vacío.</returns>
-    private static string? NormalizarTexto(string? texto)
-    {
-        // textoRecortado elimina espacios externos; cambiar esta regla altera el valor guardado.
-        var textoRecortado = texto?.Trim();
-        return string.IsNullOrEmpty(textoRecortado) ? null : textoRecortado;
-    }
 }

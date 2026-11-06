@@ -1,0 +1,12 @@
+@model ProyectoConexionRed.Web.Models.EnlaceFormularioViewModel
+<div class="rejilla-formulario">
+    <div><label asp-for="IdentificadorPuertoOrigen">Puerto de origen</label><select asp-for="IdentificadorPuertoOrigen" asp-items="Model.InterfacesDisponibles"><option value="0">Selecciona un puerto</option></select><span asp-validation-for="IdentificadorPuertoOrigen" class="mensaje-error"></span></div>
+    <div><label asp-for="IdentificadorPuertoDestino">Puerto de destino</label><select asp-for="IdentificadorPuertoDestino" asp-items="Model.InterfacesDisponibles"><option value="0">Selecciona un puerto</option></select><span asp-validation-for="IdentificadorPuertoDestino" class="mensaje-error"></span></div>
+    <div><label asp-for="Medio">Medio físico</label><select asp-for="Medio"><option>No confirmado</option><option>Cobre RJ45</option><option>Fibra</option><option>DAC</option><option>Otro</option></select><span asp-validation-for="Medio" class="mensaje-error"></span></div>
+    <div><label asp-for="EstadoDatos">Estado del enlace</label><select asp-for="EstadoDatos"><option>Pendiente de revisión</option><option>Confirmado</option><option>A verificar</option><option>Desactualizado</option></select><span asp-validation-for="EstadoDatos" class="mensaje-error"></span></div>
+    <div><label asp-for="ModuloOrigen">Módulo/SFP de origen</label><input asp-for="ModuloOrigen" placeholder="Dejar vacío si no se confirmó" /><span asp-validation-for="ModuloOrigen" class="mensaje-error"></span></div>
+    <div><label asp-for="ModuloDestino">Módulo/SFP de destino</label><input asp-for="ModuloDestino" placeholder="Dejar vacío si no se confirmó" /><span asp-validation-for="ModuloDestino" class="mensaje-error"></span></div>
+    <div><label asp-for="FechaUltimaRevision">Fecha de última revisión</label><input asp-for="FechaUltimaRevision" type="date" /><span asp-validation-for="FechaUltimaRevision" class="mensaje-error"></span></div>
+    <div><label asp-for="Fuente">Fuente documental</label><input asp-for="Fuente" placeholder="Ej.: DIAGRAMA RED V3.0, página y tabla" /><span asp-validation-for="Fuente" class="mensaje-error"></span></div>
+    <div class="campo-ancho"><label asp-for="Observaciones">Observaciones</label><textarea asp-for="Observaciones" rows="3"></textarea><span asp-validation-for="Observaciones" class="mensaje-error"></span></div>
+</div>
