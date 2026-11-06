@@ -513,3 +513,6 @@ tbody tr:hover { background: #f7fafb; }
     .entrada-suave-conexion { animation: none; }
     .boton-paginacion { transition: none; }
 }
+
+/* Acciones de corrección asociadas a las fichas de puerto y enlace. */
+.acciones-ficha-conexion { display: flex; justify-content: flex-end; margin-top: 10px; }

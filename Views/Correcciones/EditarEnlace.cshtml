@@ -1,0 +1,25 @@
+@model ProyectoConexionRed.Web.Models.EditarEnlaceViewModel
+@{
+    ViewData["Title"] = "Corregir enlace";
+}
+<section class="panel-formulario panel-formulario-ancho">
+    <p class="sobrelinea">DATOS PARA LA TOPOLOGÍA</p>
+    <h1>Corregir enlace físico</h1>
+    <p>Revisa los extremos, el medio y la fuente. La corrección es documental y no actúa sobre la red.</p>
+    <form asp-action="EditarEnlace" method="post">
+        <input asp-for="Identificador" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="mensaje-error"></div>
+        <div class="rejilla-formulario">
+            <div><label asp-for="IdentificadorPuertoOrigen">Puerto de origen</label><select asp-for="IdentificadorPuertoOrigen" asp-items="Model.InterfacesDisponibles"><option value="0">Selecciona un puerto</option></select><span asp-validation-for="IdentificadorPuertoOrigen" class="mensaje-error"></span></div>
+            <div><label asp-for="IdentificadorPuertoDestino">Puerto de destino</label><select asp-for="IdentificadorPuertoDestino" asp-items="Model.InterfacesDisponibles"><option value="0">Selecciona un puerto</option></select><span asp-validation-for="IdentificadorPuertoDestino" class="mensaje-error"></span></div>
+            <div><label asp-for="Medio">Medio físico</label><select asp-for="Medio"><option>No confirmado</option><option>Cobre RJ45</option><option>Fibra</option><option>DAC</option><option>Otro</option></select><span asp-validation-for="Medio" class="mensaje-error"></span></div>
+            <div><label asp-for="EstadoDatos">Estado</label><select asp-for="EstadoDatos"><option>Pendiente de revisión</option><option>Confirmado</option><option>A verificar</option><option>Desactualizado</option></select><span asp-validation-for="EstadoDatos" class="mensaje-error"></span></div>
+            <div><label asp-for="ModuloOrigen">Módulo/SFP de origen</label><input asp-for="ModuloOrigen" /><span asp-validation-for="ModuloOrigen" class="mensaje-error"></span></div>
+            <div><label asp-for="ModuloDestino">Módulo/SFP de destino</label><input asp-for="ModuloDestino" /><span asp-validation-for="ModuloDestino" class="mensaje-error"></span></div>
+            <div><label asp-for="FechaUltimaRevision">Última revisión</label><input asp-for="FechaUltimaRevision" type="date" /><span asp-validation-for="FechaUltimaRevision" class="mensaje-error"></span></div>
+            <div><label asp-for="Fuente">Fuente documental</label><input asp-for="Fuente" /><span asp-validation-for="Fuente" class="mensaje-error"></span></div>
+            <div class="campo-ancho"><label asp-for="Observaciones">Observaciones</label><textarea asp-for="Observaciones" rows="3"></textarea><span asp-validation-for="Observaciones" class="mensaje-error"></span></div>
+        </div>
+        <div class="acciones-formulario"><button class="boton" type="submit">Guardar corrección</button><a class="boton boton-secundario" asp-controller="Conexiones" asp-action="Index">Cancelar</a></div>
+    </form>
+</section>

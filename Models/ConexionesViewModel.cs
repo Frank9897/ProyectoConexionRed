@@ -234,3 +234,119 @@ public class NuevoEnlaceViewModel
     /// </summary>
     public List<SelectListItem> InterfacesDisponibles { get; set; } = [];
 }
+
+
+
+/// <summary>
+/// Campos permitidos al corregir una interfaz existente.
+/// </summary>
+public class EditarInterfazViewModel
+{
+    /// <summary>
+    /// ID de la interfaz; cambiarlo selecciona otro puerto.
+    /// </summary>
+    [Range(1, int.MaxValue)]
+    public int Identificador { get; set; }
+    /// <summary>
+    /// Equipo propietario; cambiarlo reasigna la interfaz documental.
+    /// </summary>
+    [Range(1, int.MaxValue, ErrorMessage = "Selecciona un equipo.")]
+    public int IdentificadorEquipo { get; set; }
+    /// <summary>
+    /// Etiqueta; cambiarla modifica el identificador visible del puerto.
+    /// </summary>
+    [Required(ErrorMessage = "La etiqueta del puerto es obligatoria.")]
+    [StringLength(100)]
+    public string EtiquetaPuerto { get; set; } = string.Empty;
+    /// <summary>
+    /// Tipo; cambiarlo altera la clasificación física documentada.
+    /// </summary>
+    [Required]
+    [StringLength(100)]
+    [RegularExpression(@"^(No confirmado|RJ45|SFP|SFP\+|QSFP|Otro)$", ErrorMessage = "Selecciona un tipo válido.")]
+    public string TipoInterfaz { get; set; } = "No confirmado";
+    /// <summary>
+    /// Vigencia; cambiarla altera el estado de revisión presentado.
+    /// </summary>
+    [Required]
+    [StringLength(60)]
+    [RegularExpression(@"^(Pendiente de revisión|Confirmado|A verificar|Desactualizado)$", ErrorMessage = "Selecciona un estado válido.")]
+    public string EstadoDatos { get; set; } = "Pendiente de revisión";
+    /// <summary>
+    /// Fecha real; cambiarla debe corresponder a una revisión hecha.
+    /// </summary>
+    public DateOnly? FechaUltimaRevision { get; set; }
+    /// <summary>
+    /// Notas; cambiarlas actualiza las observaciones del puerto.
+    /// </summary>
+    [StringLength(1000)]
+    public string? Observaciones { get; set; }
+    /// <summary>
+    /// Equipos disponibles; cambiar la lista modifica las opciones del formulario.
+    /// </summary>
+    public List<SelectListItem> EquiposDisponibles { get; set; } = [];
+}
+
+/// <summary>
+/// Campos permitidos al corregir un enlace existente.
+/// </summary>
+public class EditarEnlaceViewModel
+{
+    /// <summary>
+    /// ID de enlace; cambiarlo selecciona otra conexión.
+    /// </summary>
+    [Range(1, int.MaxValue)]
+    public int Identificador { get; set; }
+    /// <summary>
+    /// Puerto origen; cambiarlo selecciona otro extremo inicial.
+    /// </summary>
+    [Range(1, int.MaxValue, ErrorMessage = "Selecciona el puerto de origen.")]
+    public int IdentificadorPuertoOrigen { get; set; }
+    /// <summary>
+    /// Puerto destino; cambiarlo selecciona otro extremo final.
+    /// </summary>
+    [Range(1, int.MaxValue, ErrorMessage = "Selecciona el puerto de destino.")]
+    public int IdentificadorPuertoDestino { get; set; }
+    /// <summary>
+    /// Medio; cambiarlo modifica la clasificación del enlace.
+    /// </summary>
+    [Required]
+    [StringLength(60)]
+    [RegularExpression(@"^(No confirmado|Cobre RJ45|Fibra|DAC|Otro)$", ErrorMessage = "Selecciona un medio válido.")]
+    public string Medio { get; set; } = "No confirmado";
+    /// <summary>
+    /// Módulo origen; cambiarlo actualiza el dato documentado si fue verificado.
+    /// </summary>
+    [StringLength(120)]
+    public string? ModuloOrigen { get; set; }
+    /// <summary>
+    /// Módulo destino; cambiarlo actualiza el dato documentado si fue verificado.
+    /// </summary>
+    [StringLength(120)]
+    public string? ModuloDestino { get; set; }
+    /// <summary>
+    /// Estado; cambiarlo altera la etiqueta de revisión.
+    /// </summary>
+    [Required]
+    [StringLength(60)]
+    [RegularExpression(@"^(Pendiente de revisión|Confirmado|A verificar|Desactualizado)$", ErrorMessage = "Selecciona un estado válido.")]
+    public string EstadoDatos { get; set; } = "Pendiente de revisión";
+    /// <summary>
+    /// Fecha real; cambiarla debe corresponder a una revisión efectuada.
+    /// </summary>
+    public DateOnly? FechaUltimaRevision { get; set; }
+    /// <summary>
+    /// Fuente; cambiarla modifica el respaldo documental.
+    /// </summary>
+    [StringLength(300)]
+    public string? Fuente { get; set; }
+    /// <summary>
+    /// Observaciones; cambiarlas actualiza las notas del enlace.
+    /// </summary>
+    [StringLength(1000)]
+    public string? Observaciones { get; set; }
+    /// <summary>
+    /// Interfaces elegibles; cambiar la lista altera las opciones del formulario.
+    /// </summary>
+    public List<SelectListItem> InterfacesDisponibles { get; set; } = [];
+}

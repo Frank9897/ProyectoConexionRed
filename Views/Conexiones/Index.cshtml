@@ -57,6 +57,9 @@
                         <div><dt>Última revisión</dt><dd>@(interfaz.FechaUltimaRevision?.ToString("dd/MM/yyyy") ?? "Sin fecha confirmada")</dd></div>
                         <div class="dato-ficha-ancho"><dt>Observaciones</dt><dd>@(interfaz.Observaciones ?? "Sin observaciones")</dd></div>
                     </dl>
+                    <div class="acciones-ficha-conexion">
+                        <a class="boton boton-secundario" asp-controller="Correcciones" asp-action="EditarInterfaz" asp-route-identificador="@interfaz.Identificador">Corregir puerto</a>
+                    </div>
                 </article>
             }
         </div>
@@ -101,6 +104,9 @@
                         <div><dt>Última revisión</dt><dd>@(enlace.FechaUltimaRevision?.ToString("dd/MM/yyyy") ?? "Sin fecha confirmada")</dd></div>
                         <div class="dato-ficha-ancho"><dt>Fuente</dt><dd>@(enlace.Fuente ?? "Sin fuente indicada")</dd></div>
                     </dl>
+                    <div class="acciones-ficha-conexion">
+                        <a class="boton boton-secundario" asp-controller="Correcciones" asp-action="EditarEnlace" asp-route-identificador="@enlace.Identificador">Corregir enlace</a>
+                    </div>
                 </article>
             }
         </div>
