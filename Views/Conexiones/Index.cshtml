@@ -1,0 +1,102 @@
+@model ProyectoConexionRed.Web.Models.ConexionesIndexViewModel
+@{
+    ViewData["Title"] = "Puertos y enlaces";
+}
+
+<section class="encabezado-pagina encabezado-conexiones">
+    <div>
+        <p class="sobrelinea">DATOS PARA LA TOPOLOGÍA</p>
+        <h1>Puertos y enlaces</h1>
+        <p>Registra interfaces y relaciones físicas con su estado y fuente. Estos formularios solo guardan documentación.</p>
+    </div>
+</section>
+
+@* mensajeConexiones contiene el aviso de la última operación; cambiarlo altera el texto temporal mostrado. *@
+@if (TempData["Mensaje"] is string mensajeConexiones)
+{
+    <p class="mensaje-exito" role="status">@mensajeConexiones</p>
+}
+
+<section class="panel panel-conexiones">
+    <div class="cabecera-listado-conexiones">
+        <div>
+            <p class="sobrelinea">INFRAESTRUCTURA DOCUMENTADA</p>
+            <h2>Interfaces registradas <span class="contador-enlaces">@Model.Interfaces.Count</span></h2>
+        </div>
+        <a class="boton" asp-action="CrearInterfaz">Registrar puerto</a>
+    </div>
+
+    @if (Model.Interfaces.Count == 0)
+    {
+        <div class="estado-vacio-conexiones">
+            <strong>Todavía no hay puertos documentados</strong>
+            <p>Agrega los puertos de los equipos antes de registrar conexiones entre ellos.</p>
+        </div>
+    }
+    else
+    {
+        <div class="tabla-contenedor">
+            <table>
+                <thead>
+                    <tr><th>Equipo</th><th>Puerto</th><th>Tipo</th><th>Estado del dato</th><th>Última revisión</th><th>Observaciones</th></tr>
+                </thead>
+                <tbody>
+                @* interfaz recorre los puertos listados; cambiar Model.Interfaces cambia las filas presentadas. *@
+                @foreach (var interfaz in Model.Interfaces)
+                {
+                    <tr>
+                        <td><strong>@interfaz.Equipo</strong><br /><small>@(interfaz.IpAdministracion ?? "IP no indicada")</small></td>
+                        <td>@interfaz.Puerto</td>
+                        <td>@interfaz.Tipo</td>
+                        <td><span class="etiqueta-estado-conexion">@interfaz.EstadoDatos</span></td>
+                        <td>@(interfaz.FechaUltimaRevision?.ToString("dd/MM/yyyy") ?? "Sin fecha confirmada")</td>
+                        <td>@(interfaz.Observaciones ?? "—")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+<section class="panel panel-conexiones">
+    <div class="cabecera-listado-conexiones">
+        <div>
+            <p class="sobrelinea">RELACIONES ENTRE PUERTOS</p>
+            <h2>Enlaces físicos <span class="contador-enlaces">@Model.Enlaces.Count</span></h2>
+        </div>
+        <a class="boton" asp-action="CrearEnlace">Registrar enlace</a>
+    </div>
+
+    @if (Model.Enlaces.Count == 0)
+    {
+        <div class="estado-vacio-conexiones">
+            <strong>Todavía no hay enlaces registrados</strong>
+            <p>Los enlaces confirmados aquí alimentarán la vista de topología más adelante.</p>
+        </div>
+    }
+    else
+    {
+        <div class="tabla-contenedor">
+            <table>
+                <thead>
+                    <tr><th>Origen</th><th>Destino</th><th>Medio</th><th>Estado</th><th>Fecha</th><th>Fuente</th></tr>
+                </thead>
+                <tbody>
+                @* enlace recorre las conexiones listadas; cambiar Model.Enlaces cambia las filas presentadas. *@
+                @foreach (var enlace in Model.Enlaces)
+                {
+                    <tr>
+                        <td><strong>@enlace.EquipoOrigen</strong><br /><small>@enlace.PuertoOrigen</small></td>
+                        <td><strong>@enlace.EquipoDestino</strong><br /><small>@enlace.PuertoDestino</small></td>
+                        <td>@enlace.Medio</td>
+                        <td><span class="etiqueta-estado-conexion">@enlace.EstadoDatos</span></td>
+                        <td>@(enlace.FechaUltimaRevision?.ToString("dd/MM/yyyy") ?? "Sin fecha confirmada")</td>
+                        <td>@(enlace.Fuente ?? "—")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

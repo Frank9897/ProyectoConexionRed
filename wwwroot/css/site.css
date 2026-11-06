@@ -431,3 +431,22 @@ tbody tr:hover { background: #f7fafb; }
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
+
+/* Gestión documental de interfaces y enlaces físicos. */
+.encabezado-conexiones { margin-bottom: 22px; }
+.panel-conexiones { margin: 18px 0; padding: 22px; }
+.cabecera-listado-conexiones { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
+.cabecera-listado-conexiones h2 { margin: 0; font-size: 1.3rem; }
+.estado-vacio-conexiones { border: 1px dashed #cbd8df; border-radius: 14px; padding: 24px; background: #f8fbfc; color: #425a67; }
+.estado-vacio-conexiones p { margin: 6px 0 0; color: #607583; }
+.etiqueta-estado-conexion { display: inline-block; border-radius: 999px; background: #edf4f7; color: #355565; padding: 5px 9px; font-size: .8rem; font-weight: 700; }
+.panel-formulario select, .panel-formulario textarea { width: 100%; border: 1px solid #cbd7de; border-radius: 9px; padding: 10px 12px; background: #fff; color: #183341; font: inherit; }
+.panel-formulario textarea { resize: vertical; }
+.acciones-formulario { display: flex; align-items: center; gap: 10px; margin-top: 20px; }
+.campo-ancho { grid-column: 1 / -1; }
+@media (max-width: 650px) {
+    .panel-conexiones { padding: 15px; }
+    .cabecera-listado-conexiones { align-items: flex-start; flex-direction: column; }
+    .acciones-formulario { align-items: stretch; flex-direction: column; }
+    .campo-ancho { grid-column: auto; }
+}
