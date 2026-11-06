@@ -44,7 +44,7 @@ Al iniciar, se crea `proyecto-conexion-red.db` y se agregan los registros inicia
 
 ## Revisión y refactorización de código
 
-Se centralizaron la normalización de textos opcionales, el registro de cambios por campo y la carga de opciones de equipos e interfaces en `Services/UtilidadesConexiones.cs`. Los formularios de alta y edición de puertos y enlaces comparten modelos base con sus validaciones y fragmentos Razor. Esto reduce reglas duplicadas y mantiene un único formato para esos datos. La revisión también corrigió una incompatibilidad en los argumentos usados para auditar cambios de enlaces.
+Se centralizaron la normalización de textos opcionales, el registro de cambios por campo y la carga de opciones de equipos e interfaces en `Services/UtilidadesConexiones.cs`. Los formularios de alta y edición de puertos y enlaces comparten modelos base con sus validaciones y fragmentos Razor; las reglas CSS de esa sección quedaron consolidadas en un solo bloque. Esto reduce reglas duplicadas y mantiene un único formato para esos datos. La revisión también corrigió una incompatibilidad en los argumentos usados para auditar cambios de enlaces.
 
 La revisión se hizo sobre la rama publicada. En esta sesión no hay un checkout local de .NET para ejecutar la compilación; el resultado requiere esa comprobación en el entorno del proyecto.
 

@@ -25,7 +25,7 @@ Crear una aplicación web en español para inventariar, consultar y visualizar l
 
 ### Refactor de código aplicado
 - `Services/UtilidadesConexiones.cs` concentra normalización de texto, auditoría por campo y consultas para selectores de equipos/interfaces.
-- Los formularios de puertos y enlaces comparten modelos base con las validaciones y parciales Razor de alta y corrección.
+- Los formularios de puertos y enlaces comparten modelos base con las validaciones y parciales Razor de alta y corrección; sus reglas CSS están consolidadas en un solo bloque.
 - Se corrigieron las llamadas de auditoría para pasar identificador y nombre del equipo de forma uniforme.
 - La revisión fue estática sobre la rama GitHub; no se confirmó compilación .NET en esta sesión.
 
