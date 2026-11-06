@@ -7,7 +7,7 @@
     <div>
         <p class="sobrelinea">EQUIPOS DOCUMENTADOS</p>
         <h1>Inventario</h1>
-        <p>Consulta equipos e IP confirmados. El estado administrativo no representa disponibilidad de red.</p>
+        <p>Consulta los equipos, direcciones IP y su ubicación documental.</p>
     </div>
 </section>
 @* mensajeInventario informa el resultado de la edición; cambiarlo modifica el aviso de confirmación. *@
@@ -16,7 +16,7 @@
     <p class="mensaje-exito" role="status">@mensajeInventario</p>
 }
 <form method="get" class="busqueda">
-    <label for="busqueda">Buscar por equipo, IP, área, usuario, piso, modelo o fabricante</label>
+    <label for="busqueda">Buscar por equipo, IP, área, piso, tipo, modelo o fabricante</label>
     <div class="fila-busqueda">
         <input id="busqueda" name="busqueda" value="@Context.Request.Query["busqueda"]" placeholder="Ej.: 192.168.1.44 o Agrimensura" />
         <button class="boton" type="submit">Buscar</button>
@@ -25,8 +25,19 @@
 </form>
 
 <div class="resumen">
-    <span>@Model.Count equipos mostrados</span>
-    <span>Datos de equipos e IP confirmados por el usuario</span>
+    <span data-total-registros-inventario="@Model.Count">@Model.Count equipos coinciden con la búsqueda</span>
+    <span>Datos documentales del inventario</span>
+</div>
+<div class="controles-paginacion controles-inventario" data-paginacion-inventario>
+    <label for="limite-registros-inventario">Mostrar</label>
+    <select id="limite-registros-inventario" data-limite-registros>
+        <option value="10">10</option>
+        <option value="30">30</option>
+        <option value="todos">Todos</option>
+    </select>
+    <span data-resumen-pagina-inventario aria-live="polite"></span>
+    <button class="boton-paginacion" type="button" data-pagina-anterior aria-label="Página anterior">←</button>
+    <button class="boton-paginacion" type="button" data-pagina-siguiente aria-label="Página siguiente">→</button>
 </div>
 
 <div class="acciones-tabla">
@@ -45,12 +56,10 @@
             <tr>
                 <th>Equipo</th>
                 <th>Fabricante / modelo</th>
+                <th>Tipo</th>
                 <th>Área / piso</th>
-                <th>Usuario asignado</th>
-                <th>Fuente</th>
                 <th>IP documentada</th>
                 <th>Rol</th>
-                <th>Acceso administrativo</th>
                 <th>Vigencia</th>
                 <th class="columna-accion">Acción</th>
             </tr>
@@ -59,7 +68,7 @@
         @* equipo representa cada fila del modelo; cambiar el modelo de entrada cambia los equipos visibles. *@
         @foreach (var equipo in Model)
         {
-            <tr>
+            <tr data-registro-inventario>
                 <td>
                     <strong>@equipo.Nombre</strong>
                     @if (!string.IsNullOrWhiteSpace(equipo.Observaciones))
@@ -68,12 +77,10 @@
                     }
                 </td>
                 <td>@(equipo.Fabricante ?? "—")<br /><small>@(equipo.Modelo ?? "Modelo no indicado")</small></td>
+                <td>@equipo.TipoDispositivo</td>
                 <td>@(equipo.Area ?? "—")<br /><small>@(equipo.Piso ?? "Piso no indicado")</small></td>
-                <td>@(equipo.UsuarioAsignado ?? "Sin asignación documentada")</td>
-                <td>@(equipo.FuenteDatos ?? "No indicada")</td>
                 <td><span class="ip">@(equipo.IpAdministracion ?? "No indicada")</span></td>
                 <td>@equipo.RolEnArea</td>
-                <td><span class="estado @(equipo.EstadoAdministrativo.StartsWith("Inaccesible") ? "estado-alerta" : "")">@equipo.EstadoAdministrativo</span></td>
                 <td><span class="estado @(equipo.EstadoDatos.Equals("Vigente", StringComparison.OrdinalIgnoreCase) ? "estado-vigente" : "estado-alerta")">@equipo.EstadoDatos</span></td>
                 <td class="columna-accion"><a class="boton boton-secundario" asp-controller="Inventario" asp-action="Editar" asp-route-id="@equipo.Identificador">Editar</a></td>
             </tr>
@@ -81,3 +88,5 @@
         </tbody>
     </table>
 </div>
+
+<script src="~/js/paginacion-inventario.js" asp-append-version="true"></script>

@@ -119,6 +119,8 @@ td small { margin-top: 3px; color: var(--secundario); line-height: 1.35; }
     .encabezado-pagina p { margin-bottom: 10px; }
     .resumen { margin: 8px 0; }
     .tabla-contenedor { overflow: visible; border: 0; }
+    .controles-inventario { display: none !important; }
+    tbody tr[data-registro-inventario][hidden] { display: table-row !important; }
     table { font-size: 8pt; }
     th, td { padding: 6px; border: 1px solid #bbb; }
     th { background: #eee !important; color: #111; }
@@ -140,14 +142,27 @@ td small { margin-top: 3px; color: var(--secundario); line-height: 1.35; }
 .panel-formulario h1 { margin: 4px 0; font-size: 2rem; }
 .panel-formulario > p:not(.sobrelinea) { color: var(--secundario); }
 .panel-formulario label { display: block; margin: 14px 0 6px; font-weight: 700; font-size: .9rem; }
-.panel-formulario input, .panel-formulario textarea {
+.panel-formulario input, .panel-formulario select, .panel-formulario textarea {
     width: 100%;
     padding: 11px 12px;
     border: 1px solid var(--borde);
     border-radius: 8px;
     font: inherit;
+    color: var(--tinta);
+    background-color: #fff;
 }
-.panel-formulario input:focus, .panel-formulario textarea:focus {
+.panel-formulario select {
+    min-height: 44px;
+    padding-right: 36px;
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, #526575 50%), linear-gradient(135deg, #526575 50%, transparent 50%);
+    background-position: calc(100% - 17px) 19px, calc(100% - 12px) 19px;
+    background-size: 5px 5px;
+    background-repeat: no-repeat;
+    cursor: pointer;
+}
+.panel-formulario textarea { resize: vertical; }
+.panel-formulario input:focus, .panel-formulario select:focus, .panel-formulario textarea:focus {
     outline: 3px solid #126b8325;
     border-color: var(--azul);
 }
@@ -496,8 +511,10 @@ tbody tr:hover { background: #f7fafb; }
 }
 
 /* Acciones de corrección asociadas a las fichas de puerto y enlace. */
-.panel-formulario select, .panel-formulario textarea { width: 100%; border: 1px solid #cbd7de; border-radius: 9px; padding: 10px 12px; background: #fff; color: #183341; font: inherit; }
-.panel-formulario textarea { resize: vertical; }
 .acciones-formulario { display: flex; align-items: center; gap: 10px; margin-top: 20px; }
 .campo-ancho { grid-column: 1 / -1; }
 .acciones-ficha-conexion { display: flex; justify-content: flex-end; margin-top: 10px; }
+
+/* Control compacto para elegir cuántos equipos se ven por página. */
+.controles-inventario { justify-content: flex-start; margin: 12px 0; }
+.controles-inventario [data-resumen-pagina-inventario] { min-width: 110px; }

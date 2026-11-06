@@ -17,12 +17,9 @@
             <div><label asp-for="DireccionMac">Dirección MAC</label><input asp-for="DireccionMac" /><span asp-validation-for="DireccionMac" class="mensaje-error"></span></div>
             <div><label asp-for="Area">Área</label><input asp-for="Area" /><span asp-validation-for="Area" class="mensaje-error"></span></div>
             <div><label asp-for="Piso">Piso o sector físico</label><input asp-for="Piso" /><span asp-validation-for="Piso" class="mensaje-error"></span></div>
-            <div><label asp-for="UsuarioAsignado">Usuario asignado</label><input asp-for="UsuarioAsignado" /><span asp-validation-for="UsuarioAsignado" class="mensaje-error"></span></div>
-            <div><label asp-for="FuenteDatos">Fuente documental</label><input asp-for="FuenteDatos" /><span asp-validation-for="FuenteDatos" class="mensaje-error"></span></div>
-            <div><label asp-for="RolEnArea">Rol en el área</label><input asp-for="RolEnArea" /><span asp-validation-for="RolEnArea" class="mensaje-error"></span></div>
-            <div><label asp-for="TipoDispositivo">Tipo de dispositivo</label><input asp-for="TipoDispositivo" /><span asp-validation-for="TipoDispositivo" class="mensaje-error"></span></div>
-            <div><label asp-for="EstadoAdministrativo">Acceso administrativo</label><input asp-for="EstadoAdministrativo" /><span asp-validation-for="EstadoAdministrativo" class="mensaje-error"></span></div>
-            <div><label asp-for="EstadoDatos">Vigencia de los datos</label><input asp-for="EstadoDatos" /><span asp-validation-for="EstadoDatos" class="mensaje-error"></span></div>
+            <div><label asp-for="RolEnArea">Rol en el área</label><select asp-for="RolEnArea"><option>No indicado</option><option>Principal</option><option>No principal</option><option>Secundario</option><option>Reserva</option><option>No aplica</option></select><span asp-validation-for="RolEnArea" class="mensaje-error"></span></div>
+            <div><label asp-for="TipoDispositivo">Tipo de dispositivo</label><select asp-for="TipoDispositivo"><option>Puesto de usuario</option><option>Switch</option><option>Equipo de red</option><option>Router</option><option>Firewall</option><option>UPS</option><option>Servidor</option><option>No especificado</option><option>Otro</option></select><span asp-validation-for="TipoDispositivo" class="mensaje-error"></span></div>
+            <div><label asp-for="EstadoDatos">Vigencia de los datos</label><select asp-for="EstadoDatos"><option>Vigente</option><option>Pendiente de validación</option><option>A verificar</option><option>Desactualizado</option><option>Confirmado</option></select><span asp-validation-for="EstadoDatos" class="mensaje-error"></span></div>
             <div><label asp-for="FechaUltimaRevision">Última revisión real</label><input asp-for="FechaUltimaRevision" type="date" /><span asp-validation-for="FechaUltimaRevision" class="mensaje-error"></span></div>
             <div class="campo-completo"><label asp-for="Observaciones">Observaciones</label><textarea asp-for="Observaciones" rows="4"></textarea><span asp-validation-for="Observaciones" class="mensaje-error"></span></div>
         </div>

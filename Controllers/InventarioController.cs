@@ -51,7 +51,6 @@ public class InventarioController : Controller
         {
             RolEnArea = "No indicado",
             TipoDispositivo = "Puesto de usuario",
-            EstadoAdministrativo = "No aplica",
             EstadoDatos = "Pendiente de validación"
         };
 
@@ -85,11 +84,8 @@ public class InventarioController : Controller
             DireccionMac = UtilidadesConexiones.NormalizarTexto(formulario.DireccionMac),
             Area = UtilidadesConexiones.NormalizarTexto(formulario.Area),
             Piso = UtilidadesConexiones.NormalizarTexto(formulario.Piso),
-            UsuarioAsignado = UtilidadesConexiones.NormalizarTexto(formulario.UsuarioAsignado),
-            FuenteDatos = UtilidadesConexiones.NormalizarTexto(formulario.FuenteDatos),
             RolEnArea = formulario.RolEnArea.Trim(),
             TipoDispositivo = formulario.TipoDispositivo.Trim(),
-            EstadoAdministrativo = formulario.EstadoAdministrativo.Trim(),
             EstadoDatos = formulario.EstadoDatos.Trim(),
             FechaUltimaRevision = formulario.FechaUltimaRevision,
             Observaciones = UtilidadesConexiones.NormalizarTexto(formulario.Observaciones)
@@ -109,11 +105,8 @@ public class InventarioController : Controller
         UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "MAC", null, equipoNuevo.DireccionMac);
         UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Área", null, equipoNuevo.Area);
         UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Piso o sector", null, equipoNuevo.Piso);
-        UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Usuario asignado", null, equipoNuevo.UsuarioAsignado);
-        UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Fuente documental", null, equipoNuevo.FuenteDatos);
         UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Rol en el área", null, equipoNuevo.RolEnArea);
         UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Tipo de dispositivo", null, equipoNuevo.TipoDispositivo);
-        UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Acceso administrativo", null, equipoNuevo.EstadoAdministrativo);
         UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Vigencia de datos", null, equipoNuevo.EstadoDatos);
         UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Observaciones", null, equipoNuevo.Observaciones);
 
@@ -139,7 +132,7 @@ public class InventarioController : Controller
 
         // contenidoCsv acumula el archivo; cambiar encabezados o separadores modifica cómo se interpreta en hojas de cálculo.
         var contenidoCsv = new StringBuilder();
-        contenidoCsv.AppendLine("Equipo;Fabricante;Modelo;Área;Piso;Usuario asignado;Fuente;IP documentada;MAC;Rol;Tipo;Acceso administrativo;Vigencia");
+        contenidoCsv.AppendLine("Equipo;Fabricante;Modelo;Área;Piso;IP documentada;MAC;Rol;Tipo;Vigencia");
 
         // equipo recorre cada fila exportada; cambiar los registros de entrada cambia las filas del archivo.
         foreach (var equipo in equiposExportados)
@@ -152,13 +145,10 @@ public class InventarioController : Controller
                 equipo.Modelo,
                 equipo.Area,
                 equipo.Piso,
-                equipo.UsuarioAsignado,
-                equipo.FuenteDatos,
                 equipo.IpAdministracion,
                 equipo.DireccionMac,
                 equipo.RolEnArea,
                 equipo.TipoDispositivo,
-                equipo.EstadoAdministrativo,
                 equipo.EstadoDatos
             };
 
@@ -214,11 +204,8 @@ public class InventarioController : Controller
             DireccionMac = equipoEncontrado.DireccionMac,
             Area = equipoEncontrado.Area,
             Piso = equipoEncontrado.Piso,
-            UsuarioAsignado = equipoEncontrado.UsuarioAsignado,
-            FuenteDatos = equipoEncontrado.FuenteDatos,
             RolEnArea = equipoEncontrado.RolEnArea,
             TipoDispositivo = equipoEncontrado.TipoDispositivo,
-            EstadoAdministrativo = equipoEncontrado.EstadoAdministrativo,
             EstadoDatos = equipoEncontrado.EstadoDatos,
             FechaUltimaRevision = equipoEncontrado.FechaUltimaRevision,
             Observaciones = equipoEncontrado.Observaciones
@@ -264,11 +251,8 @@ public class InventarioController : Controller
         UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Dirección MAC", equipoGuardado.DireccionMac, formulario.DireccionMac);
         UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Área", equipoGuardado.Area, formulario.Area);
         UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Piso o sector", equipoGuardado.Piso, formulario.Piso);
-        UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Usuario asignado", equipoGuardado.UsuarioAsignado, formulario.UsuarioAsignado);
-        UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Fuente documental", equipoGuardado.FuenteDatos, formulario.FuenteDatos);
         UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Rol en el área", equipoGuardado.RolEnArea, formulario.RolEnArea);
         UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Tipo de dispositivo", equipoGuardado.TipoDispositivo, formulario.TipoDispositivo);
-        UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Acceso administrativo", equipoGuardado.EstadoAdministrativo, formulario.EstadoAdministrativo);
         UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Vigencia de datos", equipoGuardado.EstadoDatos, formulario.EstadoDatos);
         UtilidadesConexiones.AgregarCambio(
             cambiosRegistrados,
@@ -287,11 +271,8 @@ public class InventarioController : Controller
         equipoGuardado.DireccionMac = UtilidadesConexiones.NormalizarTexto(formulario.DireccionMac);
         equipoGuardado.Area = UtilidadesConexiones.NormalizarTexto(formulario.Area);
         equipoGuardado.Piso = UtilidadesConexiones.NormalizarTexto(formulario.Piso);
-        equipoGuardado.UsuarioAsignado = UtilidadesConexiones.NormalizarTexto(formulario.UsuarioAsignado);
-        equipoGuardado.FuenteDatos = UtilidadesConexiones.NormalizarTexto(formulario.FuenteDatos);
         equipoGuardado.RolEnArea = formulario.RolEnArea.Trim();
         equipoGuardado.TipoDispositivo = formulario.TipoDispositivo.Trim();
-        equipoGuardado.EstadoAdministrativo = formulario.EstadoAdministrativo.Trim();
         equipoGuardado.EstadoDatos = formulario.EstadoDatos.Trim();
         equipoGuardado.FechaUltimaRevision = formulario.FechaUltimaRevision;
         equipoGuardado.Observaciones = UtilidadesConexiones.NormalizarTexto(formulario.Observaciones);
@@ -383,8 +364,6 @@ public class InventarioController : Controller
             || Contiene(equipo.IpAdministracion, busqueda)
             || Contiene(equipo.Area, busqueda)
             || Contiene(equipo.Piso, busqueda)
-            || Contiene(equipo.UsuarioAsignado, busqueda)
-            || Contiene(equipo.FuenteDatos, busqueda)
             || Contiene(equipo.TipoDispositivo, busqueda)
             || Contiene(equipo.Modelo, busqueda)
             || Contiene(equipo.Fabricante, busqueda);

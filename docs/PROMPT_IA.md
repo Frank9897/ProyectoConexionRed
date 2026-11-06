@@ -6,8 +6,8 @@ Crear una aplicación web en español para inventariar, consultar y visualizar l
 ## Estado actual del proyecto
 - Repositorio público por decisión explícita del usuario.
 - Hay un MVP inicial en C# / ASP.NET Core MVC con EF Core y SQLite.
-- Incluye página de inicio, inventario con búsqueda por nombre/IP/área/usuario/piso/modelo/fabricante, CSV de resultados filtrados, impresión de la tabla y 25 registros semilla.
-- El inventario admite alta y edición de equipos/puestos, usuario asignado, piso y fuente documental. Las fichas nuevas y sus valores iniciales quedan auditados. Las propiedades nuevas se agregan con una actualización de esquema compatible con bases SQLite anteriores. Todavía no se cargaron masivamente los puestos del PDF.
+- Incluye página de inicio, inventario con búsqueda por nombre/IP/área/piso/tipo/modelo/fabricante, CSV de resultados filtrados, impresión de la tabla y 25 registros semilla.
+- El inventario permite alta/edición de datos técnicos y ubicación. Por ahora no debe capturar ni editar usuario asignado, fuente documental ni acceso administrativo; los valores previos de esos campos se preservan al editar. Tipo de equipo, rol y vigencia se seleccionan de listas. La tabla muestra el tipo de dispositivo y ofrece 10, 30 o todos los registros, con botones de página anterior/siguiente; al imprimir se muestran todos los resultados filtrados. Las fichas nuevas y sus valores iniciales quedan auditados. Las propiedades nuevas se agregan con una actualización de esquema compatible con bases SQLite anteriores. Todavía no se cargaron masivamente los puestos del PDF.
 - MODO TEMPORAL SIN LOGIN: las páginas principales se abren sin autenticación para pruebas. En Program.cs se comenta el filtro MVC global; las acciones GET/POST de ingreso y salida quedan marcadas [NonAction]; _Layout muestra navegación pública sin cuenta ni enlace a Usuarios. UsuariosController conserva el requisito de rol Administrador, por lo que la gestión de cuentas no está disponible durante este modo abierto. Para restaurar el login al final del proyecto, descomentar el filtro global, quitar [NonAction] de CuentaController y reponer la navegación autenticada.
 - Las claves se almacenan como hash. La tabla de accesos registra ingresos correctos/fallidos y cierres con hora UTC; no guarda contraseñas.
 - La tabla de accesos tiene una página para consultar los últimos cien eventos.
@@ -37,7 +37,7 @@ Crear una aplicación web en español para inventariar, consultar y visualizar l
 - Algunos SFP no están confirmados. Registrar como pendientes de actualización/sin confirmar; la fecha de última revisión debe ser real y conocida. Nunca inventar fecha, modelo, tipo o medio.
 - Dos switches son inaccesibles administrativamente por falta de credenciales: área Régimen y switch principal de Mesa de Entradas. Esa condición no significa que estén apagados ni que haya una falla de red.
 - «Principal» y «No principal» expresan jerarquía de switches dentro de un área. El switch «No principal» de Mesa de Entradas enlaza al principal del área y conecta tres equipos de usuario a través de él.
-- Separar estado de acceso administrativo, vigencia de datos y disponibilidad física.
+- Mantener separados en el modelo los datos de acceso administrativo, vigencia y disponibilidad física; el acceso administrativo no se edita ni muestra en el inventario durante esta etapa.
 - El usuario autoriza publicar documentación e IPs del inventario en el repositorio público. No publicar contraseñas, claves, tokens ni otros secretos de autenticación.
 
 ## Datos iniciales cargados

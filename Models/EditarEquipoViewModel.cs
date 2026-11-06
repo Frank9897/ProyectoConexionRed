@@ -56,18 +56,6 @@ public class EditarEquipoViewModel
     public string? Piso { get; set; }
 
     /// <summary>
-    /// Usuario asignado según la fuente; cambiarlo modifica el vínculo registrado, no una cuenta de acceso.
-    /// </summary>
-    [StringLength(160)]
-    public string? UsuarioAsignado { get; set; }
-
-    /// <summary>
-    /// Fuente documental; cambiarla modifica la referencia utilizada para revisar el dato.
-    /// </summary>
-    [StringLength(240)]
-    public string? FuenteDatos { get; set; }
-
-    /// <summary>
     /// Función jerárquica documentada; cambiarla modifica la clasificación principal o secundaria.
     /// </summary>
     [Required]
@@ -82,17 +70,11 @@ public class EditarEquipoViewModel
     public string TipoDispositivo { get; set; } = "No especificado";
 
     /// <summary>
-    /// Estado de acceso administrativo; cambiarlo no mide conectividad ni disponibilidad física.
-    /// </summary>
-    [Required]
-    [StringLength(100)]
-    public string EstadoAdministrativo { get; set; } = "Sin información";
-
-    /// <summary>
     /// Estado de vigencia documental; cambiarlo ajusta el aviso que presenta la aplicación.
     /// </summary>
     [Required]
     [StringLength(60)]
+    [RegularExpression("^(Vigente|Pendiente de validación|A verificar|Desactualizado|Confirmado)$", ErrorMessage = "Selecciona una vigencia válida.")]
     public string EstadoDatos { get; set; } = "Vigente";
 
     /// <summary>
