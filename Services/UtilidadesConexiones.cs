@@ -86,6 +86,8 @@ public static class UtilidadesConexiones
         var interfacesDisponibles = await (
             from interfaz in contextoInventario.InterfacesEquipo.AsNoTracking()
             join equipo in contextoInventario.Equipos.AsNoTracking() on interfaz.IdentificadorEquipo equals equipo.Identificador
+            where !contextoInventario.ConexionesDocumentadas.Any(relacion =>
+                relacion.IdentificadorPuertoLocal == interfaz.Identificador)
             orderby equipo.Nombre, interfaz.EtiquetaPuerto
             select new { interfaz.Identificador, interfaz.EtiquetaPuerto, equipo.Nombre, equipo.IpAdministracion, interfaz.EstadoDatos })
             .ToListAsync(cancelacion);
