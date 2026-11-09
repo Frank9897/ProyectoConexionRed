@@ -48,7 +48,9 @@ public class ConexionesController : Controller
                 EstadoUso = contextoInventario.EnlacesFisicos.Any(enlace =>
                     enlace.IdentificadorPuertoOrigen == interfaz.Identificador
                     || enlace.IdentificadorPuertoDestino == interfaz.Identificador)
-                    ? "Ocupado · enlace registrado"
+                    || contextoInventario.ConexionesDocumentadas.Any(relacion =>
+                        relacion.IdentificadorPuertoLocal == interfaz.Identificador)
+                    ? "Ocupado · relación documentada"
                     : interfaz.EstadoUso == "Libre confirmado" && interfaz.EstadoDatos != "Confirmado"
                         ? "Desconocido · vigencia sin confirmar" : interfaz.EstadoUso,
                 FechaUltimaRevision = interfaz.FechaUltimaRevision,
@@ -80,11 +82,36 @@ public class ConexionesController : Controller
                 Fuente = enlace.Fuente
             }).ToListAsync(cancelacion);
 
-        // modeloConexiones contiene los dos listados; cambiar sus colecciones modifica el contenido de la página.
+        // relacionesParciales muestra el destino opcional y la procedencia sin inventar el otro extremo.
+        var relacionesParciales = await (
+            from relacion in contextoInventario.ConexionesDocumentadas.AsNoTracking()
+            join puertoLocal in contextoInventario.InterfacesEquipo.AsNoTracking()
+                on relacion.IdentificadorPuertoLocal equals puertoLocal.Identificador
+            join equipoLocal in contextoInventario.Equipos.AsNoTracking()
+                on puertoLocal.IdentificadorEquipo equals equipoLocal.Identificador
+            orderby equipoLocal.Nombre, puertoLocal.EtiquetaPuerto
+            select new RelacionParcialListadoViewModel
+            {
+                Identificador = relacion.Identificador,
+                EquipoLocal = equipoLocal.Nombre,
+                PuertoLocal = puertoLocal.EtiquetaPuerto,
+                EquipoRemoto = relacion.EquipoRemoto,
+                IpRemota = relacion.IpRemota,
+                PuertoRemoto = relacion.PuertoRemoto,
+                Medio = relacion.Medio,
+                EstadoDatos = relacion.EstadoDatos,
+                FuentePagina = relacion.FuentePagina,
+                FuenteLibro = relacion.FuenteLibro,
+                FuenteFila = relacion.FuenteFila,
+                Observaciones = relacion.Observaciones
+            }).ToListAsync(cancelacion);
+
+        // modeloConexiones agrupa los listados completos y parciales sin confundirlos entre sí.
         var modeloConexiones = new ConexionesIndexViewModel
         {
             Interfaces = interfacesRegistradas,
-            Enlaces = enlacesRegistrados
+            Enlaces = enlacesRegistrados,
+            RelacionesParciales = relacionesParciales
         };
 
         return View(modeloConexiones);
@@ -188,6 +215,151 @@ public class ConexionesController : Controller
     }
 
     /// <summary>
+    /// Presenta un formulario para registrar una conexión cuyo extremo remoto puede faltar.
+    /// </summary>
+    /// <param name="cancelacion">Señal de cancelación; activarla detiene la consulta de puertos disponibles.</param>
+    /// <returns>Formulario con interfaces locales libres en la documentación.</returns>
+    [HttpGet]
+    public async Task<IActionResult> CrearRelacion(CancellationToken cancelacion)
+    {
+        // interfacesLibres excluye relaciones existentes para evitar doble asignación documental.
+        var interfacesLibres = await (
+            from interfaz in contextoInventario.InterfacesEquipo.AsNoTracking()
+            join equipo in contextoInventario.Equipos.AsNoTracking()
+                on interfaz.IdentificadorEquipo equals equipo.Identificador
+            where !contextoInventario.EnlacesFisicos.Any(enlace =>
+                    enlace.IdentificadorPuertoOrigen == interfaz.Identificador
+                    || enlace.IdentificadorPuertoDestino == interfaz.Identificador)
+                && !contextoInventario.ConexionesDocumentadas.Any(relacion =>
+                    relacion.IdentificadorPuertoLocal == interfaz.Identificador)
+            orderby equipo.Nombre, interfaz.EtiquetaPuerto
+            select new { interfaz.Identificador, interfaz.EtiquetaPuerto, equipo.Nombre, equipo.IpAdministracion })
+            .ToListAsync(cancelacion);
+        // formularioRelacion conserva los campos de origen y las opciones libres para el selector.
+        var formularioRelacion = new NuevaConexionDocumentadaViewModel
+        {
+            InterfacesDisponibles = interfacesLibres.Select(interfaz => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+            {
+                Value = interfaz.Identificador.ToString(),
+                Text = string.Join(" · ", new[] { interfaz.Nombre, interfaz.IpAdministracion, interfaz.EtiquetaPuerto }
+                    .Where(texto => !string.IsNullOrWhiteSpace(texto)))
+            }).ToList()
+        };
+        return View(formularioRelacion);
+    }
+
+    /// <summary>
+    /// Guarda la conexión observada y su procedencia, sin inventar el puerto remoto.
+    /// </summary>
+    /// <param name="formulario">Puerto local, destino opcional y fuente; cambiarlos modifica el registro documental.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla detiene las validaciones y escrituras.</param>
+    /// <returns>Redirección a puertos y enlaces o formulario con errores.</returns>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CrearRelacion(
+        [Bind("IdentificadorPuertoLocal,EquipoRemoto,IpRemota,PuertoRemoto,Medio,EstadoDatos,FechaUltimaRevision,FuentePagina,FuenteLibro,FuenteFila,Observaciones")]
+        NuevaConexionDocumentadaViewModel formulario,
+        CancellationToken cancelacion)
+    {
+        // interfazLocal verifica que el extremo conocido exista antes de persistir la relación.
+        var interfazLocal = await (
+            from interfaz in contextoInventario.InterfacesEquipo.AsNoTracking()
+            join equipo in contextoInventario.Equipos.AsNoTracking()
+                on interfaz.IdentificadorEquipo equals equipo.Identificador
+            where interfaz.Identificador == formulario.IdentificadorPuertoLocal
+            select new { interfaz.Identificador, interfaz.IdentificadorEquipo, interfaz.EtiquetaPuerto, interfaz.EstadoUso, equipo.Nombre })
+            .SingleOrDefaultAsync(cancelacion);
+        if (interfazLocal is null)
+            ModelState.AddModelError(nameof(formulario.IdentificadorPuertoLocal), "Selecciona un puerto local existente.");
+
+        // puertoYaVinculado evita superponer la observación con un enlace o registro parcial existente.
+        var puertoYaVinculado = await contextoInventario.EnlacesFisicos.AnyAsync(enlace =>
+            enlace.IdentificadorPuertoOrigen == formulario.IdentificadorPuertoLocal
+            || enlace.IdentificadorPuertoDestino == formulario.IdentificadorPuertoLocal, cancelacion)
+            || await contextoInventario.ConexionesDocumentadas.AnyAsync(relacion =>
+                relacion.IdentificadorPuertoLocal == formulario.IdentificadorPuertoLocal, cancelacion);
+        if (puertoYaVinculado)
+            ModelState.AddModelError(nameof(formulario.IdentificadorPuertoLocal), "Ese puerto ya tiene una relación registrada.");
+
+        if (interfazLocal?.EstadoUso == "Libre confirmado")
+            ModelState.AddModelError(nameof(formulario.IdentificadorPuertoLocal),
+                "El puerto figura libre confirmado. Corrige primero su estado antes de registrar una relación.");
+
+        if (!ModelState.IsValid)
+        {
+            formulario.InterfacesDisponibles = await ObtenerPuertosSinRelacionAsync(cancelacion);
+            return View(formulario);
+        }
+
+        // nuevaRelacion mantiene opcionales los datos del extremo remoto y registra la fuente por separado.
+        var nuevaRelacion = new ConexionDocumentada
+        {
+            IdentificadorPuertoLocal = formulario.IdentificadorPuertoLocal,
+            EquipoRemoto = UtilidadesConexiones.NormalizarTexto(formulario.EquipoRemoto),
+            IpRemota = UtilidadesConexiones.NormalizarTexto(formulario.IpRemota),
+            PuertoRemoto = UtilidadesConexiones.NormalizarTexto(formulario.PuertoRemoto),
+            Medio = formulario.Medio,
+            EstadoDatos = formulario.EstadoDatos,
+            FechaUltimaRevision = formulario.FechaUltimaRevision,
+            FuentePagina = formulario.FuentePagina.Trim(),
+            FuenteLibro = UtilidadesConexiones.NormalizarTexto(formulario.FuenteLibro),
+            FuenteFila = UtilidadesConexiones.NormalizarTexto(formulario.FuenteFila),
+            Observaciones = UtilidadesConexiones.NormalizarTexto(formulario.Observaciones)
+        };
+        // descripcionDestino deja explícito si el equipo remoto no aparece en la fuente.
+        var descripcionDestino = string.Join(" · ", new[]
+        {
+            nuevaRelacion.EquipoRemoto, nuevaRelacion.IpRemota, nuevaRelacion.PuertoRemoto
+        }.Where(texto => !string.IsNullOrWhiteSpace(texto)));
+        if (string.IsNullOrWhiteSpace(descripcionDestino))
+            descripcionDestino = "Extremo remoto no identificado";
+        // eventoCambio atribuye el alta al equipo local y conserva la referencia que se cargó.
+        var eventoCambio = new EventoModificacion
+        {
+            IdentificadorEquipo = interfazLocal!.IdentificadorEquipo,
+            NombreEquipo = interfazLocal.Nombre,
+            NombreUsuario = ObtenerUsuarioEditor(),
+            FechaUtc = DateTime.UtcNow,
+            Campo = "Conexión documental agregada",
+            ValorNuevo = $"{interfazLocal.Nombre} · {interfazLocal.EtiquetaPuerto} → {descripcionDestino} · {nuevaRelacion.EstadoDatos} · {nuevaRelacion.FuentePagina}"
+        };
+        await contextoInventario.ConexionesDocumentadas.AddAsync(nuevaRelacion, cancelacion);
+        await contextoInventario.EventosModificacion.AddAsync(eventoCambio, cancelacion);
+        await contextoInventario.SaveChangesAsync(cancelacion);
+        TempData["Mensaje"] = "Se registró la relación documental con su fuente. El extremo remoto sigue opcional.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    /// <summary>
+    /// Consulta puertos que aún no tienen enlace completo ni relación de un extremo.
+    /// </summary>
+    /// <param name="cancelacion">Señal de cancelación; activarla detiene la consulta.</param>
+    /// <returns>Opciones de interfaces sin relación asignada.</returns>
+    private async Task<List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>> ObtenerPuertosSinRelacionAsync(
+        CancellationToken cancelacion)
+    {
+        // puertosLibres contiene solo interfaces que pueden asignarse sin duplicar otro vínculo.
+        var puertosLibres = await (
+            from interfaz in contextoInventario.InterfacesEquipo.AsNoTracking()
+            join equipo in contextoInventario.Equipos.AsNoTracking()
+                on interfaz.IdentificadorEquipo equals equipo.Identificador
+            where !contextoInventario.EnlacesFisicos.Any(enlace =>
+                    enlace.IdentificadorPuertoOrigen == interfaz.Identificador
+                    || enlace.IdentificadorPuertoDestino == interfaz.Identificador)
+                && !contextoInventario.ConexionesDocumentadas.Any(relacion =>
+                    relacion.IdentificadorPuertoLocal == interfaz.Identificador)
+            orderby equipo.Nombre, interfaz.EtiquetaPuerto
+            select new { interfaz.Identificador, interfaz.EtiquetaPuerto, equipo.Nombre, equipo.IpAdministracion })
+            .ToListAsync(cancelacion);
+        return puertosLibres.Select(interfaz => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+        {
+            Value = interfaz.Identificador.ToString(),
+            Text = string.Join(" · ", new[] { interfaz.Nombre, interfaz.IpAdministracion, interfaz.EtiquetaPuerto }
+                .Where(texto => !string.IsNullOrWhiteSpace(texto)))
+        }).ToList();
+    }
+
+    /// <summary>
     /// Presenta el formulario para relacionar dos puertos ya registrados.
     /// </summary>
     /// <param name="cancelacion">Señal de cancelación; activarla detiene la carga de interfaces.</param>
@@ -245,6 +417,13 @@ public class ConexionesController : Controller
         {
             ModelState.AddModelError(string.Empty, "Uno de los puertos ya participa en un enlace. Revisa el registro existente.");
         }
+
+        // puertoConRelacionParcial evita usar un puerto reservado por una observación de un solo lado.
+        var puertoConRelacionParcial = await contextoInventario.ConexionesDocumentadas.AnyAsync(relacion =>
+            relacion.IdentificadorPuertoLocal == formulario.IdentificadorPuertoOrigen
+            || relacion.IdentificadorPuertoLocal == formulario.IdentificadorPuertoDestino, cancelacion);
+        if (puertoConRelacionParcial)
+            ModelState.AddModelError(string.Empty, "Uno de los puertos ya tiene una relación documental parcial.");
 
         if (!ModelState.IsValid)
         {
