@@ -232,6 +232,7 @@ public class ConexionesController : Controller
                     || enlace.IdentificadorPuertoDestino == interfaz.Identificador)
                 && !contextoInventario.ConexionesDocumentadas.Any(relacion =>
                     relacion.IdentificadorPuertoLocal == interfaz.Identificador)
+                && interfaz.EstadoUso != "Libre confirmado"
             orderby equipo.Nombre, interfaz.EtiquetaPuerto
             select new { interfaz.Identificador, interfaz.EtiquetaPuerto, equipo.Nombre, equipo.IpAdministracion })
             .ToListAsync(cancelacion);
@@ -348,6 +349,7 @@ public class ConexionesController : Controller
                     || enlace.IdentificadorPuertoDestino == interfaz.Identificador)
                 && !contextoInventario.ConexionesDocumentadas.Any(relacion =>
                     relacion.IdentificadorPuertoLocal == interfaz.Identificador)
+                && interfaz.EstadoUso != "Libre confirmado"
             orderby equipo.Nombre, interfaz.EtiquetaPuerto
             select new { interfaz.Identificador, interfaz.EtiquetaPuerto, equipo.Nombre, equipo.IpAdministracion })
             .ToListAsync(cancelacion);
