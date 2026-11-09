@@ -1,0 +1,57 @@
+@model ProyectoConexionRed.Web.Models.DispositivoTopologiaViewModel
+
+@{
+    // gruposPuertos separa conectores de distinto formato; cambiar el agrupamiento altera las filas del frontal.
+    var gruposPuertos = Model.Puertos.GroupBy(puerto => puerto.Tipo).ToList();
+}
+
+<div class="panel-frontal-switch">
+    <div class="frontal-switch-scroll">
+        <div class="frontal-switch-panel" role="group" aria-label="Frontal de puertos de @Model.Nombre">
+            <div class="frontal-switch-cabecera">
+                <strong>@Model.Nombre</strong>
+                <small>@(Model.Modelo ?? "Modelo no indicado") · @Model.EstadoCapacidad</small>
+            </div>
+            @if (gruposPuertos.Count == 0)
+            {
+                <p class="capacidad-sin-puertos">Capacidad no documentada; no se generan bocas sin una cantidad conocida.</p>
+            }
+            @foreach (var grupoPuertos in gruposPuertos)
+            {
+                // puertosDelGrupo conserva el orden de etiquetas al ubicar números impares y pares.
+                var puertosDelGrupo = grupoPuertos.ToList();
+                <section class="grupo-frontal-puertos">
+                    <span class="etiqueta-grupo-frontal">@grupoPuertos.Key</span>
+                    <div class="filas-frontal-puertos">
+                        <div class="fila-frontal-puertos">
+                            @for (var indiceGrupo = 0; indiceGrupo < puertosDelGrupo.Count; indiceGrupo += 2)
+                            {
+                                // puertoSuperior representa la boca impar en el orden registrado.
+                                var puertoSuperior = puertosDelGrupo[indiceGrupo];
+                                <span class="puerto-frontal @puertoSuperior.ClaseVisual @(puertoSuperior.Tipo.Contains("SFP", StringComparison.OrdinalIgnoreCase) ? "puerto-sfp" : "")"
+                                      data-identificador-interfaz="@puertoSuperior.IdentificadorInterfaz"
+                                      title="@puertoSuperior.Etiqueta · @puertoSuperior.EstadoVisual · @puertoSuperior.Tipo@(puertoSuperior.DestinoConexion is null ? "" : " · " + puertoSuperior.DestinoConexion)">
+                                    <span class="numero-puerto-frontal">@puertoSuperior.Etiqueta</span>
+                                    <span class="solo-lectores-pantalla">@puertoSuperior.EstadoVisual@(puertoSuperior.DestinoConexion is null ? "" : " · " + puertoSuperior.DestinoConexion)</span>
+                                </span>
+                            }
+                        </div>
+                        <div class="fila-frontal-puertos">
+                            @for (var indiceGrupo = 1; indiceGrupo < puertosDelGrupo.Count; indiceGrupo += 2)
+                            {
+                                // puertoInferior representa la boca par en el orden registrado.
+                                var puertoInferior = puertosDelGrupo[indiceGrupo];
+                                <span class="puerto-frontal @puertoInferior.ClaseVisual @(puertoInferior.Tipo.Contains("SFP", StringComparison.OrdinalIgnoreCase) ? "puerto-sfp" : "")"
+                                      data-identificador-interfaz="@puertoInferior.IdentificadorInterfaz"
+                                      title="@puertoInferior.Etiqueta · @puertoInferior.EstadoVisual · @puertoInferior.Tipo@(puertoInferior.DestinoConexion is null ? "" : " · " + puertoInferior.DestinoConexion)">
+                                    <span class="numero-puerto-frontal">@puertoInferior.Etiqueta</span>
+                                    <span class="solo-lectores-pantalla">@puertoInferior.EstadoVisual@(puertoInferior.DestinoConexion is null ? "" : " · " + puertoInferior.DestinoConexion)</span>
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </section>
+            }
+        </div>
+    </div>
+</div>
