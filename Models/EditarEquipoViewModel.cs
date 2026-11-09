@@ -70,6 +70,42 @@ public class EditarEquipoViewModel
     public string TipoDispositivo { get; set; } = "No especificado";
 
     /// <summary>
+    /// Puertos RJ45 del switch; nulo mantiene la capacidad sin confirmar y un valor la define manualmente.
+    /// </summary>
+    [Range(0, 512)]
+    public int? CantidadPuertosRj45 { get; set; }
+
+    /// <summary>
+    /// Puertos SFP del switch; nulo mantiene la capacidad sin confirmar.
+    /// </summary>
+    [Range(0, 512)]
+    public int? CantidadPuertosSfp { get; set; }
+
+    /// <summary>
+    /// Puertos SFP+ del switch; nulo mantiene la capacidad sin confirmar.
+    /// </summary>
+    [Range(0, 512)]
+    public int? CantidadPuertosSfpPlus { get; set; }
+
+    /// <summary>
+    /// Puertos QSFP del switch; nulo mantiene la capacidad sin confirmar.
+    /// </summary>
+    [Range(0, 512)]
+    public int? CantidadPuertosQsfp { get; set; }
+
+    /// <summary>
+    /// Puertos QSFP+ del switch; nulo mantiene la capacidad sin confirmar.
+    /// </summary>
+    [Range(0, 512)]
+    public int? CantidadPuertosQsfpPlus { get; set; }
+
+    /// <summary>
+    /// Puertos QSFP28 del switch; nulo mantiene la capacidad sin confirmar.
+    /// </summary>
+    [Range(0, 512)]
+    public int? CantidadPuertosQsfp28 { get; set; }
+
+    /// <summary>
     /// Estado de vigencia documental; cambiarlo ajusta el aviso que presenta la aplicación.
     /// </summary>
     [Required]

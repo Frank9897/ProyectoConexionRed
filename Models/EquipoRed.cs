@@ -66,6 +66,36 @@ public class EquipoRed
     public string TipoDispositivo { get; set; } = "No especificado";
 
     /// <summary>
+    /// Cantidad de puertos RJ45; nulo significa que la capacidad todavía no fue documentada.
+    /// </summary>
+    public int? CantidadPuertosRj45 { get; set; }
+
+    /// <summary>
+    /// Cantidad de puertos SFP; nulo significa que la capacidad todavía no fue documentada.
+    /// </summary>
+    public int? CantidadPuertosSfp { get; set; }
+
+    /// <summary>
+    /// Cantidad de puertos SFP+; nulo significa que la capacidad todavía no fue documentada.
+    /// </summary>
+    public int? CantidadPuertosSfpPlus { get; set; }
+
+    /// <summary>
+    /// Cantidad de puertos QSFP; nulo significa que la capacidad todavía no fue documentada.
+    /// </summary>
+    public int? CantidadPuertosQsfp { get; set; }
+
+    /// <summary>
+    /// Cantidad de puertos QSFP+; nulo significa que la capacidad todavía no fue documentada.
+    /// </summary>
+    public int? CantidadPuertosQsfpPlus { get; set; }
+
+    /// <summary>
+    /// Cantidad de puertos QSFP28; nulo significa que la capacidad todavía no fue documentada.
+    /// </summary>
+    public int? CantidadPuertosQsfp28 { get; set; }
+
+    /// <summary>
     /// Estado de acceso administrativo; cambiarlo describe la documentación de acceso y no el estado físico de la red.
     /// </summary>
     public string EstadoAdministrativo { get; set; } = "Sin información";

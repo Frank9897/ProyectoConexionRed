@@ -31,6 +31,11 @@ public class InterfazEquipo
     public string EstadoDatos { get; set; } = "Pendiente de revisión";
 
     /// <summary>
+    /// Uso confirmado del puerto cuando no tiene enlace; cambiarlo cambia si puede mostrarse como libre.
+    /// </summary>
+    public string EstadoUso { get; set; } = "Desconocido";
+
+    /// <summary>
     /// Fecha real de revisión; cambiarla actualiza el dato temporal y debe corresponder a una verificación hecha.
     /// </summary>
     public DateOnly? FechaUltimaRevision { get; set; }

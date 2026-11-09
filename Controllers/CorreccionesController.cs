@@ -45,6 +45,7 @@ public class CorreccionesController : Controller
             EtiquetaPuerto = interfazGuardada.EtiquetaPuerto,
             TipoInterfaz = interfazGuardada.TipoInterfaz,
             EstadoDatos = interfazGuardada.EstadoDatos,
+            EstadoUso = interfazGuardada.EstadoUso,
             FechaUltimaRevision = interfazGuardada.FechaUltimaRevision,
             Observaciones = interfazGuardada.Observaciones,
             EquiposDisponibles = await UtilidadesConexiones.ObtenerEquiposDisponiblesAsync(contextoInventario, interfazGuardada.IdentificadorEquipo, cancelacion)
@@ -61,7 +62,7 @@ public class CorreccionesController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditarInterfaz(
-        [Bind("Identificador,IdentificadorEquipo,EtiquetaPuerto,TipoInterfaz,EstadoDatos,FechaUltimaRevision,Observaciones")]
+        [Bind("Identificador,IdentificadorEquipo,EtiquetaPuerto,TipoInterfaz,EstadoDatos,EstadoUso,FechaUltimaRevision,Observaciones")]
         EditarInterfazViewModel formulario,
         CancellationToken cancelacion)
     {
@@ -72,6 +73,9 @@ public class CorreccionesController : Controller
 
         // etiquetaNueva recorta espacios externos; cambiar esta regla altera la etiqueta guardada.
         var etiquetaNueva = formulario.EtiquetaPuerto.Trim();
+
+        if (formulario.EstadoUso == "Libre confirmado" && formulario.EstadoDatos != "Confirmado")
+            ModelState.AddModelError(nameof(formulario.EstadoUso), "Confirma también la vigencia del puerto antes de marcarlo libre.");
 
         if (!await contextoInventario.Equipos.AnyAsync(
                 equipo => equipo.Identificador == formulario.IdentificadorEquipo, cancelacion))
@@ -107,6 +111,7 @@ public class CorreccionesController : Controller
         UtilidadesConexiones.AgregarCambio(cambiosInterfaz, equipoAnterior.Identificador, equipoAnterior.Nombre, usuarioEditor, "Etiqueta del puerto", interfazGuardada.EtiquetaPuerto, etiquetaNueva);
         UtilidadesConexiones.AgregarCambio(cambiosInterfaz, equipoAnterior.Identificador, equipoAnterior.Nombre, usuarioEditor, "Tipo de interfaz", interfazGuardada.TipoInterfaz, formulario.TipoInterfaz);
         UtilidadesConexiones.AgregarCambio(cambiosInterfaz, equipoAnterior.Identificador, equipoAnterior.Nombre, usuarioEditor, "Estado de interfaz", interfazGuardada.EstadoDatos, formulario.EstadoDatos);
+        UtilidadesConexiones.AgregarCambio(cambiosInterfaz, equipoAnterior.Identificador, equipoAnterior.Nombre, usuarioEditor, "Uso del puerto", interfazGuardada.EstadoUso, formulario.EstadoUso);
         UtilidadesConexiones.AgregarCambio(cambiosInterfaz, equipoAnterior.Identificador, equipoAnterior.Nombre, usuarioEditor, "Fecha de revisión",
             interfazGuardada.FechaUltimaRevision?.ToString("yyyy-MM-dd"),
             formulario.FechaUltimaRevision?.ToString("yyyy-MM-dd"));
@@ -116,6 +121,7 @@ public class CorreccionesController : Controller
         interfazGuardada.EtiquetaPuerto = etiquetaNueva;
         interfazGuardada.TipoInterfaz = formulario.TipoInterfaz;
         interfazGuardada.EstadoDatos = formulario.EstadoDatos;
+        interfazGuardada.EstadoUso = formulario.EstadoUso;
         interfazGuardada.FechaUltimaRevision = formulario.FechaUltimaRevision;
         interfazGuardada.Observaciones = UtilidadesConexiones.NormalizarTexto(formulario.Observaciones);
         await contextoInventario.EventosModificacion.AddRangeAsync(cambiosInterfaz, cancelacion);

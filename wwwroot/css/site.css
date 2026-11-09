@@ -518,3 +518,61 @@ tbody tr:hover { background: #f7fafb; }
 /* Control compacto para elegir cuántos equipos se ven por página. */
 .controles-inventario { justify-content: flex-start; margin: 12px 0; }
 .controles-inventario [data-resumen-pagina-inventario] { min-width: 110px; }
+
+
+/* Clases para el mapa SVG de topología y sus estados documentales. */
+.panel-grafico-topologia { margin-top: 22px; overflow: hidden; }
+.grupo-capacidades-switch[hidden] { display: none !important; }
+.grupo-capacidades-switch { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 18px; padding: 12px; border: 1px solid #dce6ea; border-radius: 10px; background: #f7fafb; }
+.nota-capacidades-switch { grid-column: 1 / -1; margin: 0 0 4px; color: #607583; font-size: .83rem; }
+.filtros-topologia-grafica { display: grid; grid-template-columns: minmax(220px, 1.5fr) minmax(190px, 1fr); gap: 14px; margin: 18px 0 12px; }
+.filtros-topologia-grafica label { display: grid; gap: 6px; color: var(--secundario); font-size: .88rem; font-weight: 650; }
+.filtros-topologia-grafica input, .filtros-topologia-grafica select { width: 100%; min-height: 42px; border: 1px solid var(--borde); border-radius: 9px; padding: 9px 12px; background: #fff; color: var(--tinta); font: inherit; }
+.leyenda-topologia { display: flex; flex-wrap: wrap; gap: 10px 18px; color: var(--secundario); font-size: .82rem; }
+.leyenda-topologia span { display: inline-flex; align-items: center; gap: 7px; }
+.muestra-puerto { width: 17px; height: 12px; border: 1px solid #fff8; border-radius: 3px; }
+.puerto-ocupado, .muestra-puerto.puerto-ocupado { background: #248a58; color: #fff; }
+.puerto-libre, .muestra-puerto.puerto-libre { background: #46525b; color: #fff; }
+.puerto-desconocido, .muestra-puerto.puerto-desconocido { background: #1b4b3e; color: #e4f0eb; }
+.muestra-enlace { width: 26px; height: 0; border-top: 3px solid #248a58; }
+.muestra-enlace.enlace-pendiente { border-top: 3px dashed #b3762c; }
+.aclaracion-topologia-grafica { margin: 10px 0 15px; padding: 10px 12px; border-left: 3px solid #b9cbd3; background: #f6f9fa; color: #526575; font-size: .86rem; }
+.mapa-topologia { position: relative; min-height: 90px; overflow: hidden; border: 1px solid #e0e8ec; border-radius: 12px; padding: 18px; background: radial-gradient(circle at 1px 1px, #dce5e9 1px, transparent 0) 0 0 / 22px 22px, #f8fbfc; }
+.capa-svg-enlaces { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; overflow: visible; }
+.rejilla-dispositivos-topologia { position: relative; z-index: 2; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr)); align-items: start; gap: 22px; }
+.nodo-dispositivo-topologia { min-width: 0; border: 1px solid #d7e2e7; border-radius: 14px; padding: 14px; background: #fff; box-shadow: 0 7px 20px #19374412; }
+.nodo-dispositivo-topologia[hidden] { display: none !important; }
+.cabecera-nodo-topologia { display: flex; align-items: center; gap: 12px; min-height: 76px; }
+.cabecera-nodo-topologia img { width: 82px; height: 58px; flex: 0 0 82px; object-fit: contain; }
+.cabecera-nodo-topologia .sobrelinea { margin: 0 0 3px; font-size: .67rem; }
+.cabecera-nodo-topologia h3 { margin: 0; color: #173440; font-size: 1rem; line-height: 1.25; overflow-wrap: anywhere; }
+.detalle-nodo-topologia { margin: 4px 0 0; color: #607583; font-size: .8rem; }
+.datos-nodo-topologia { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 11px 0; }
+.datos-nodo-topologia dt { color: #71838c; font-size: .72rem; }
+.datos-nodo-topologia dd { margin: 1px 0 0; color: #294957; font-size: .81rem; overflow-wrap: anywhere; }
+.estado-capacidad-topologia { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 10px 0 7px; color: #687a83; font-size: .72rem; }
+.estado-capacidad-topologia a { color: var(--azul); }
+.panel-frontal-switch { border-top: 1px solid #edf1f3; padding-top: 9px; }
+.panel-frontal-switch > strong { display: block; margin-bottom: 8px; color: #50636e; font-size: .75rem; }
+.rejilla-puertos-switch { display: grid; grid-template-columns: repeat(auto-fill, minmax(37px, 1fr)); gap: 4px; }
+.puerto-topologia { display: inline-flex; min-width: 0; min-height: 25px; align-items: center; justify-content: center; border: 1px solid #ffffff33; border-radius: 4px; padding: 3px 2px; font-size: .62rem; font-weight: 700; line-height: 1; text-align: center; overflow-wrap: anywhere; }
+.puerto-topologia[data-identificador-interfaz=""] { outline: 1px dashed #ffffff55; outline-offset: -3px; }
+.puerto-topologia.puerto-resaltado { outline: 3px solid #efb54b; outline-offset: 1px; z-index: 3; }
+.solo-lectores-pantalla { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+.capacidad-sin-puertos { margin: 10px 0 0; color: #687a83; font-size: .78rem; }
+.enlace-topologia { fill: none; stroke: #248a58; stroke-width: 3; opacity: .82; pointer-events: stroke; transition: stroke-width .15s ease, opacity .15s ease; }
+.enlace-topologia:hover, .enlace-topologia:focus { stroke-width: 5; opacity: 1; outline: none; }
+.enlace-topologia.enlace-pendiente { stroke: #b3762c; stroke-dasharray: 7 6; }
+.enlace-topologia.enlace-confirmado { stroke: #248a58; }
+@media (max-width: 700px) {
+    .mapa-topologia { padding: 12px; }
+    .filtros-topologia-grafica { grid-template-columns: 1fr; }
+    .grupo-capacidades-switch { grid-template-columns: 1fr; }
+    .nota-capacidades-switch { grid-column: auto; }
+}
+@media print {
+    .filtros-topologia-grafica { display: none !important; }
+    .mapa-topologia { overflow: visible; background: #fff; }
+    .nodo-dispositivo-topologia { break-inside: avoid; box-shadow: none; }
+    .capa-svg-enlaces { overflow: visible; }
+}

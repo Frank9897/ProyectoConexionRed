@@ -74,6 +74,8 @@ public class InventarioController : Controller
 
         // usuarioEditor atribuye el alta; cambiar su identidad cambia el autor del historial.
         var usuarioEditor = User.Identity?.Name ?? "Usuario desconocido";
+        // esSwitch decide si se conservan cantidades de puertos; cambiarlo altera qué datos de capacidad se guardan.
+        var esSwitch = string.Equals(formulario.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase);
         // equipoNuevo contiene la ficha normalizada; cambiar su asignación cambia únicamente el registro local.
         var equipoNuevo = new EquipoRed
         {
@@ -86,6 +88,12 @@ public class InventarioController : Controller
             Piso = UtilidadesConexiones.NormalizarTexto(formulario.Piso),
             RolEnArea = formulario.RolEnArea.Trim(),
             TipoDispositivo = formulario.TipoDispositivo.Trim(),
+            CantidadPuertosRj45 = esSwitch ? formulario.CantidadPuertosRj45 : null,
+            CantidadPuertosSfp = esSwitch ? formulario.CantidadPuertosSfp : null,
+            CantidadPuertosSfpPlus = esSwitch ? formulario.CantidadPuertosSfpPlus : null,
+            CantidadPuertosQsfp = esSwitch ? formulario.CantidadPuertosQsfp : null,
+            CantidadPuertosQsfpPlus = esSwitch ? formulario.CantidadPuertosQsfpPlus : null,
+            CantidadPuertosQsfp28 = esSwitch ? formulario.CantidadPuertosQsfp28 : null,
             EstadoDatos = formulario.EstadoDatos.Trim(),
             FechaUltimaRevision = formulario.FechaUltimaRevision,
             Observaciones = UtilidadesConexiones.NormalizarTexto(formulario.Observaciones)
@@ -107,6 +115,7 @@ public class InventarioController : Controller
         UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Piso o sector", null, equipoNuevo.Piso);
         UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Rol en el área", null, equipoNuevo.RolEnArea);
         UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Tipo de dispositivo", null, equipoNuevo.TipoDispositivo);
+        AgregarCambiosCapacidad(cambiosIniciales, equipoNuevo, usuarioEditor, null);
         UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Vigencia de datos", null, equipoNuevo.EstadoDatos);
         UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Observaciones", null, equipoNuevo.Observaciones);
 
@@ -132,7 +141,7 @@ public class InventarioController : Controller
 
         // contenidoCsv acumula el archivo; cambiar encabezados o separadores modifica cómo se interpreta en hojas de cálculo.
         var contenidoCsv = new StringBuilder();
-        contenidoCsv.AppendLine("Equipo;Fabricante;Modelo;Área;Piso;IP documentada;MAC;Rol;Tipo;Vigencia");
+        contenidoCsv.AppendLine("Equipo;Fabricante;Modelo;Área;Piso;IP documentada;MAC;Rol;Tipo;Puertos RJ45;Puertos SFP;Puertos SFP+;Puertos QSFP;Puertos QSFP+;Puertos QSFP28;Vigencia");
 
         // equipo recorre cada fila exportada; cambiar los registros de entrada cambia las filas del archivo.
         foreach (var equipo in equiposExportados)
@@ -149,6 +158,12 @@ public class InventarioController : Controller
                 equipo.DireccionMac,
                 equipo.RolEnArea,
                 equipo.TipoDispositivo,
+                equipo.CantidadPuertosRj45?.ToString(CultureInfo.InvariantCulture),
+                equipo.CantidadPuertosSfp?.ToString(CultureInfo.InvariantCulture),
+                equipo.CantidadPuertosSfpPlus?.ToString(CultureInfo.InvariantCulture),
+                equipo.CantidadPuertosQsfp?.ToString(CultureInfo.InvariantCulture),
+                equipo.CantidadPuertosQsfpPlus?.ToString(CultureInfo.InvariantCulture),
+                equipo.CantidadPuertosQsfp28?.ToString(CultureInfo.InvariantCulture),
                 equipo.EstadoDatos
             };
 
@@ -205,6 +220,12 @@ public class InventarioController : Controller
             Area = equipoEncontrado.Area,
             Piso = equipoEncontrado.Piso,
             RolEnArea = equipoEncontrado.RolEnArea,
+            CantidadPuertosRj45 = equipoEncontrado.CantidadPuertosRj45,
+            CantidadPuertosSfp = equipoEncontrado.CantidadPuertosSfp,
+            CantidadPuertosSfpPlus = equipoEncontrado.CantidadPuertosSfpPlus,
+            CantidadPuertosQsfp = equipoEncontrado.CantidadPuertosQsfp,
+            CantidadPuertosQsfpPlus = equipoEncontrado.CantidadPuertosQsfpPlus,
+            CantidadPuertosQsfp28 = equipoEncontrado.CantidadPuertosQsfp28,
             TipoDispositivo = equipoEncontrado.TipoDispositivo,
             EstadoDatos = equipoEncontrado.EstadoDatos,
             FechaUltimaRevision = equipoEncontrado.FechaUltimaRevision,
@@ -253,6 +274,7 @@ public class InventarioController : Controller
         UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Piso o sector", equipoGuardado.Piso, formulario.Piso);
         UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Rol en el área", equipoGuardado.RolEnArea, formulario.RolEnArea);
         UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Tipo de dispositivo", equipoGuardado.TipoDispositivo, formulario.TipoDispositivo);
+        AgregarCambiosCapacidad(cambiosRegistrados, equipoGuardado, usuarioEditor, formulario);
         UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Vigencia de datos", equipoGuardado.EstadoDatos, formulario.EstadoDatos);
         UtilidadesConexiones.AgregarCambio(
             cambiosRegistrados,
@@ -273,6 +295,12 @@ public class InventarioController : Controller
         equipoGuardado.Piso = UtilidadesConexiones.NormalizarTexto(formulario.Piso);
         equipoGuardado.RolEnArea = formulario.RolEnArea.Trim();
         equipoGuardado.TipoDispositivo = formulario.TipoDispositivo.Trim();
+        equipoGuardado.CantidadPuertosRj45 = string.Equals(formulario.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase) ? formulario.CantidadPuertosRj45 : null;
+        equipoGuardado.CantidadPuertosSfp = string.Equals(formulario.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase) ? formulario.CantidadPuertosSfp : null;
+        equipoGuardado.CantidadPuertosSfpPlus = string.Equals(formulario.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase) ? formulario.CantidadPuertosSfpPlus : null;
+        equipoGuardado.CantidadPuertosQsfp = string.Equals(formulario.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase) ? formulario.CantidadPuertosQsfp : null;
+        equipoGuardado.CantidadPuertosQsfpPlus = string.Equals(formulario.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase) ? formulario.CantidadPuertosQsfpPlus : null;
+        equipoGuardado.CantidadPuertosQsfp28 = string.Equals(formulario.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase) ? formulario.CantidadPuertosQsfp28 : null;
         equipoGuardado.EstadoDatos = formulario.EstadoDatos.Trim();
         equipoGuardado.FechaUltimaRevision = formulario.FechaUltimaRevision;
         equipoGuardado.Observaciones = UtilidadesConexiones.NormalizarTexto(formulario.Observaciones);
@@ -379,4 +407,38 @@ public class InventarioController : Controller
     {
         return valor?.Contains(busqueda, StringComparison.OrdinalIgnoreCase) == true;
     }
+    /// <summary>
+    /// Audita cantidades de conectores cuando se crea o edita un switch.
+    /// </summary>
+    /// <param name="cambios">Lista destino; cambiarla cambia dónde quedan los eventos de capacidad.</param>
+    /// <param name="equipo">Ficha asociada; cambiarla atribuye los eventos a otro equipo.</param>
+    /// <param name="usuarioEditor">Autor del cambio; cambiarlo modifica la atribución histórica.</param>
+    /// <param name="formulario">Formulario editado; nulo indica que se está registrando el alta inicial.</param>
+    private static void AgregarCambiosCapacidad(List<EventoModificacion> cambios, EquipoRed equipo,
+        string usuarioEditor, EditarEquipoViewModel? formulario)
+    {
+        // nombresCampos mantiene los rótulos del historial alineados con cada familia de conectores.
+        var nombresCampos = new[] { "Puertos RJ45", "Puertos SFP", "Puertos SFP+", "Puertos QSFP", "Puertos QSFP+", "Puertos QSFP28" };
+        // cantidadesAnteriores usa nulos para un alta y los valores persistidos para una edición.
+        var cantidadesAnteriores = formulario is null
+            ? new int?[] { null, null, null, null, null, null }
+            : new int?[] { equipo.CantidadPuertosRj45, equipo.CantidadPuertosSfp, equipo.CantidadPuertosSfpPlus,
+                equipo.CantidadPuertosQsfp, equipo.CantidadPuertosQsfpPlus, equipo.CantidadPuertosQsfp28 };
+        // cantidadesNuevas toma la ficha recién creada o las propiedades recibidas del formulario.
+        var cantidadesNuevas = formulario is null
+            ? new int?[] { equipo.CantidadPuertosRj45, equipo.CantidadPuertosSfp, equipo.CantidadPuertosSfpPlus,
+                equipo.CantidadPuertosQsfp, equipo.CantidadPuertosQsfpPlus, equipo.CantidadPuertosQsfp28 }
+            : new int?[] { formulario.CantidadPuertosRj45, formulario.CantidadPuertosSfp, formulario.CantidadPuertosSfpPlus,
+                formulario.CantidadPuertosQsfp, formulario.CantidadPuertosQsfpPlus, formulario.CantidadPuertosQsfp28 };
+
+        for (var indiceCapacidad = 0; indiceCapacidad < nombresCampos.Length; indiceCapacidad++)
+        {
+            // cambioCapacidad guarda una sola diferencia de conectores en el historial común.
+            UtilidadesConexiones.AgregarCambio(cambios, equipo.Identificador, equipo.Nombre, usuarioEditor,
+                nombresCampos[indiceCapacidad],
+                cantidadesAnteriores[indiceCapacidad]?.ToString(CultureInfo.InvariantCulture),
+                cantidadesNuevas[indiceCapacidad]?.ToString(CultureInfo.InvariantCulture));
+        }
+    }
+
 }

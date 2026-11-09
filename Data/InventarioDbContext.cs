@@ -113,6 +113,7 @@ public class InventarioDbContext : DbContext
         configuracionInterfaz.Property(nameof(InterfazEquipo.EtiquetaPuerto)).HasMaxLength(100).IsRequired();
         configuracionInterfaz.Property(nameof(InterfazEquipo.TipoInterfaz)).HasMaxLength(100).IsRequired();
         configuracionInterfaz.Property(nameof(InterfazEquipo.EstadoDatos)).HasMaxLength(60).IsRequired();
+        configuracionInterfaz.Property(nameof(InterfazEquipo.EstadoUso)).HasMaxLength(40).IsRequired();
         configuracionInterfaz.Property(nameof(InterfazEquipo.Observaciones)).HasMaxLength(1000);
         configuracionInterfaz.HasIndex(nameof(InterfazEquipo.IdentificadorEquipo), nameof(InterfazEquipo.EtiquetaPuerto)).IsUnique();
         configuracionInterfaz.HasOne<EquipoRed>()

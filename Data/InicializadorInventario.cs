@@ -93,6 +93,7 @@ public static class InicializadorInventario
                 "EtiquetaPuerto" TEXT NOT NULL,
                 "TipoInterfaz" TEXT NOT NULL,
                 "EstadoDatos" TEXT NOT NULL,
+                "EstadoUso" TEXT NOT NULL DEFAULT 'Desconocido',
                 "FechaUltimaRevision" TEXT NULL,
                 "Observaciones" TEXT NULL,
                 CONSTRAINT "FK_InterfacesEquipo_EquiposRed_IdentificadorEquipo"
@@ -124,46 +125,50 @@ public static class InicializadorInventario
 
         await contextoInventario.Database.ExecuteSqlRawAsync(comandosSql, cancelacion);
         await AgregarColumnaRolSiFaltaAsync(contextoInventario, cancelacion);
-        await AgregarColumnaEquipoSiFaltaAsync(contextoInventario, "Piso", "TEXT NULL", cancelacion);
-        await AgregarColumnaEquipoSiFaltaAsync(contextoInventario, "UsuarioAsignado", "TEXT NULL", cancelacion);
-        await AgregarColumnaEquipoSiFaltaAsync(contextoInventario, "FuenteDatos", "TEXT NULL", cancelacion);
+        await AgregarColumnaSiFaltaAsync(contextoInventario, "EquiposRed", "Piso", "TEXT NULL", cancelacion);
+        await AgregarColumnaSiFaltaAsync(contextoInventario, "EquiposRed", "UsuarioAsignado", "TEXT NULL", cancelacion);
+        await AgregarColumnaSiFaltaAsync(contextoInventario, "EquiposRed", "FuenteDatos", "TEXT NULL", cancelacion);
+        await AgregarColumnaSiFaltaAsync(contextoInventario, "EquiposRed", "CantidadPuertosRj45", "INTEGER NULL", cancelacion);
+        await AgregarColumnaSiFaltaAsync(contextoInventario, "EquiposRed", "CantidadPuertosSfp", "INTEGER NULL", cancelacion);
+        await AgregarColumnaSiFaltaAsync(contextoInventario, "EquiposRed", "CantidadPuertosSfpPlus", "INTEGER NULL", cancelacion);
+        await AgregarColumnaSiFaltaAsync(contextoInventario, "EquiposRed", "CantidadPuertosQsfp", "INTEGER NULL", cancelacion);
+        await AgregarColumnaSiFaltaAsync(contextoInventario, "EquiposRed", "CantidadPuertosQsfpPlus", "INTEGER NULL", cancelacion);
+        await AgregarColumnaSiFaltaAsync(contextoInventario, "EquiposRed", "CantidadPuertosQsfp28", "INTEGER NULL", cancelacion);
+        await AgregarColumnaSiFaltaAsync(contextoInventario, "InterfacesEquipo", "EstadoUso", "TEXT NOT NULL DEFAULT 'Desconocido'", cancelacion);
     }
 
     /// <summary>
-    /// Agrega una columna documental a EquiposRed si la base SQLite anterior todavía no la contiene.
+    /// Agrega una columna a una tabla permitida si todavía no existe en SQLite.
     /// </summary>
-    /// <param name="contextoInventario">Base donde se revisa el esquema; cambiarlo aplica el ajuste a otra conexión.</param>
-    /// <param name="nombreColumna">Nombre interno de columna; cambiarlo revisa otra propiedad del equipo.</param>
-    /// <param name="tipoColumna">Definición SQLite; cambiarla altera el tipo y la nulabilidad de la columna agregada.</param>
-    /// <param name="cancelacion">Señal de cancelación; activarla interrumpe la lectura o alteración del esquema.</param>
-    private static async Task AgregarColumnaEquipoSiFaltaAsync(
-        InventarioDbContext contextoInventario,
-        string nombreColumna,
-        string tipoColumna,
-        CancellationToken cancelacion)
+    /// <param name="contextoInventario">Contexto de base; cambiarlo aplica el cambio en otra conexión.</param>
+    /// <param name="nombreTabla">Tabla destino; solo se aceptan nombres internos de inventario.</param>
+    /// <param name="nombreColumna">Columna destino; cambiarla modifica el dato agregado.</param>
+    /// <param name="tipoColumna">Definición SQLite; cambiarla altera tipo y nulabilidad.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla detiene la revisión o el cambio.</param>
+    private static async Task AgregarColumnaSiFaltaAsync(InventarioDbContext contextoInventario,
+        string nombreTabla, string nombreColumna, string tipoColumna, CancellationToken cancelacion)
     {
-        // conexionBase representa la conexión activa; cambiarla inspecciona otra base configurada.
+        // tablaPermitida limita la interpolación SQL a tablas internas conocidas.
+        var tablaPermitida = nombreTabla == "EquiposRed" || nombreTabla == "InterfacesEquipo";
+        if (!tablaPermitida) throw new InvalidOperationException("La tabla solicitada no está permitida para la actualización.");
+
+        // conexionBase conserva la única conexión SQLite usada por el contexto.
         var conexionBase = contextoInventario.Database.GetDbConnection();
-        // cerrarAlFinal conserva el estado inicial de la conexión tras la revisión de esquema.
+        // cerrarAlFinal conserva el estado original de la conexión al salir de la función.
         var cerrarAlFinal = conexionBase.State != ConnectionState.Open;
-        if (cerrarAlFinal)
-        {
-            await conexionBase.OpenAsync(cancelacion);
-        }
+        if (cerrarAlFinal) await conexionBase.OpenAsync(cancelacion);
 
         try
         {
-            // existeColumna indica si la propiedad ya fue agregada en un inicio anterior.
+            // existeColumna evita aplicar dos veces la misma actualización.
             var existeColumna = false;
             await using (var comandoEsquema = conexionBase.CreateCommand())
             {
-                // nombreTabla identifica la tabla consultada; mantenerlo fijo evita revisar una tabla arbitraria.
-                const string nombreTabla = "EquiposRed";
                 comandoEsquema.CommandText = $"PRAGMA table_info(\"{nombreTabla}\")";
                 await using var lectorEsquema = await comandoEsquema.ExecuteReaderAsync(cancelacion);
                 while (await lectorEsquema.ReadAsync(cancelacion))
                 {
-                    // columnaRevisada contiene el nombre recuperado del esquema SQLite.
+                    // columnaRevisada conserva el nombre inspeccionado en el esquema SQLite.
                     var columnaRevisada = lectorEsquema.GetString(1);
                     if (columnaRevisada == nombreColumna)
                     {
@@ -175,18 +180,14 @@ public static class InicializadorInventario
 
             if (!existeColumna)
             {
-                // La columna solo se añade si ya no existe; los nombres se reciben de llamadas constantes internas.
+                // Tabla y columna llegan desde llamadas internas con identificadores constantes.
                 await contextoInventario.Database.ExecuteSqlRawAsync(
-                    $"ALTER TABLE \"EquiposRed\" ADD COLUMN \"{nombreColumna}\" {tipoColumna}",
-                    cancelacion);
+                    $"ALTER TABLE \"{nombreTabla}\" ADD COLUMN \"{nombreColumna}\" {tipoColumna}", cancelacion);
             }
         }
         finally
         {
-            if (cerrarAlFinal)
-            {
-                await conexionBase.CloseAsync();
-            }
+            if (cerrarAlFinal) await conexionBase.CloseAsync();
         }
     }
 

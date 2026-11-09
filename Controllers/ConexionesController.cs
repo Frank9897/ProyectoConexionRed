@@ -45,6 +45,12 @@ public class ConexionesController : Controller
                 Puerto = interfaz.EtiquetaPuerto,
                 Tipo = interfaz.TipoInterfaz,
                 EstadoDatos = interfaz.EstadoDatos,
+                EstadoUso = contextoInventario.EnlacesFisicos.Any(enlace =>
+                    enlace.IdentificadorPuertoOrigen == interfaz.Identificador
+                    || enlace.IdentificadorPuertoDestino == interfaz.Identificador)
+                    ? "Ocupado · enlace registrado"
+                    : interfaz.EstadoUso == "Libre confirmado" && interfaz.EstadoDatos != "Confirmado"
+                        ? "Desconocido · vigencia sin confirmar" : interfaz.EstadoUso,
                 FechaUltimaRevision = interfaz.FechaUltimaRevision,
                 Observaciones = interfaz.Observaciones
             }).ToListAsync(cancelacion);
@@ -112,12 +118,15 @@ public class ConexionesController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CrearInterfaz(
-        [Bind("IdentificadorEquipo,EtiquetaPuerto,TipoInterfaz,EstadoDatos,FechaUltimaRevision,Observaciones")]
+        [Bind("IdentificadorEquipo,EtiquetaPuerto,TipoInterfaz,EstadoDatos,EstadoUso,FechaUltimaRevision,Observaciones")]
         NuevaInterfazViewModel formulario,
         CancellationToken cancelacion)
     {
         // etiquetaPuertoNormalizada recorta espacios externos; cambiar esta regla modifica la etiqueta guardada.
         var etiquetaPuertoNormalizada = formulario.EtiquetaPuerto.Trim();
+
+        if (formulario.EstadoUso == "Libre confirmado" && formulario.EstadoDatos != "Confirmado")
+            ModelState.AddModelError(nameof(formulario.EstadoUso), "Confirma también la vigencia del puerto antes de marcarlo libre.");
 
         if (formulario.IdentificadorEquipo <= 0
             || !await contextoInventario.Equipos.AnyAsync(
@@ -154,6 +163,7 @@ public class ConexionesController : Controller
             EtiquetaPuerto = etiquetaPuertoNormalizada,
             TipoInterfaz = formulario.TipoInterfaz,
             EstadoDatos = formulario.EstadoDatos,
+            EstadoUso = formulario.EstadoUso,
             FechaUltimaRevision = formulario.FechaUltimaRevision,
             Observaciones = UtilidadesConexiones.NormalizarTexto(formulario.Observaciones)
         };

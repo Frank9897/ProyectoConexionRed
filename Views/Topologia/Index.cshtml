@@ -90,6 +90,122 @@
     </div>
 </aside>
 
+<section class="panel panel-grafico-topologia" id="mapa-grafico" aria-labelledby="titulo-mapa-topologia">
+    <div class="encabezado-seccion-topologia">
+        <div>
+            <p class="sobrelinea">VISTA INTERACTIVA</p>
+            <h2 id="titulo-mapa-topologia">Mapa físico documentado</h2>
+            <p>Los equipos se dibujan como nodos; las líneas representan solo enlaces guardados.</p>
+        </div>
+        <span class="contador-enlaces">@Model.Dispositivos.Count equipos · @Model.Enlaces.Count enlaces</span>
+    </div>
+
+    <div class="filtros-topologia-grafica">
+        <label>Buscar equipo
+            <input type="search" data-busqueda-topologia placeholder="Nombre, modelo o IP" />
+        </label>
+        <label>Filtrar por área
+            <select data-filtro-area>
+                <option value="">Todas las áreas</option>
+                @foreach (var area in Model.Areas)
+                {
+                    <option value="@area">@area</option>
+                }
+            </select>
+        </label>
+    </div>
+
+    <div class="leyenda-topologia" aria-label="Leyenda de los puertos">
+        <span><i class="muestra-puerto puerto-ocupado" aria-hidden="true"></i> Ocupado en la documentación</span>
+        <span><i class="muestra-puerto puerto-libre" aria-hidden="true"></i> Libre confirmado</span>
+        <span><i class="muestra-puerto puerto-desconocido" aria-hidden="true"></i> Desconocido</span>
+        <span><i class="muestra-enlace enlace-confirmado" aria-hidden="true"></i> Enlace confirmado</span>
+        <span><i class="muestra-enlace enlace-pendiente" aria-hidden="true"></i> Enlace pendiente</span>
+    </div>
+
+    <p class="aclaracion-topologia-grafica">Un enlace registrado no confirma que el equipo responda ahora. Un puerto sin enlace solo se considera libre si alguien lo marcó explícitamente como libre confirmado.</p>
+
+    <div class="mapa-topologia" data-mapa-topologia>
+        <svg class="capa-svg-enlaces" data-capa-enlaces aria-hidden="true"></svg>
+        @if (Model.Dispositivos.Count == 0)
+        {
+            <div class="estado-vacio-conexiones"><strong>No hay equipos para dibujar</strong><p>Agrega fichas al inventario y aparecerán aquí.</p></div>
+        }
+        else
+        {
+            <div class="rejilla-dispositivos-topologia">
+            @foreach (var dispositivo in Model.Dispositivos)
+            {
+                <article class="nodo-dispositivo-topologia" data-dispositivo
+                         data-identificador-dispositivo="@dispositivo.Identificador"
+                         data-dispositivo-nombre="@dispositivo.Nombre"
+                         data-dispositivo-tipo="@dispositivo.TipoDispositivo"
+                         data-dispositivo-area="@dispositivo.Area"
+                         data-dispositivo-modelo="@dispositivo.Modelo"
+                         data-dispositivo-ip="@dispositivo.IpAdministracion">
+                    <header class="cabecera-nodo-topologia">
+                        <img src="@dispositivo.Icono" alt="" aria-hidden="true" />
+                        <div>
+                            <p class="sobrelinea">@(dispositivo.Area ?? "Área no indicada") · @dispositivo.TipoDispositivo</p>
+                            <h3>@dispositivo.Nombre</h3>
+                            <p class="detalle-nodo-topologia">@(dispositivo.Modelo ?? "Modelo no indicado")</p>
+                        </div>
+                    </header>
+                    <dl class="datos-nodo-topologia">
+                        <div><dt>IP</dt><dd>@(dispositivo.IpAdministracion ?? "No indicada")</dd></div>
+                        <div><dt>Rol</dt><dd>@dispositivo.RolEnArea</dd></div>
+                    </dl>
+                    @if (dispositivo.EsSwitch)
+                    {
+                        <div class="estado-capacidad-topologia">
+                            <span>@dispositivo.EstadoCapacidad</span>
+                            @if (!string.IsNullOrWhiteSpace(dispositivo.FuentePerfil))
+                            {
+                                <a href="@dispositivo.FuentePerfil" target="_blank" rel="noopener noreferrer">Fuente del perfil</a>
+                            }
+                        </div>
+                    }
+                    @if (dispositivo.Puertos.Count > 0)
+                    {
+                        <div class="panel-frontal-switch">
+                            <strong>@(dispositivo.EsSwitch ? "Puertos del frontal" : "Interfaces registradas")</strong>
+                            <div class="rejilla-puertos-switch">
+                                @foreach (var puerto in dispositivo.Puertos)
+                                {
+                                    <span class="puerto-topologia @puerto.ClaseVisual"
+                                          data-identificador-interfaz="@puerto.IdentificadorInterfaz"
+                                          title="@puerto.Etiqueta · @puerto.EstadoVisual · @puerto.Tipo">
+                                        <span>@puerto.Etiqueta</span>
+                                        <span class="solo-lectores-pantalla">@puerto.EstadoVisual</span>
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else if (dispositivo.EsSwitch)
+                    {
+                        <p class="capacidad-sin-puertos">Capacidad no documentada; todavía no se pueden calcular posiciones.</p>
+                    }
+                </article>
+            }
+            </div>
+        }
+    </div>
+
+    <div class="metadatos-enlaces-topologia" hidden>
+        @foreach (var enlace in Model.Enlaces)
+        {
+            <span data-enlace-topologia
+                  data-equipo-origen="@enlace.IdentificadorEquipoOrigen"
+                  data-equipo-destino="@enlace.IdentificadorEquipoDestino"
+                  data-puerto-origen="@enlace.IdentificadorPuertoOrigen"
+                  data-puerto-destino="@enlace.IdentificadorPuertoDestino"
+                  data-confirmado="@(enlace.Confirmado ? "true" : "false")"
+                  data-etiqueta="@($"{enlace.EquipoOrigen} · Puerto {enlace.PuertoOrigen} → {enlace.EquipoDestino} · Puerto {enlace.PuertoDestino} · {enlace.Medio} · {enlace.EstadoDatos}")"></span>
+        }
+    </div>
+</section>
+
 @if (Model.Enlaces.Count == 0)
 {
     <section class="vacio-topologia" id="enlaces-fisicos">
@@ -103,8 +219,8 @@
             </svg>
         </div>
         <p class="sobrelinea">CAPA FÍSICA</p>
-        <h2>Todavía no hay enlaces para dibujar</h2>
-        <p>El inventario conserva equipos e IP confirmados. Los enlaces se incorporarán cuando estén registrados con puerto de origen, puerto de destino, medio y fuente.</p>
+        <h2>Los nodos aún no tienen enlaces registrados</h2>
+        <p>Los equipos y sus puertos siguen visibles. Las líneas aparecerán cuando se documenten sus dos extremos y el medio; no se infieren relaciones por área o cercanía.</p>
         <a class="boton boton-secundario" asp-controller="Inventario" asp-action="Index">Revisar inventario</a>
     </section>
 }
@@ -141,3 +257,5 @@ else
         </div>
     </section>
 }
+
+<script src="~/js/topologia-grafica.js" asp-append-version="true"></script>

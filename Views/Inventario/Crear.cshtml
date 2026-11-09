@@ -10,7 +10,16 @@
         <div asp-validation-summary="ModelOnly" class="mensaje-error"></div>
         <div class="rejilla-formulario">
             <div><label asp-for="Nombre">Nombre o etiqueta</label><input asp-for="Nombre" /><span asp-validation-for="Nombre" class="mensaje-error"></span></div>
-            <div><label asp-for="TipoDispositivo">Tipo de dispositivo</label><select asp-for="TipoDispositivo"><option>Puesto de usuario</option><option>Switch</option><option>Equipo de red</option><option>Router</option><option>Firewall</option><option>UPS</option><option>Servidor</option><option>No especificado</option><option>Otro</option></select><span asp-validation-for="TipoDispositivo" class="mensaje-error"></span></div>
+            <div><label asp-for="TipoDispositivo">Tipo de dispositivo</label><select asp-for="TipoDispositivo"><option>Puesto de usuario</option><option>Switch</option><option>Equipo de red</option><option>Router</option><option>Firewall</option><option>UPS</option><option>Servidor</option><option>No especificado</option><option>Impresora</option><option>No especificado</option><option>Otro</option></select><span asp-validation-for="TipoDispositivo" class="mensaje-error"></span></div>
+            <div class="grupo-capacidades-switch" data-capacidades-switch hidden>
+                <p class="nota-capacidades-switch">Cantidad de conectores físicos. Si el modelo no tiene perfil exacto, estos valores dibujan sus posiciones; 0 significa ninguno y vacío, cantidad desconocida.</p>
+                <div><label asp-for="CantidadPuertosRj45">Puertos RJ45</label><input asp-for="CantidadPuertosRj45" type="number" min="0" max="512" /><span asp-validation-for="CantidadPuertosRj45" class="mensaje-error"></span></div>
+                <div><label asp-for="CantidadPuertosSfp">Puertos SFP</label><input asp-for="CantidadPuertosSfp" type="number" min="0" max="512" /><span asp-validation-for="CantidadPuertosSfp" class="mensaje-error"></span></div>
+                <div><label asp-for="CantidadPuertosSfpPlus">Puertos SFP+</label><input asp-for="CantidadPuertosSfpPlus" type="number" min="0" max="512" /><span asp-validation-for="CantidadPuertosSfpPlus" class="mensaje-error"></span></div>
+                <div><label asp-for="CantidadPuertosQsfp">Puertos QSFP</label><input asp-for="CantidadPuertosQsfp" type="number" min="0" max="512" /><span asp-validation-for="CantidadPuertosQsfp" class="mensaje-error"></span></div>
+                <div><label asp-for="CantidadPuertosQsfpPlus">Puertos QSFP+</label><input asp-for="CantidadPuertosQsfpPlus" type="number" min="0" max="512" /><span asp-validation-for="CantidadPuertosQsfpPlus" class="mensaje-error"></span></div>
+                <div><label asp-for="CantidadPuertosQsfp28">Puertos QSFP28</label><input asp-for="CantidadPuertosQsfp28" type="number" min="0" max="512" /><span asp-validation-for="CantidadPuertosQsfp28" class="mensaje-error"></span></div>
+            </div>
             <div><label asp-for="Fabricante">Fabricante</label><input asp-for="Fabricante" /><span asp-validation-for="Fabricante" class="mensaje-error"></span></div>
             <div><label asp-for="Modelo">Modelo</label><input asp-for="Modelo" /><span asp-validation-for="Modelo" class="mensaje-error"></span></div>
             <div><label asp-for="IpAdministracion">IP documentada</label><input asp-for="IpAdministracion" /><span asp-validation-for="IpAdministracion" class="mensaje-error"></span></div>
@@ -28,3 +37,5 @@
         </div>
     </form>
 </section>
+
+<script src="~/js/capacidades-switch.js" asp-append-version="true"></script>

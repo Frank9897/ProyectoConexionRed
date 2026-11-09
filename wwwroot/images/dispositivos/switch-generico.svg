@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 112" role="img" aria-labelledby="titulo descripcion">
+<title id="titulo">Switch genérico</title><desc id="descripcion">Ilustración esquemática de un switch en formato de rack.</desc>
+<defs><linearGradient id="carcasa" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#354a59"/><stop offset="1" stop-color="#172b38"/></linearGradient></defs>
+<rect x="6" y="13" width="308" height="86" rx="12" fill="url(#carcasa)"/><rect x="18" y="23" width="284" height="65" rx="7" fill="#233744" stroke="#526a78" stroke-width="2"/>
+<path d="M31 35h18v8H31zm0 35h18v8H31zM270 35h18v8h-18zm0 35h18v8h-18z" fill="#9db0ba"/><circle cx="60" cy="49" r="3" fill="#82c49b"/><circle cx="72" cy="49" r="3" fill="#758895"/>
+<text x="160" y="63" fill="#e4edf1" font-family="Segoe UI,Arial,sans-serif" font-size="12" text-anchor="middle" letter-spacing="2">SWITCH · VISTA ESQUEMÁTICA</text>
+</svg>

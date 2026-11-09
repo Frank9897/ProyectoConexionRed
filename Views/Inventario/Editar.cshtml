@@ -18,7 +18,16 @@
             <div><label asp-for="Area">Área</label><input asp-for="Area" /><span asp-validation-for="Area" class="mensaje-error"></span></div>
             <div><label asp-for="Piso">Piso o sector físico</label><input asp-for="Piso" /><span asp-validation-for="Piso" class="mensaje-error"></span></div>
             <div><label asp-for="RolEnArea">Rol en el área</label><select asp-for="RolEnArea"><option>No indicado</option><option>Principal</option><option>No principal</option><option>Secundario</option><option>Reserva</option><option>No aplica</option></select><span asp-validation-for="RolEnArea" class="mensaje-error"></span></div>
-            <div><label asp-for="TipoDispositivo">Tipo de dispositivo</label><select asp-for="TipoDispositivo"><option>Puesto de usuario</option><option>Switch</option><option>Equipo de red</option><option>Router</option><option>Firewall</option><option>UPS</option><option>Servidor</option><option>No especificado</option><option>Otro</option></select><span asp-validation-for="TipoDispositivo" class="mensaje-error"></span></div>
+            <div><label asp-for="TipoDispositivo">Tipo de dispositivo</label><select asp-for="TipoDispositivo"><option>Puesto de usuario</option><option>Switch</option><option>Equipo de red</option><option>Router</option><option>Firewall</option><option>UPS</option><option>Servidor</option><option>No especificado</option><option>Impresora</option><option>No especificado</option><option>Otro</option></select><span asp-validation-for="TipoDispositivo" class="mensaje-error"></span></div>
+            <div class="grupo-capacidades-switch" data-capacidades-switch hidden>
+                <p class="nota-capacidades-switch">Cantidad de conectores físicos. Si el modelo no tiene perfil exacto, estos valores dibujan sus posiciones; 0 significa ninguno y vacío, cantidad desconocida.</p>
+                <div><label asp-for="CantidadPuertosRj45">Puertos RJ45</label><input asp-for="CantidadPuertosRj45" type="number" min="0" max="512" /><span asp-validation-for="CantidadPuertosRj45" class="mensaje-error"></span></div>
+                <div><label asp-for="CantidadPuertosSfp">Puertos SFP</label><input asp-for="CantidadPuertosSfp" type="number" min="0" max="512" /><span asp-validation-for="CantidadPuertosSfp" class="mensaje-error"></span></div>
+                <div><label asp-for="CantidadPuertosSfpPlus">Puertos SFP+</label><input asp-for="CantidadPuertosSfpPlus" type="number" min="0" max="512" /><span asp-validation-for="CantidadPuertosSfpPlus" class="mensaje-error"></span></div>
+                <div><label asp-for="CantidadPuertosQsfp">Puertos QSFP</label><input asp-for="CantidadPuertosQsfp" type="number" min="0" max="512" /><span asp-validation-for="CantidadPuertosQsfp" class="mensaje-error"></span></div>
+                <div><label asp-for="CantidadPuertosQsfpPlus">Puertos QSFP+</label><input asp-for="CantidadPuertosQsfpPlus" type="number" min="0" max="512" /><span asp-validation-for="CantidadPuertosQsfpPlus" class="mensaje-error"></span></div>
+                <div><label asp-for="CantidadPuertosQsfp28">Puertos QSFP28</label><input asp-for="CantidadPuertosQsfp28" type="number" min="0" max="512" /><span asp-validation-for="CantidadPuertosQsfp28" class="mensaje-error"></span></div>
+            </div>
             <div><label asp-for="EstadoDatos">Vigencia de los datos</label><select asp-for="EstadoDatos"><option>Vigente</option><option>Pendiente de validación</option><option>A verificar</option><option>Desactualizado</option><option>Confirmado</option></select><span asp-validation-for="EstadoDatos" class="mensaje-error"></span></div>
             <div><label asp-for="FechaUltimaRevision">Última revisión real</label><input asp-for="FechaUltimaRevision" type="date" /><span asp-validation-for="FechaUltimaRevision" class="mensaje-error"></span></div>
             <div class="campo-completo"><label asp-for="Observaciones">Observaciones</label><textarea asp-for="Observaciones" rows="4"></textarea><span asp-validation-for="Observaciones" class="mensaje-error"></span></div>
@@ -29,3 +38,5 @@
         </div>
     </form>
 </section>
+
+<script src="~/js/capacidades-switch.js" asp-append-version="true"></script>

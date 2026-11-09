@@ -55,6 +55,11 @@ public class InterfazListadoViewModel
     public string EstadoDatos { get; set; } = string.Empty;
 
     /// <summary>
+    /// Uso del puerto; cambiarlo actualiza la etiqueta de disponibilidad documental.
+    /// </summary>
+    public string EstadoUso { get; set; } = "Desconocido";
+
+    /// <summary>
     /// Fecha de revisión real; cambiarla modifica la fecha asociada al puerto.
     /// </summary>
     public DateOnly? FechaUltimaRevision { get; set; }
@@ -130,9 +135,13 @@ public abstract class InterfazFormularioViewModel
     public string EtiquetaPuerto { get; set; } = string.Empty;
     /// <summary>Tipo documentado; cambiarlo modifica la clasificación, no la velocidad real.</summary>
     [Required, StringLength(100)]
-    [RegularExpression(@"^(No confirmado|RJ45|SFP|SFP\+|QSFP|Otro)$", ErrorMessage = "Selecciona un tipo de interfaz válido.")]
+    [RegularExpression(@"^(No confirmado|RJ45|SFP|SFP\+|QSFP|QSFP\+|QSFP28|Otro)$", ErrorMessage = "Selecciona un tipo de interfaz válido.")]
     public string TipoInterfaz { get; set; } = "No confirmado";
-    /// <summary>Vigencia; cambiarla modifica el estado de revisión mostrado.</summary>
+    /// <summary>Uso confirmado del puerto; cambiarlo define si un extremo sin enlace está libre o desconocido.</summary>
+    [Required, StringLength(40)]
+    [RegularExpression(@"^(Desconocido|Libre confirmado)$", ErrorMessage = "Selecciona un uso válido.")]
+    public string EstadoUso { get; set; } = "Desconocido";
+        /// <summary>Vigencia; cambiarla modifica el estado de revisión mostrado.</summary>
     [Required, StringLength(60)]
     [RegularExpression(@"^(Pendiente de revisión|Confirmado|A verificar|Desactualizado)$", ErrorMessage = "Selecciona un estado válido.")]
     public string EstadoDatos { get; set; } = "Pendiente de revisión";
