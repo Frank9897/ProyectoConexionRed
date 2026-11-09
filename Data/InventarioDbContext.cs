@@ -46,6 +46,9 @@ public class InventarioDbContext : DbContext
     /// </summary>
     public DbSet<EnlaceFisico> EnlacesFisicos => Set<EnlaceFisico>();
 
+    /// <summary>Conexiones con puerto remoto opcional; cambiar sus filas modifica las relaciones parciales documentadas.</summary>
+    public DbSet<ConexionDocumentada> ConexionesDocumentadas => Set<ConexionDocumentada>();
+
     /// <summary>
     /// Define nombres y límites de columnas; cambiar estas reglas requiere actualizar el esquema de la base.
     /// </summary>
@@ -140,6 +143,24 @@ public class InventarioDbContext : DbContext
         configuracionEnlace.HasOne<InterfazEquipo>()
             .WithMany()
             .HasForeignKey(nameof(EnlaceFisico.IdentificadorPuertoDestino))
+            .OnDelete(DeleteBehavior.Restrict);
+        // configuracionConexionDocumentada permite un extremo remoto opcional y conserva su procedencia.
+        var configuracionConexionDocumentada = constructorModelo.Entity<ConexionDocumentada>();
+        configuracionConexionDocumentada.ToTable("ConexionesDocumentadas");
+        configuracionConexionDocumentada.HasKey(nameof(ConexionDocumentada.Identificador));
+        configuracionConexionDocumentada.Property(nameof(ConexionDocumentada.EquipoRemoto)).HasMaxLength(160);
+        configuracionConexionDocumentada.Property(nameof(ConexionDocumentada.IpRemota)).HasMaxLength(45);
+        configuracionConexionDocumentada.Property(nameof(ConexionDocumentada.PuertoRemoto)).HasMaxLength(100);
+        configuracionConexionDocumentada.Property(nameof(ConexionDocumentada.Medio)).HasMaxLength(60).IsRequired();
+        configuracionConexionDocumentada.Property(nameof(ConexionDocumentada.EstadoDatos)).HasMaxLength(60).IsRequired();
+        configuracionConexionDocumentada.Property(nameof(ConexionDocumentada.FuentePagina)).HasMaxLength(160).IsRequired();
+        configuracionConexionDocumentada.Property(nameof(ConexionDocumentada.FuenteLibro)).HasMaxLength(160);
+        configuracionConexionDocumentada.Property(nameof(ConexionDocumentada.FuenteFila)).HasMaxLength(100);
+        configuracionConexionDocumentada.Property(nameof(ConexionDocumentada.Observaciones)).HasMaxLength(1000);
+        configuracionConexionDocumentada.HasIndex(nameof(ConexionDocumentada.IdentificadorPuertoLocal)).IsUnique();
+        configuracionConexionDocumentada.HasOne<InterfazEquipo>()
+            .WithMany()
+            .HasForeignKey(nameof(ConexionDocumentada.IdentificadorPuertoLocal))
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
