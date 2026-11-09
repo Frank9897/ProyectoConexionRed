@@ -45,23 +45,40 @@ En el inventario, rol operativo, tipo, fabricante y modelo son campos distintos.
 
 - El libro del HP 5500 lista servidores, almacenamiento y gestión. Incluye ProCurve en el puerto 22 y HP 1920S (H) en el 24.
 - El libro de puertos del HP 1920 incluye dispositivos de rack y switches/servicios de área. Su tabla SFP enumera puertos 26, 27 y 28 hacia Secretaría, Agrimensura HP e Inmuebles; los demás renglones de esa tabla deben conservar su estado literal.
-- El S4148U indica SUMARIOS en el puerto 2, R770/iDRAC 192.168.0.247 en el 21 y HP 1920 (E) 192.168.1.115 en el 24.
-- El HP 1920S (H) relaciona, entre otros, el HP 1920 (E) en el 22, iDRAC del R920 en el 23 y HP 5500 en el 24.
+- El S4148U indica SUMARIOS en el puerto 2 y HP 1920 (E) 192.168.1.115 en el 24. La fila del puerto 21 que lo rotula como iDRAC `.247` queda corregida por el usuario: corresponde al Dell R770 LAN P2, IP `192.168.0.246`.
+- El HP 1920 (E) relaciona R770 P1/iDRAC (`192.168.0.247`) en el puerto 16. El HP 1920S (H) relaciona, entre otros, el HP 1920 (E) en el 22, iDRAC del R920 en el 23 y HP 5500 en el 24.
 - Mesa de Entradas no principal documenta MENTRADA04 (192.168.0.216), MENTRADA02 (192.168.0.136) y el Aruba principal (192.168.1.1).
 - Varias tablas de switches de área enumeran puestos con IP y posición local; esas relaciones de usuarios están actualizadas según el usuario. Deben cargarse con el número del puerto del switch de origen tal como aparece.
 
 Estos renglones no bastan para asumir medio de cable ni numeración del puerto del equipo remoto. Cuando falte el dato, el modelo debe mostrar no documentado y no crear un puerto remoto ficticio.
 
+### Pares de puertos recíprocos que aparecen en las hojas
+
+Las coincidencias siguientes sirven para proponer extremos locales y remotos con mejor sustento documental. Como el usuario indicó que algunas conexiones del rack pueden estar desactualizadas, se mantienen como **candidatos a revisar físicamente** hasta confirmar vigencia. Las tablas no identifican de manera confiable el medio de cada cable.
+
+| Extremo en una hoja | Extremo recíproco | Evidencia y tratamiento |
+|---|---|---|
+| HP 5500 puerto 24 | HP 1920S (H) puerto 24 | Ambas hojas nombran al switch contraparte; confirmar que el cable siga conectado. Medio no confirmado. |
+| HP 1920 (E) puerto 24 | HP 1920S (H) puerto 22 | Coincidencia de contraparte en ambas tablas; revisar en rack. |
+| HP 1920 (E) puerto 19 | Valuación R1 puerto 24 | Referencia recíproca en las tablas; revisar vigencia del enlace de rack. |
+| HP 1920 (E) puerto 20 | Valuación R2 puerto 24 | Referencia recíproca en las tablas; revisar vigencia del enlace de rack. |
+| HP 1920 (E) puerto 21 | Sistemas puerto 24 | Referencia recíproca en las tablas; revisar vigencia del enlace de rack. |
+| HP 1920 (E) SFP 26 | Secretaría SFP 26 | Referencia recíproca; no se confirma tipo/modelo de transceptor ni medio. |
+| Agrimensura HP puerto 15 | Agrimensura 3Com puerto 24 | Referencia recíproca entre las hojas de ambas áreas; verificar físicamente. |
+
+No consolidar como enlace confirmado la salida S4148U puerto 24 ↔ HP 1920: la tabla HP 1920 menciona el S4148U en los puertos 1 y 23, por lo que el extremo correspondiente es ambiguo. También dejar «a verificar» la relación HP 1920 puerto 13 ↔ Cartografía: la hoja de Cartografía señala al HP 1920S (H) en su puerto 24, y no confirma el extremo remoto del puerto 13.
+
+
 ## Diferencias que no se deben corregir por inferencia
 
 1. La tabla Excel de la página PUERTA AGRIMENSURA registra el ProCurve como 10.0.1.0; el usuario confirmó que la dirección correcta vigente es 10.0.1.1. Para la ficha vigente prevalece la corrección del usuario.
-2. El resumen de switches de áreas registra el 3Com como 192.168.0.24; otras fichas del V3 y el inventario lo registran como 192.168.1.24. Conservar nota de discrepancia y no reemplazar el valor canónico sin validación.
-3. El S4148U y el HP 1920 mencionan ambos el iDRAC del R770 en 192.168.0.247 (puerto 21 y puerto 16, respectivamente). Puede ser un doble enlace o un dato duplicado; verificar antes de consolidarlo como redundancia.
+2. El resumen de switches de áreas registra el 3Com como 192.168.0.24; el usuario confirma que la IP vigente es 192.168.1.24. Mantener 192.168.1.24 en la ficha y conservar la discrepancia como nota de fuente.
+3. La tabla del S4148U rotula su puerto 21 como iDRAC .247, pero el usuario corrige el extremo: S4148U puerto 21 ↔ Dell R770 LAN P2, IP 192.168.0.246. HP 1920 puerto 16 ↔ Dell R770 P1/iDRAC, IP 192.168.0.247. El R770 P3 figura libre y P4 no configurado. No hay base para declarar medio físico.
 4. Las tablas incluyen etiquetas LIBRE, DESCONOCIDO, OCUPADO, SIN SFP y SFP LIBRE. No son equivalentes: ocupación del puerto, vigencia del registro y transceptor instalado deben persistirse por separado.
 5. La tabla de Agrimensura HP incluye AGRIMENSURA60 con dos direcciones (192.168.0.141 y 192.168.1.250). Conservar ambas como observación/alias hasta que los Visios de usuario aclaren interfaces, no descartar una.
 
 ## Consecuencia para la vista gráfica y el modelo de datos
 
-La primera gráfica muestra posiciones de puertos y líneas de extremo a extremo basadas en EnlacesFisicos, pero las hojas V3 suelen documentar solo el puerto local del switch. Para representar estas filas sin falsear el dato, la siguiente ampliación debe admitir una conexión desde una interfaz conocida hacia un equipo remoto con puerto remoto opcional. El frontal mostrará etiqueta/número y estado; el puerto ocupado podrá mostrar nombre/IP remoto y resaltarse. El trazo debe terminar en el nodo remoto, saliendo del puerto conocido. El puerto remoto ausente se mostrará como no documentado.
+La gráfica actual muestra posiciones por capacidad documentada y relaciones únicamente desde EnlacesFisicos, cuyo modelo requiere dos puertos existentes. El frontal esquemático ya muestra bocas numeradas en dos hileras, el estado por color y abre una página con detalles de cada switch. El destino emergente aparece cuando el enlace de dos extremos existe. Para importar filas de Visio que solo indican el puerto local, la siguiente ampliación debe permitir un extremo remoto opcional, con nombre/IP y procedencia, sin inventar puerto remoto ni medio.
 
-La importación de estas tablas a SQLite todavía está pendiente. Mantener la procedencia de página, libro y fila y no tratar el estado de los SFP como confirmado si el usuario no lo ha verificado por separado.
+La importación masiva de estas tablas a SQLite todavía está pendiente. Mantener procedencia de página, libro y fila y no tratar el estado de los SFP como confirmado sin verificación. El usuario confirma las IP vigentes del ProCurve `10.0.1.1` y 3Com `192.168.1.24`. Para R770, HP 1920 puerto 16 ↔ P1/iDRAC `.247`; S4148U puerto 21 ↔ P2/LAN `.246`; P4 no está configurado. El medio permanece sin confirmar.
