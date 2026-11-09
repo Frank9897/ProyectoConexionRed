@@ -25,6 +25,8 @@ public class TopologiaViewModel
     public IReadOnlyList<DispositivoTopologiaViewModel> Dispositivos { get; set; } = [];
     /// <summary>Enlaces cuyos dos extremos existen en la documentación.</summary>
     public IReadOnlyList<EnlaceTopologiaViewModel> Enlaces { get; set; } = [];
+    /// <summary>Relaciones con un extremo incompleto; cambiar la lista altera el registro pendiente mostrado.</summary>
+    public IReadOnlyList<ConexionParcialTopologiaViewModel> RelacionesParciales { get; set; } = [];
 }
 
 /// <summary>Representa un nodo de equipo y los puertos que pueden verse en su figura.</summary>
@@ -111,4 +113,37 @@ public class DetalleTopologiaViewModel
     public DispositivoTopologiaViewModel Dispositivo { get; set; } = new();
     /// <summary>Enlaces documentados del switch; cambiar la lista altera la tabla de conexiones.</summary>
     public IReadOnlyList<EnlaceTopologiaViewModel> Enlaces { get; set; } = [];
+    /// <summary>Relaciones parciales del switch; cambiar la lista altera las conexiones pendientes del detalle.</summary>
+    public IReadOnlyList<ConexionDocumentada> ConexionesParciales { get; set; } = [];
+}
+
+/// <summary>Resume una relación cuyo extremo local existe y el remoto puede faltar.</summary>
+public class ConexionParcialTopologiaViewModel
+{
+    /// <summary>ID del registro; cambiarlo selecciona otra observación documental.</summary>
+    public int Identificador { get; set; }
+    /// <summary>ID del puerto local; cambiarlo selecciona la interfaz enlazada con la observación.</summary>
+    public int IdentificadorPuertoLocal { get; set; }
+    /// <summary>Equipo local; cambiarlo modifica el extremo inventariado.</summary>
+    public string EquipoLocal { get; set; } = string.Empty;
+    /// <summary>Puerto local; cambiarlo señala otra interfaz conocida.</summary>
+    public string PuertoLocal { get; set; } = string.Empty;
+    /// <summary>Equipo remoto opcional; cambiarlo actualiza el nombre disponible.</summary>
+    public string? EquipoRemoto { get; set; }
+    /// <summary>IP remota opcional; cambiarla actualiza la dirección anotada.</summary>
+    public string? IpRemota { get; set; }
+    /// <summary>Puerto remoto opcional; cambiarlo actualiza su etiqueta conocida.</summary>
+    public string? PuertoRemoto { get; set; }
+    /// <summary>Medio; cambiarlo modifica la clasificación de la relación.</summary>
+    public string Medio { get; set; } = string.Empty;
+    /// <summary>Estado documental; cambiarlo modifica la confianza y alerta de revisión.</summary>
+    public string EstadoDatos { get; set; } = string.Empty;
+    /// <summary>Página de origen; cambiarla modifica la ubicación del dato.</summary>
+    public string FuentePagina { get; set; } = string.Empty;
+    /// <summary>Libro Excel opcional; cambiarlo señala otra hoja incrustada.</summary>
+    public string? FuenteLibro { get; set; }
+    /// <summary>Fila opcional; cambiarla señala otro renglón de origen.</summary>
+    public string? FuenteFila { get; set; }
+    /// <summary>Notas; cambiarlas modifica el contexto visible.</summary>
+    public string? Observaciones { get; set; }
 }
