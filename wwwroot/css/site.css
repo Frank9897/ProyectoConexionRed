@@ -583,3 +583,32 @@ tbody tr:hover { background: #f7fafb; }
     .nodo-dispositivo-topologia { break-inside: avoid; box-shadow: none; }
     .capa-svg-enlaces { overflow: visible; }
 }
+
+
+/* frontalSwitch dibuja bocas numeradas y su estado; cambiar columnas altera la distribución por fila. */
+.frontal-switch-scroll { overflow-x: auto; padding: 5px 2px 9px; }
+.frontal-switch-panel { min-width: 700px; padding: 14px; border: 1px solid #b7bdc0; border-radius: 9px; background: linear-gradient(180deg,#e7e9e8,#cfd3d2); box-shadow: inset 0 1px #fff, 0 5px 14px #172b3a12; color: #26343a; }
+.frontal-switch-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 13px; font-size: .76rem; font-weight: 750; }
+.frontal-switch-cabecera small { color: #536269; font-weight: 550; }
+.grupo-frontal-puertos { margin-top: 10px; }
+.etiqueta-grupo-frontal { display: block; margin-bottom: 5px; color: #56666d; font-size: .67rem; font-weight: 750; text-transform: uppercase; letter-spacing: .06em; }
+.filas-frontal-puertos { display: grid; gap: 4px; }
+.fila-frontal-puertos { display: grid; grid-auto-columns: minmax(32px,1fr); grid-auto-flow: column; gap: 4px; }
+.puerto-frontal { display: grid; min-width: 28px; min-height: 34px; align-content: center; justify-items: center; padding: 2px; border: 1px solid #1c262a; border-radius: 3px; background: #293337; color: #e7eeee; font-size: .62rem; text-decoration: none; box-shadow: inset 0 1px #ffffff20; }
+.numero-puerto-frontal { color: #445158; font-size: .62rem; font-weight: 700; text-align: center; }
+.puerto-frontal::after { width: 68%; height: 11px; margin-top: 2px; border: 1px solid #111a1d; border-radius: 2px; background: #303c40; content: ""; }
+.puerto-frontal.puerto-ocupado::after { background: #19d568; box-shadow: 0 0 6px #12c85a99; }
+.puerto-frontal.puerto-libre::after { background: #333d41; }
+.puerto-frontal.puerto-desconocido::after { background: #315946; opacity: .78; }
+.puerto-frontal.puerto-sfp::after { width: 76%; height: 17px; border-radius: 2px; background: #283438; }
+.puerto-frontal.puerto-sfp.puerto-ocupado::after { background: #18cf66; }
+.puerto-frontal.puerto-desconocido { color: #f1f5f4; }
+.enlace-detalle-switch { display: inline-flex; gap: 7px; margin-top: 10px; color: var(--azul); font-size: .82rem; font-weight: 700; text-decoration: none; }
+.enlace-detalle-switch:hover { text-decoration: underline; }
+.detalle-topologia-switch { display: grid; grid-template-columns: minmax(0,1.25fr) minmax(250px,.75fr); gap: 20px; align-items: start; }
+.datos-detalle-switch { display: grid; gap: 9px; margin: 0; padding: 18px; border: 1px solid var(--borde); border-radius: 12px; background: #fff; }
+.datos-detalle-switch div { display: grid; grid-template-columns: 100px 1fr; gap: 12px; }
+.datos-detalle-switch dt { color: var(--secundario); font-size: .82rem; }
+.datos-detalle-switch dd { margin: 0; font-size: .88rem; font-weight: 650; }
+@media (max-width: 760px) { .detalle-topologia-switch { grid-template-columns: 1fr; } .frontal-switch-panel { min-width: 650px; } }
+@media print { .enlace-detalle-switch, .boton { display:none!important; } .frontal-switch-scroll { overflow: visible; } .frontal-switch-panel { min-width: 0; box-shadow: none; } }
