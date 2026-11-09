@@ -122,6 +122,24 @@ public static class InicializadorInventario
                 ON "EnlacesFisicos" ("IdentificadorPuertoOrigen");
             CREATE INDEX IF NOT EXISTS "IX_EnlacesFisicos_IdentificadorPuertoDestino"
                 ON "EnlacesFisicos" ("IdentificadorPuertoDestino");
+            CREATE TABLE IF NOT EXISTS "ConexionesDocumentadas" (
+                "Identificador" INTEGER NOT NULL CONSTRAINT "PK_ConexionesDocumentadas" PRIMARY KEY AUTOINCREMENT,
+                "IdentificadorPuertoLocal" INTEGER NOT NULL,
+                "EquipoRemoto" TEXT NULL,
+                "IpRemota" TEXT NULL,
+                "PuertoRemoto" TEXT NULL,
+                "Medio" TEXT NOT NULL DEFAULT 'No confirmado',
+                "EstadoDatos" TEXT NOT NULL DEFAULT 'A verificar',
+                "FechaUltimaRevision" TEXT NULL,
+                "FuentePagina" TEXT NOT NULL,
+                "FuenteLibro" TEXT NULL,
+                "FuenteFila" TEXT NULL,
+                "Observaciones" TEXT NULL,
+                CONSTRAINT "FK_ConexionesDocumentadas_InterfacesEquipo_IdentificadorPuertoLocal"
+                    FOREIGN KEY ("IdentificadorPuertoLocal") REFERENCES "InterfacesEquipo" ("Identificador") ON DELETE RESTRICT
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_ConexionesDocumentadas_IdentificadorPuertoLocal"
+                ON "ConexionesDocumentadas" ("IdentificadorPuertoLocal");
             """;
 
         await contextoInventario.Database.ExecuteSqlRawAsync(comandosSql, cancelacion);
