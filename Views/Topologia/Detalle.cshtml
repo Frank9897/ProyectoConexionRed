@@ -59,3 +59,34 @@
         </div>
     }
 </section>
+
+@if (Model.ConexionesParciales.Count > 0)
+{
+    <section class="panel panel-enlaces">
+        <div class="encabezado-seccion-topologia">
+            <div><p class="sobrelinea">EXTREMO REMOTO INCOMPLETO</p><h2>Relaciones documentadas para revisar</h2></div>
+            <span class="contador-enlaces">@Model.ConexionesParciales.Count registros</span>
+        </div>
+        <p class="aclaracion-topologia-grafica">El puerto local está ocupado según el registro. El otro extremo y el medio siguen pendientes cuando la fuente no los identifica.</p>
+        <div class="tabla-contenedor">
+            <table>
+                <thead><tr><th>Puerto local</th><th>Destino disponible</th><th>Medio</th><th>Estado</th><th>Procedencia</th></tr></thead>
+                <tbody>
+                @foreach (var conexionParcial in Model.ConexionesParciales)
+                {
+                    // puertoLocal busca la etiqueta real que corresponde al ID guardado.
+                    var puertoLocal = Model.Dispositivo.Puertos.FirstOrDefault(puerto =>
+                        puerto.IdentificadorInterfaz == conexionParcial.IdentificadorPuertoLocal);
+                    <tr>
+                        <td>@(puertoLocal?.Etiqueta ?? "Interfaz local")</td>
+                        <td><strong>@(conexionParcial.EquipoRemoto ?? "No identificado")</strong><small>@(conexionParcial.IpRemota ?? "IP no indicada") · @(conexionParcial.PuertoRemoto ?? "Puerto remoto no documentado")</small></td>
+                        <td>@conexionParcial.Medio</td>
+                        <td>@conexionParcial.EstadoDatos</td>
+                        <td>@conexionParcial.FuentePagina · @(conexionParcial.FuenteLibro ?? "sin libro") · @(conexionParcial.FuenteFila ?? "fila sin indicar")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}
