@@ -11,7 +11,8 @@
     </div>
     <div class="acciones-encabezado-conexiones">
         <a class="boton boton-secundario" asp-action="CrearInterfaz">Registrar puerto</a>
-        <a class="boton" asp-action="CrearEnlace">Registrar enlace</a>
+        <a class="boton" asp-action="CrearEnlace">Registrar enlace entre puertos</a>
+        <a class="boton boton-secundario" asp-action="CrearRelacion">Registrar conexión con extremo pendiente</a>
     </div>
 </section>
 
@@ -108,6 +109,51 @@
                     <div class="acciones-ficha-conexion">
                         <a class="boton boton-secundario" asp-controller="Correcciones" asp-action="EditarEnlace" asp-route-identificador="@enlace.Identificador">Corregir enlace</a>
                     </div>
+                </article>
+            }
+        </div>
+    }
+</section>
+<section class="panel panel-conexiones seccion-registros" data-paginador="relaciones-parciales" aria-labelledby="titulo-relaciones-parciales">
+    <div class="cabecera-listado-conexiones">
+        <div>
+            <p class="sobrelinea">IMPORTACIÓN DOCUMENTAL</p>
+            <h2 id="titulo-relaciones-parciales">Relaciones con extremo remoto pendiente <span class="contador-enlaces">@Model.RelacionesParciales.Count</span></h2>
+        </div>
+        <div class="controles-paginacion">
+            <label for="tamano-relaciones-parciales">Mostrar</label>
+            <select id="tamano-relaciones-parciales" data-tamano-pagina aria-label="Cantidad de relaciones parciales por página">
+                <option value="10" selected>10</option><option value="20">20</option><option value="30">30</option><option value="0">Todas</option>
+            </select>
+            <span data-resumen-pagina aria-live="polite"></span>
+            <button class="boton-paginacion" type="button" data-pagina-anterior aria-label="Mostrar página anterior">← Anterior</button>
+            <button class="boton-paginacion" type="button" data-pagina-siguiente aria-label="Mostrar página siguiente">Siguiente →</button>
+        </div>
+    </div>
+    @if (Model.RelacionesParciales.Count == 0)
+    {
+        <div class="estado-vacio-conexiones"><strong>No hay relaciones parciales</strong><p>Usa esta sección cuando una tabla identifique el puerto local pero no confirme el remoto.</p></div>
+    }
+    else
+    {
+        <div class="lista-fichas-conexion" data-lista-paginada>
+            @* relacion recorre conexiones con puerto remoto opcional y conserva visible su procedencia. *@
+            @foreach (var relacion in Model.RelacionesParciales)
+            {
+                <article class="ficha-conexion ficha-enlace" data-registro-paginable>
+                    <div class="trayecto-enlace">
+                        <div class="extremo-enlace"><p class="identificador-secundario">PUERTO LOCAL</p><h3>@relacion.EquipoLocal</h3><span>@relacion.PuertoLocal</span></div>
+                        <span class="flecha-enlace" aria-hidden="true">→</span>
+                        <div class="extremo-enlace"><p class="identificador-secundario">REMOTO DOCUMENTADO</p><h3>@(relacion.EquipoRemoto ?? "No identificado")</h3><span>@(relacion.PuertoRemoto ?? "Puerto no documentado") · @(relacion.IpRemota ?? "IP no indicada")</span></div>
+                        <span class="etiqueta-estado-conexion">@relacion.EstadoDatos</span>
+                    </div>
+                    <dl class="datos-ficha-conexion datos-enlace">
+                        <div><dt>Medio</dt><dd>@relacion.Medio</dd></div>
+                        <div><dt>Página</dt><dd>@relacion.FuentePagina</dd></div>
+                        <div><dt>Libro</dt><dd>@(relacion.FuenteLibro ?? "No indicado")</dd></div>
+                        <div><dt>Fila</dt><dd>@(relacion.FuenteFila ?? "No indicada")</dd></div>
+                        <div class="dato-ficha-ancho"><dt>Notas</dt><dd>@(relacion.Observaciones ?? "Sin observaciones")</dd></div>
+                    </dl>
                 </article>
             }
         </div>
