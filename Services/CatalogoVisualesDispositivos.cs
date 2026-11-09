@@ -135,7 +135,7 @@ public static class CatalogoVisualesDispositivos
             && interfaz.EstadoDatos == "Confirmado";
         var claseVisual = ocupadoEnDocumento ? "puerto-ocupado"
             : libreConfirmado ? "puerto-libre" : "puerto-desconocido";
-        var estadoVisual = ocupadoEnDocumento ? "Ocupado · enlace registrado"
+        var estadoVisual = ocupadoEnDocumento ? "Ocupado · relación documentada"
             : libreConfirmado ? "Libre confirmado" : "Desconocido";
 
         return new PuertoTopologiaViewModel
