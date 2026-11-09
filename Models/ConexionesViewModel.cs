@@ -17,6 +17,9 @@ public class ConexionesIndexViewModel
     /// Enlaces registrados; cambiar la lista modifica las relaciones presentadas.
     /// </summary>
     public IReadOnlyList<EnlaceListadoViewModel> Enlaces { get; set; } = [];
+
+    /// <summary>Relaciones con extremo remoto incompleto; cambiar la lista altera las filas pendientes.</summary>
+    public IReadOnlyList<RelacionParcialListadoViewModel> RelacionesParciales { get; set; } = [];
 }
 
 /// <summary>
@@ -215,4 +218,74 @@ public class EditarEnlaceViewModel : EnlaceFormularioViewModel
     /// <summary>ID del enlace; cambiarlo selecciona otra relación.</summary>
     [Range(1, int.MaxValue)]
     public int Identificador { get; set; }
+}
+
+/// <summary>Resume una relación con puerto local conocido y remoto opcional.</summary>
+public class RelacionParcialListadoViewModel
+{
+    /// <summary>ID del registro; cambiarlo selecciona otra relación parcial.</summary>
+    public int Identificador { get; set; }
+    /// <summary>Equipo local; cambiarlo modifica el extremo inventariado.</summary>
+    public string EquipoLocal { get; set; } = string.Empty;
+    /// <summary>Puerto local; cambiarlo señala otra interfaz conocida.</summary>
+    public string PuertoLocal { get; set; } = string.Empty;
+    /// <summary>Equipo remoto; cambiarlo modifica la etiqueta del destino documentado.</summary>
+    public string? EquipoRemoto { get; set; }
+    /// <summary>IP remota; cambiarla actualiza la dirección de destino.</summary>
+    public string? IpRemota { get; set; }
+    /// <summary>Puerto remoto; cambiarlo actualiza la etiqueta remota conocida.</summary>
+    public string? PuertoRemoto { get; set; }
+    /// <summary>Medio registrado; cambiarlo modifica la clasificación documental.</summary>
+    public string Medio { get; set; } = string.Empty;
+    /// <summary>Estado registrado; cambiarlo modifica la señal de revisión.</summary>
+    public string EstadoDatos { get; set; } = string.Empty;
+    /// <summary>Página de origen; cambiarla cambia la ubicación documental.</summary>
+    public string FuentePagina { get; set; } = string.Empty;
+    /// <summary>Libro de origen; cambiarlo cambia la tabla Excel referenciada.</summary>
+    public string? FuenteLibro { get; set; }
+    /// <summary>Fila de origen; cambiarla apunta a otro renglón.</summary>
+    public string? FuenteFila { get; set; }
+    /// <summary>Notas; cambiarlas modifica el contexto visible del registro.</summary>
+    public string? Observaciones { get; set; }
+}
+
+/// <summary>Datos y opciones para registrar una relación con extremo remoto incompleto.</summary>
+public class NuevaConexionDocumentadaViewModel
+{
+    /// <summary>Puerto local real; cambiarlo vincula la observación a otra interfaz.</summary>
+    [Range(1, int.MaxValue, ErrorMessage = "Selecciona el puerto local conocido.")]
+    public int IdentificadorPuertoLocal { get; set; }
+    /// <summary>Equipo remoto opcional; cambiarlo actualiza el nombre del destino disponible.</summary>
+    [StringLength(160)]
+    public string? EquipoRemoto { get; set; }
+    /// <summary>IP remota opcional; cambiarla actualiza la dirección si está documentada.</summary>
+    [StringLength(45)]
+    public string? IpRemota { get; set; }
+    /// <summary>Puerto remoto opcional; cambiarlo actualiza la etiqueta si se conoce.</summary>
+    [StringLength(100)]
+    public string? PuertoRemoto { get; set; }
+    /// <summary>Medio; cambiarlo modifica el tipo indicado y queda No confirmado sin evidencia.</summary>
+    [Required, StringLength(60)]
+    [RegularExpression(@"^(No confirmado|Cobre RJ45|Fibra|DAC|Otro)$", ErrorMessage = "Selecciona un medio válido.")]
+    public string Medio { get; set; } = "No confirmado";
+    /// <summary>Estado; cambiarlo altera la confianza documental de la relación.</summary>
+    [Required, StringLength(60)]
+    [RegularExpression(@"^(A verificar|Pendiente de revisión|Confirmado|Desactualizado)$", ErrorMessage = "Selecciona un estado válido.")]
+    public string EstadoDatos { get; set; } = "A verificar";
+    /// <summary>Fecha comprobada; cambiarla debe coincidir con una revisión real.</summary>
+    public DateOnly? FechaUltimaRevision { get; set; }
+    /// <summary>Página requerida de origen; cambiarla modifica la referencia al Visio.</summary>
+    [Required, StringLength(160)]
+    public string FuentePagina { get; set; } = string.Empty;
+    /// <summary>Libro Excel opcional; cambiarlo actualiza el nombre de la tabla incrustada.</summary>
+    [StringLength(160)]
+    public string? FuenteLibro { get; set; }
+    /// <summary>Fila opcional; cambiarla apunta al renglón origen.</summary>
+    [StringLength(100)]
+    public string? FuenteFila { get; set; }
+    /// <summary>Observaciones; cambiarlas modifica el contexto de revisión.</summary>
+    [StringLength(1000)]
+    public string? Observaciones { get; set; }
+    /// <summary>Interfaces utilizables; cambiar la lista modifica las opciones del selector local.</summary>
+    public List<SelectListItem> InterfacesDisponibles { get; set; } = [];
 }
