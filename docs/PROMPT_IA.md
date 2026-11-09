@@ -155,14 +155,16 @@ Todavía no se importaron en masa las posiciones de puerto a SQLite. Al hacerlo,
 - Simulaciones solo sobre el modelo de datos de la aplicación. No mandar pings, comandos ni cambios a la red real.
 - Las imágenes deben corresponder a un modelo identificado y registrar su fuente; no presentarlas como verificadas por similitud de nombre.
 
-## Orden de trabajo
+## Orden de trabajo actualizado
 
-1. Revisar roles/tipos corregidos y la vista de puertos para que cada conexión ocupada muestre el equipo/IP de destino.
-2. Ampliar el modelo para guardar el puerto local conocido y permitir el puerto remoto sin documentar; conservar fuente de página, libro y fila.
-3. Importar los puertos de usuario confirmados del V3; mantener discrepancias y enlaces de rack como pendientes, y separar uso del puerto de presencia del SFP.
+1. Importar de forma controlada las relaciones del V3: puerto local, destino conocido si existe y fuente de página/libro/fila. Los puertos remotos y medios faltantes quedan vacíos o «No confirmado».
+2. Revisar los pares recíprocos del rack y las discrepancias restantes con el usuario antes de convertirlos en enlaces completos.
+3. Separar de forma estructurada el estado de ocupación del puerto y la presencia/modelo/fecha del transceptor SFP.
 4. Enriquecer PCs/usuarios con los dos Visios pendientes y luego completar jerarquía de switching/VLAN con relaciones confirmadas.
 5. Agregar simulaciones exclusivamente sobre datos locales y exportación/impresión gráfica.
 6. Verificar bases SQLite previas, migraciones, respaldos, HTTPS y permisos; restaurar el login al finalizar el proyecto.
+
+La entidad SQLite `ConexionDocumentada` ya admite puerto local obligatorio, destino remoto opcional, medio/estado, fecha y procedencia (página, libro y fila). No sustituye `EnlaceFisico`, conserva la compatibilidad con los enlaces de dos puertos y crea la tabla faltante al iniciar bases SQLite existentes. El puerto se muestra ocupado; sin extremo remoto validado, no se dibuja una arista.
 
 ## Auditoría requerida
 - El MVP registra accesos correctos/fallidos y cierres de sesión con usuario, evento, resultado y fecha UTC.
