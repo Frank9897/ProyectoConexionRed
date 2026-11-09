@@ -65,7 +65,8 @@ public static class CatalogoVisualesDispositivos
     /// <param name="identificadoresEnlazados">IDs con enlace; cambiar el conjunto altera qué puertos se ven ocupados.</param>
     /// <returns>Puertos visibles con ocupado documental, libre confirmado o desconocido.</returns>
     public static List<PuertoTopologiaViewModel> CrearPuertos(EquipoRed equipo,
-        IReadOnlyList<InterfazEquipo> interfacesEquipo, ISet<int> identificadoresEnlazados)
+        IReadOnlyList<InterfazEquipo> interfacesEquipo, ISet<int> identificadoresEnlazados,
+        IReadOnlyDictionary<int, string> destinosPorInterfaz)
     {
         // perfilExacto aporta capacidad de fabricante solo cuando ambos nombres coinciden literalmente.
         var perfilExacto = string.Equals(equipo.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase)
@@ -103,14 +104,14 @@ public static class CatalogoVisualesDispositivos
                 {
                     interfacesUsadas.Add(interfazEncontrada.Identificador);
                 }
-                resultadoPuertos.Add(CrearPuertoVisual(interfazEncontrada, etiquetaEsperada, grupo.Tipo, identificadoresEnlazados));
+                resultadoPuertos.Add(CrearPuertoVisual(interfazEncontrada, etiquetaEsperada, grupo.Tipo, identificadoresEnlazados, destinosPorInterfaz));
             }
         }
 
         foreach (var interfazSinPosicion in interfacesEquipo.Where(interfaz => !interfacesUsadas.Contains(interfaz.Identificador)))
         {
             resultadoPuertos.Add(CrearPuertoVisual(interfazSinPosicion, interfazSinPosicion.EtiquetaPuerto,
-                interfazSinPosicion.TipoInterfaz, identificadoresEnlazados));
+                interfazSinPosicion.TipoInterfaz, identificadoresEnlazados, destinosPorInterfaz));
         }
 
         return resultadoPuertos;
@@ -125,7 +126,7 @@ public static class CatalogoVisualesDispositivos
     /// <param name="identificadoresEnlazados">Conjunto de enlaces; cambiarlo puede marcar ocupado el puerto.</param>
     /// <returns>Modelo de puerto con estado documental y clase de color.</returns>
     private static PuertoTopologiaViewModel CrearPuertoVisual(InterfazEquipo? interfaz, string etiqueta, string tipo,
-        ISet<int> identificadoresEnlazados)
+        ISet<int> identificadoresEnlazados, IReadOnlyDictionary<int, string> destinosPorInterfaz)
     {
         // ocupadoEnDocumento solo significa que existe una relación guardada, no que se midió conectividad actual.
         var ocupadoEnDocumento = interfaz is not null && identificadoresEnlazados.Contains(interfaz.Identificador);
@@ -143,7 +144,9 @@ public static class CatalogoVisualesDispositivos
             Etiqueta = etiqueta,
             Tipo = tipo,
             ClaseVisual = claseVisual,
-            EstadoVisual = estadoVisual
+            EstadoVisual = estadoVisual,
+            DestinoConexion = interfaz is not null && destinosPorInterfaz.TryGetValue(interfaz.Identificador, out var destino)
+                ? destino : null
         };
     }
 
