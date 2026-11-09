@@ -528,6 +528,12 @@ tbody tr:hover { background: #f7fafb; }
 .filtros-topologia-grafica { display: grid; grid-template-columns: minmax(220px, 1.5fr) minmax(190px, 1fr); gap: 14px; margin: 18px 0 12px; }
 .filtros-topologia-grafica label { display: grid; gap: 6px; color: var(--secundario); font-size: .88rem; font-weight: 650; }
 .filtros-topologia-grafica input, .filtros-topologia-grafica select { width: 100%; min-height: 42px; border: 1px solid var(--borde); border-radius: 9px; padding: 9px 12px; background: #fff; color: var(--tinta); font: inherit; }
+.boton-capa-topologia { border: 0; padding: 0; background: transparent; cursor: pointer; font: inherit; text-align: left; }
+.selector-capas-topologia { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0 12px; }
+.selector-capa-topologia { min-height: 36px; border: 1px solid #d6e1e6; border-radius: 999px; padding: 7px 14px; background: #fff; color: #4c626e; font: inherit; font-size: .84rem; font-weight: 700; cursor: pointer; transition: background .18s ease, color .18s ease, border-color .18s ease; }
+.selector-capa-topologia:hover { border-color: #87aeb9; }
+.selector-capa-topologia.activa { border-color: #176b78; background: #176b78; color: #fff; }
+.selector-capas-topologia [data-resumen-mapa] { margin-left: auto; color: #617782; font-size: .82rem; font-variant-numeric: tabular-nums; }
 .leyenda-topologia { display: flex; flex-wrap: wrap; gap: 10px 18px; color: var(--secundario); font-size: .82rem; }
 .leyenda-topologia span { display: inline-flex; align-items: center; gap: 7px; }
 .muestra-puerto { width: 17px; height: 12px; border: 1px solid #fff8; border-radius: 3px; }
@@ -565,6 +571,7 @@ tbody tr:hover { background: #f7fafb; }
 .enlace-topologia.enlace-pendiente { stroke: #b3762c; stroke-dasharray: 7 6; }
 .enlace-topologia.enlace-confirmado { stroke: #248a58; }
 @media (max-width: 700px) {
+    .selector-capas-topologia [data-resumen-mapa] { width: 100%; margin: 4px 0 0; }
     .mapa-topologia { padding: 12px; }
     .filtros-topologia-grafica { grid-template-columns: 1fr; }
     .grupo-capacidades-switch { grid-template-columns: 1fr; }

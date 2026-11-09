@@ -16,7 +16,14 @@
     // buscarTopologia y filtrarArea reducen el gráfico sin alterar los datos guardados.
     const buscarTopologia = document.querySelector("[data-busqueda-topologia]");
     const filtrarArea = document.querySelector("[data-filtro-area]");
+    // espacioSvg identifica el espacio de nombres que necesita el navegador para crear rutas SVG.
     const espacioSvg = "http://www.w3.org/2000/svg";
+    // botonesCapa permite elegir una perspectiva sin cambiar el inventario guardado.
+    const botonesCapa = Array.from(document.querySelectorAll("[data-seleccionar-capa]"));
+    // resumenMapa anuncia cuántos nodos y enlaces quedan visibles tras aplicar filtros.
+    const resumenMapa = document.querySelector("[data-resumen-mapa]");
+    // modoCapaActual inicia el mapa en la vista física completa.
+    let modoCapaActual = "fisica";
 
     /**
      * Marca los puertos extremos al enfocar o señalar una línea del gráfico.
@@ -113,13 +120,67 @@
     };
 
     /**
-     * Filtra nodos por texto y área y oculta aristas con extremos no visibles.
+     * Cambia la perspectiva de red; el modo determina qué nodos pueden verse.
+     * @param {string} modoSolicitado El valor física, switching o acceso limita la vista sin alterar los datos.
+     */
+    const seleccionarCapa = modoSolicitado => {
+        // modoValido evita activar una vista desconocida si el HTML recibe un valor inesperado.
+        const modoValido = ["fisica", "switching", "acceso"].includes(modoSolicitado) ? modoSolicitado : "fisica";
+        modoCapaActual = modoValido;
+        // boton cambia su estado accesible y visual según la capa seleccionada.
+        botonesCapa.forEach(boton => {
+            // estaActiva evita marcar simultáneamente dos perspectivas.
+            const estaActiva = boton.dataset.seleccionarCapa === modoCapaActual;
+            boton.classList.toggle("activa", estaActiva);
+            boton.setAttribute("aria-pressed", String(estaActiva));
+        });
+        actualizarFiltros();
+    };
+
+    /**
+     * Filtra equipos y enlaces por capa, texto y área sin inferir relaciones.
      */
     const actualizarFiltros = () => {
         // textoBuscado se compara sin distinguir mayúsculas ni tildes.
         const textoBuscado = normalizarTexto(buscarTopologia?.value || "");
         const areaElegida = filtrarArea?.value || "";
+        // nodosPorId resuelve extremos de enlaces para construir la vista de acceso documentada.
+        const nodosPorId = new Map(nodosTopologia.map(nodo => [nodo.dataset.identificadorDispositivo, nodo]));
+        // identificadoresAcceso contiene puestos y switches enlazados explícitamente con puestos.
+        const identificadoresAcceso = new Set(nodosTopologia
+            // nodo se incluye como puesto si su tipo registrado contiene esa categoría.
+            .filter(nodo => normalizarTexto(nodo.dataset.dispositivoTipo || "").includes("puesto"))
+            .map(nodo => nodo.dataset.identificadorDispositivo));
+
+        if (modoCapaActual === "acceso") {
+            // enlace representa solo una relación guardada que puede agregar un switch a Acceso.
+            datosEnlaces.forEach(enlace => {
+                // equipoOrigen y equipoDestino solo agregan el switch vecino si el enlace ya está registrado.
+                const equipoOrigen = nodosPorId.get(enlace.dataset.equipoOrigen);
+                const equipoDestino = nodosPorId.get(enlace.dataset.equipoDestino);
+                const origenEsPuesto = normalizarTexto(equipoOrigen?.dataset.dispositivoTipo || "").includes("puesto");
+                const destinoEsPuesto = normalizarTexto(equipoDestino?.dataset.dispositivoTipo || "").includes("puesto");
+                // origenEsSwitch decide si el primer extremo puede entrar como switch vecino.
+                const origenEsSwitch = normalizarTexto(equipoOrigen?.dataset.dispositivoTipo || "").includes("switch");
+                // destinoEsSwitch decide si el segundo extremo puede entrar como switch vecino.
+                const destinoEsSwitch = normalizarTexto(equipoDestino?.dataset.dispositivoTipo || "").includes("switch");
+
+                if (origenEsPuesto && destinoEsSwitch) {
+                    identificadoresAcceso.add(enlace.dataset.equipoDestino);
+                } else if (destinoEsPuesto && origenEsSwitch) {
+                    identificadoresAcceso.add(enlace.dataset.equipoOrigen);
+                }
+            });
+        }
+
         nodosTopologia.forEach(nodo => {
+            // coincideCapa limita la ficha a la perspectiva actualmente seleccionada.
+            // tipoNormalizado permite aplicar los filtros por familia sin depender de mayúsculas ni tildes.
+            const tipoNormalizado = normalizarTexto(nodo.dataset.dispositivoTipo || "");
+            const coincideCapa = modoCapaActual === "fisica"
+                || (modoCapaActual === "switching" && tipoNormalizado.includes("switch"))
+                || (modoCapaActual === "acceso" && identificadoresAcceso.has(nodo.dataset.identificadorDispositivo));
+            // datosNodo reúne campos documentados que participan de la búsqueda textual.
             const datosNodo = [
                 nodo.dataset.dispositivoNombre,
                 nodo.dataset.dispositivoTipo,
@@ -127,18 +188,55 @@
                 nodo.dataset.dispositivoModelo,
                 nodo.dataset.dispositivoIp
             ].join(" ");
+            // textoNormalizado permite comparar la búsqueda sin mayúsculas ni acentos.
             const textoNormalizado = normalizarTexto(datosNodo);
-            nodo.hidden = (areaElegida !== "" && nodo.dataset.dispositivoArea !== areaElegida)
+            nodo.hidden = !coincideCapa
+                || (areaElegida !== "" && nodo.dataset.dispositivoArea !== areaElegida)
                 || (textoBuscado !== "" && !textoNormalizado.includes(textoBuscado));
         });
         dibujarEnlaces();
+        actualizarResumen();
     };
 
     /**
+     * Actualiza el resumen visible para reflejar solo nodos y enlaces del filtro actual.
+     */
+    const actualizarResumen = () => {
+        // equiposVisibles cuenta los nodos presentes tras filtros de capa, texto y área.
+        // equiposVisibles actualiza el resumen tras variar capa, área o búsqueda.
+        const equiposVisibles = nodosTopologia.filter(nodo => !nodo.hidden).length;
+        // enlacesVisibles cuenta solo relaciones cuyos dos extremos permanecen visibles.
+        // enlacesVisibles excluye toda relación cuyo nodo esté oculto por los filtros.
+        const enlacesVisibles = datosEnlaces.filter(enlace => {
+            // origen y destino permiten contar solo aristas con ambos nodos visibles.
+            const origen = nodosPorIdentificador(enlace.dataset.equipoOrigen);
+            const destino = nodosPorIdentificador(enlace.dataset.equipoDestino);
+            return origen && destino && !origen.hidden && !destino.hidden;
+        }).length;
+        if (resumenMapa) {
+            resumenMapa.textContent = `${equiposVisibles} equipos · ${enlacesVisibles} enlaces`;
+        }
+    };
+
+    /**
+     * Busca una ficha por su identificador dentro de los nodos renderizados.
+     * @param {string} identificadorEquipo ID documental del nodo; cambiarlo busca otra ficha.
+     * @returns {Element|undefined} Nodo correspondiente o indefinido cuando no está en la vista.
+     */
+    const nodosPorIdentificador = identificadorEquipo =>
+        nodosTopologia.find(nodo => nodo.dataset.identificadorDispositivo === identificadorEquipo);
+
+    /**
      * Normaliza texto del filtro para comparar nombres con o sin tildes.
+     * @param {string} texto Valor a normalizar; cambiarlo produce otro texto de comparación.
+     * @returns {string} Texto en minúsculas y sin marcas diacríticas.
      */
     const normalizarTexto = texto => texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es");
 
+    botonesCapa.forEach(boton => {
+        // cada boton cambia solo la perspectiva visual y conserva los filtros de búsqueda y área.
+        boton.addEventListener("click", () => seleccionarCapa(boton.dataset.seleccionarCapa || "fisica"));
+    });
     buscarTopologia?.addEventListener("input", actualizarFiltros);
     filtrarArea?.addEventListener("change", actualizarFiltros);
     // observadorMapa redibuja las conexiones cuando cambia el tamaño de la cuadrícula.

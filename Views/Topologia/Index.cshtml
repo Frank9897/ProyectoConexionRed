@@ -50,7 +50,7 @@
             <strong>@Model.TotalEnlaces</strong>
             <span>enlaces registrados</span>
         </div>
-        <a class="enlace-capa" href="#enlaces-fisicos">Ver detalle de capa <span aria-hidden="true">→</span></a>
+        <button class="enlace-capa boton-capa-topologia" type="button" data-seleccionar-capa="fisica">Ver detalle de capa <span aria-hidden="true">→</span></button>
     </article>
 
     <article class="tarjeta-capa capa-switching">
@@ -59,12 +59,12 @@
             <span class="etiqueta-capa">CAPA 2 · SWITCHING</span>
         </div>
         <h2>Switches y áreas</h2>
-        <p>Jerarquía de switches, funciones principal/secundario y gestión administrativa.</p>
+        <p>Switches inventariados y enlaces documentados entre switches. La administración y las VLAN quedan para otra etapa.</p>
         <div class="dato-capa">
             <strong>@Model.TotalSwitches</strong>
             <span>switches inventariados</span>
         </div>
-        <a class="enlace-capa" asp-controller="Inventario" asp-action="Index" asp-route-busqueda="Switch">Consultar switches <span aria-hidden="true">→</span></a>
+        <button class="enlace-capa boton-capa-topologia" type="button" data-seleccionar-capa="switching">Ver switches <span aria-hidden="true">→</span></button>
     </article>
 
     <article class="tarjeta-capa capa-acceso">
@@ -73,12 +73,12 @@
             <span class="etiqueta-capa">CAPA 3 · ACCESO E IP</span>
         </div>
         <h2>Puestos y direcciones</h2>
-        <p>Equipos de usuario, asignaciones y direcciones IP registradas por área.</p>
+        <p>Puestos inventariados y switches conectados mediante un enlace registrado.</p>
         <div class="dato-capa">
             <strong>@Model.PuestosConIp<span class="total-secundario"> / @Model.TotalPuestos</span></strong>
             <span>puestos con IP documentada</span>
         </div>
-        <a class="enlace-capa" asp-controller="Inventario" asp-action="Index" asp-route-busqueda="Puesto de usuario">Consultar puestos <span aria-hidden="true">→</span></a>
+        <button class="enlace-capa boton-capa-topologia" type="button" data-seleccionar-capa="acceso">Ver puestos y switches enlazados <span aria-hidden="true">→</span></button>
     </article>
 </section>
 
@@ -94,8 +94,8 @@
     <div class="encabezado-seccion-topologia">
         <div>
             <p class="sobrelinea">VISTA INTERACTIVA</p>
-            <h2 id="titulo-mapa-topologia">Mapa físico documentado</h2>
-            <p>Los equipos se dibujan como nodos; las líneas representan solo enlaces guardados.</p>
+            <h2 id="titulo-mapa-topologia">Mapa de conexiones documentadas</h2>
+            <p>Selecciona una perspectiva para filtrar los equipos; las líneas aparecen solo entre extremos guardados.</p>
         </div>
         <span class="contador-enlaces">@Model.Dispositivos.Count equipos · @Model.Enlaces.Count enlaces</span>
     </div>
@@ -113,6 +113,13 @@
                 }
             </select>
         </label>
+    </div>
+
+    <div class="selector-capas-topologia" role="group" aria-label="Seleccionar vista de topología">
+        <button type="button" class="selector-capa-topologia activa" data-seleccionar-capa="fisica" aria-pressed="true">Física</button>
+        <button type="button" class="selector-capa-topologia" data-seleccionar-capa="switching" aria-pressed="false">Switching</button>
+        <button type="button" class="selector-capa-topologia" data-seleccionar-capa="acceso" aria-pressed="false">Acceso</button>
+        <span data-resumen-mapa>@Model.Dispositivos.Count equipos · @Model.Enlaces.Count enlaces</span>
     </div>
 
     <div class="leyenda-topologia" aria-label="Leyenda de los puertos">
