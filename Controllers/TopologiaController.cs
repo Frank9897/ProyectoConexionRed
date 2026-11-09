@@ -39,9 +39,33 @@ public class TopologiaController : Controller
         var interfacesRegistradas = await contextoInventario.InterfacesEquipo.AsNoTracking()
             .OrderBy(interfaz => interfaz.EtiquetaPuerto)
             .ToListAsync(cancelacion);
-        // enlacesRegistrados contiene relaciones explícitas y determina qué aristas se pueden dibujar.
+        // enlacesRegistrados contiene relaciones explícitas entre dos puertos y determina las aristas completas.
         var enlacesRegistrados = await contextoInventario.EnlacesFisicos.AsNoTracking()
             .ToListAsync(cancelacion);
+        // relacionesParciales conserva filas con un puerto local conocido y remoto opcional.
+        var relacionesParciales = await (
+            from relacion in contextoInventario.ConexionesDocumentadas.AsNoTracking()
+            join puertoLocal in contextoInventario.InterfacesEquipo.AsNoTracking()
+                on relacion.IdentificadorPuertoLocal equals puertoLocal.Identificador
+            join equipoLocal in contextoInventario.Equipos.AsNoTracking()
+                on puertoLocal.IdentificadorEquipo equals equipoLocal.Identificador
+            orderby equipoLocal.Nombre, puertoLocal.EtiquetaPuerto
+            select new ConexionParcialTopologiaViewModel
+            {
+                Identificador = relacion.Identificador,
+                IdentificadorPuertoLocal = relacion.IdentificadorPuertoLocal,
+                EquipoLocal = equipoLocal.Nombre,
+                PuertoLocal = puertoLocal.EtiquetaPuerto,
+                EquipoRemoto = relacion.EquipoRemoto,
+                IpRemota = relacion.IpRemota,
+                PuertoRemoto = relacion.PuertoRemoto,
+                Medio = relacion.Medio,
+                EstadoDatos = relacion.EstadoDatos,
+                FuentePagina = relacion.FuentePagina,
+                FuenteLibro = relacion.FuenteLibro,
+                FuenteFila = relacion.FuenteFila,
+                Observaciones = relacion.Observaciones
+            }).ToListAsync(cancelacion);
 
         // equiposPorId resuelve cada extremo de enlace a su ficha propietaria.
         var equiposPorId = equiposRegistrados.ToDictionary(equipo => equipo.Identificador);
@@ -51,6 +75,8 @@ public class TopologiaController : Controller
         var puertosEnlazados = enlacesRegistrados
             .SelectMany(enlace => new[] { enlace.IdentificadorPuertoOrigen, enlace.IdentificadorPuertoDestino })
             .ToHashSet();
+        // ConexionesDocumentadas también ocupa el puerto local aunque no se dibuje un enlace de dos extremos.
+        puertosEnlazados.UnionWith(relacionesParciales.Select(relacion => relacion.IdentificadorPuertoLocal));
         // destinosPorInterfaz resume el otro extremo guardado para que el título del puerto identifique su destino.
         var destinosPorInterfaz = new Dictionary<int, string>();
         foreach (var enlace in enlacesRegistrados)
@@ -62,6 +88,18 @@ public class TopologiaController : Controller
                 continue;
             destinosPorInterfaz[interfazOrigen.Identificador] = $"{equipoDestino.Nombre} · {interfazDestino.EtiquetaPuerto}";
             destinosPorInterfaz[interfazDestino.Identificador] = $"{equipoOrigen.Nombre} · {interfazOrigen.EtiquetaPuerto}";
+        }
+        foreach (var relacion in relacionesParciales)
+        {
+            // destinoParcial señala el extremo documentado sin inventar campos que no aparecen en el Visio.
+            var destinoParcial = string.Join(" · ", new[]
+            {
+                relacion.EquipoRemoto, relacion.IpRemota, relacion.PuertoRemoto
+            }.Where(texto => !string.IsNullOrWhiteSpace(texto)));
+            if (string.IsNullOrWhiteSpace(destinoParcial))
+                destinoParcial = "Extremo remoto no identificado";
+            destinosPorInterfaz[relacion.IdentificadorPuertoLocal] =
+                $"{destinoParcial} · {relacion.Medio} · {relacion.EstadoDatos} · Fuente: {relacion.FuentePagina}";
         }
         // interfacesPorEquipo agrupa los puertos reales; cambiar el agrupamiento altera cada frontal.
         var interfacesPorEquipo = interfacesRegistradas.ToLookup(interfaz => interfaz.IdentificadorEquipo);
@@ -164,7 +202,8 @@ public class TopologiaController : Controller
             TotalEnlaces = enlacesDibujables.Count,
             Areas = areasDocumentadas,
             Dispositivos = dispositivosDibujados,
-            Enlaces = enlacesDibujables
+            Enlaces = enlacesDibujables,
+            RelacionesParciales = relacionesParciales
         };
 
         return View(resumenTopologia);
@@ -192,6 +231,12 @@ public class TopologiaController : Controller
             .ToListAsync(cancelacion);
         // enlacesRegistrados permite resolver ambos extremos y listar solo enlaces de esta ficha.
         var enlacesRegistrados = await contextoInventario.EnlacesFisicos.AsNoTracking().ToListAsync(cancelacion);
+        // conexionesParciales conserva las observaciones cuyo puerto local pertenece a este switch.
+        var identificadoresInterfacesSwitch = interfacesDelSwitch.Select(interfaz => interfaz.Identificador).ToList();
+        var conexionesParciales = await contextoInventario.ConexionesDocumentadas.AsNoTracking()
+            .Where(relacion => identificadoresInterfacesSwitch.Contains(relacion.IdentificadorPuertoLocal))
+            .OrderBy(relacion => relacion.IdentificadorPuertoLocal)
+            .ToListAsync(cancelacion);
         // interfacesPorId resuelve cada extremo guardado sin buscar por nombre o IP.
         var interfacesPorId = await contextoInventario.InterfacesEquipo.AsNoTracking()
             .ToDictionaryAsync(interfaz => interfaz.Identificador, cancelacion);
@@ -276,6 +321,6 @@ public class TopologiaController : Controller
             Puertos = puertosDelSwitch
         };
 
-        return View(new DetalleTopologiaViewModel { Dispositivo = dispositivo, Enlaces = enlacesDelSwitch });
+        return View(new DetalleTopologiaViewModel { Dispositivo = dispositivo, Enlaces = enlacesDelSwitch, ConexionesParciales = conexionesParciales });
     }
 }
