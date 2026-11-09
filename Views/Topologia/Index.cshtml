@@ -174,20 +174,28 @@
                     }
                     @if (dispositivo.Puertos.Count > 0)
                     {
-                        <div class="panel-frontal-switch">
-                            <strong>@(dispositivo.EsSwitch ? "Puertos del frontal" : "Interfaces registradas")</strong>
-                            <div class="rejilla-puertos-switch">
-                                @foreach (var puerto in dispositivo.Puertos)
-                                {
-                                    <span class="puerto-topologia @puerto.ClaseVisual"
-                                          data-identificador-interfaz="@puerto.IdentificadorInterfaz"
-                                          title="@puerto.Etiqueta · @puerto.EstadoVisual · @puerto.Tipo">
-                                        <span>@puerto.Etiqueta</span>
-                                        <span class="solo-lectores-pantalla">@puerto.EstadoVisual</span>
-                                    </span>
-                                }
+                        @if (dispositivo.EsSwitch)
+                        {
+                            @await Html.PartialAsync("_FrontalSwitch", dispositivo)
+                            <a class="enlace-detalle-switch" asp-action="Detalle" asp-route-identificador="@dispositivo.Identificador">Ver puertos y enlaces <span aria-hidden="true">→</span></a>
+                        }
+                        else
+                        {
+                            <div class="panel-frontal-switch">
+                                <strong>Interfaces registradas</strong>
+                                <div class="rejilla-puertos-switch">
+                                    @foreach (var puerto in dispositivo.Puertos)
+                                    {
+                                        <span class="puerto-topologia @puerto.ClaseVisual"
+                                              data-identificador-interfaz="@puerto.IdentificadorInterfaz"
+                                              title="@puerto.Etiqueta · @puerto.EstadoVisual · @puerto.Tipo@(puerto.DestinoConexion is null ? "" : " · " + puerto.DestinoConexion)">
+                                            <span>@puerto.Etiqueta</span>
+                                            <span class="solo-lectores-pantalla">@puerto.EstadoVisual</span>
+                                        </span>
+                                    }
+                                </div>
                             </div>
-                        </div>
+                        }
                     }
                     else if (dispositivo.EsSwitch)
                     {
