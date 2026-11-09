@@ -32,9 +32,9 @@
         <small>@Model.PuestosConIp con IP documentada</small>
     </article>
     <article class="metrica-topologia">
-        <span class="etiqueta-metrica">Enlaces físicos</span>
+        <span class="etiqueta-metrica">Enlaces completos</span>
         <strong>@Model.TotalEnlaces</strong>
-        <small>@Model.TotalInterfaces interfaces registradas</small>
+        <small>@Model.RelacionesParciales.Count relaciones con extremo remoto pendiente</small>
     </article>
 </section>
 
@@ -273,4 +273,41 @@ else
     </section>
 }
 
+@if (Model.RelacionesParciales.Count > 0)
+{
+    <section class="panel panel-enlaces" data-paginador="relaciones-parciales-topologia" aria-labelledby="titulo-conexiones-parciales-topologia">
+        <div class="encabezado-seccion-topologia">
+            <div><p class="sobrelinea">EXTREMO REMOTO INCOMPLETO</p><h2 id="titulo-conexiones-parciales-topologia">Relaciones documentadas para revisar</h2></div>
+            <div class="controles-paginacion">
+                <label for="tamano-relaciones-topologia">Mostrar</label>
+                <select id="tamano-relaciones-topologia" data-tamano-pagina aria-label="Cantidad de relaciones parciales por página">
+                    <option value="10" selected>10</option><option value="20">20</option><option value="30">30</option><option value="0">Todas</option>
+                </select>
+                <span data-resumen-pagina aria-live="polite"></span>
+                <button class="boton-paginacion" type="button" data-pagina-anterior aria-label="Página anterior">← Anterior</button>
+                <button class="boton-paginacion" type="button" data-pagina-siguiente aria-label="Página siguiente">Siguiente →</button>
+            </div>
+        </div>
+        <p class="aclaracion-topologia-grafica">Estos puertos se marcan ocupados en el frontal. No se dibuja una línea de extremo a extremo porque el puerto remoto todavía no está confirmado.</p>
+        <div class="tabla-contenedor">
+            <table>
+                <thead><tr><th>Puerto local</th><th>Destino disponible</th><th>Medio</th><th>Estado</th><th>Procedencia</th></tr></thead>
+                <tbody>
+                @foreach (var relacion in Model.RelacionesParciales)
+                {
+                    <tr data-registro-paginable>
+                        <td><strong>@relacion.EquipoLocal</strong><small>@relacion.PuertoLocal</small></td>
+                        <td><strong>@(relacion.EquipoRemoto ?? "No identificado")</strong><small>@(relacion.IpRemota ?? "IP no indicada") · @(relacion.PuertoRemoto ?? "Puerto remoto no documentado")</small></td>
+                        <td>@relacion.Medio</td>
+                        <td>@relacion.EstadoDatos</td>
+                        <td>@relacion.FuentePagina · @(relacion.FuenteLibro ?? "sin libro") · @(relacion.FuenteFila ?? "fila sin indicar")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}
+
+<script src="~/js/paginacion-conexiones.js" asp-append-version="true"></script>
 <script src="~/js/topologia-grafica.js" asp-append-version="true"></script>
