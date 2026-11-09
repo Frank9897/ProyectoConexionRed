@@ -61,7 +61,7 @@ La revisión se hizo sobre la rama publicada. En esta sesión no hay un checkout
 
 La vista Topología representa todas las fichas de equipo como nodos y dibuja una línea solamente para cada registro de `EnlacesFisicos` cuyos dos extremos existen. Incluye búsqueda, filtro por área, iconos SVG locales por tipo, frontal de puertos adaptable, lista de relaciones exactas y un estado visual accesible:
 
-- Verde: puerto ocupado en la documentación porque participa en un enlace guardado; no confirma conectividad actual.
+- Verde: puerto ocupado por un enlace completo o una relación parcial guardada; no confirma conectividad actual.
 - Gris oscuro: puerto con uso marcado explícitamente como `Libre confirmado` con vigencia `Confirmado`.
 - Verde oscuro: puerto desconocido o sin correspondencia exacta con una posición.
 
@@ -88,8 +88,8 @@ La inicialización SQLite agrega de forma idempotente las columnas nuevas de cap
 
 ## Avance de topología visual
 
-La vista de topología incorpora un frontal esquemático para cada switch con capacidad documentada o ingresada. Las bocas se distribuyen en dos filas numeradas; el verde claro marca ocupación registrada, el gris oscuro marca puerto libre confirmado y el verde oscuro translúcido representa estado desconocido. Las bahías SFP se dibujan por separado y la presencia/modelo del transceptor no se deduce de la bahía. Cada puerto ocupado muestra su destino en la ayuda emergente cuando existe un enlace de dos extremos. El enlace «Ver puertos y enlaces» abre el detalle del switch.
+La vista de topología incorpora un frontal esquemático para cada switch con capacidad documentada o ingresada. Las bocas se distribuyen en dos filas numeradas; el verde claro marca ocupación registrada, el gris oscuro marca puerto libre confirmado y el verde oscuro translúcido representa estado desconocido. Las bahías SFP se dibujan por separado y la presencia/modelo del transceptor no se deduce de la bahía. Cada puerto ocupado muestra el destino en la ayuda emergente cuando existe un enlace completo o una relación documental de un extremo. El enlace «Ver puertos y enlaces» abre el detalle del switch.
 
-Los registros que solo indican un equipo conectado a un puerto local de una hoja Visio aún no se importan automáticamente porque el esquema actual exige dos interfaces enlazadas. No se crean puertos remotos ni medios de cable ficticios; esta limitación queda para la siguiente etapa de importación con extremo remoto opcional.
+La aplicación ahora admite relaciones documentales con un puerto local obligatorio y equipo/IP/puerto remotos opcionales. Guarda página, libro Excel y fila de origen, estado, medio y observaciones; los valores predeterminados son «A verificar» y «No confirmado». Una relación parcial ocupa el puerto en el frontal y aparece en sus detalles, pero no dibuja una línea entre equipos. El formulario evita reutilizar puertos ya vinculados y registra el alta en auditoría. Las tablas del V3 aún deben cargarse, validar fila por fila y mantener ambiguos como pendientes.
 
 Correcciones confirmadas para el análisis: HP ProCurve `10.0.1.1`; switch 3Com `192.168.1.24`; el HP 1920 puerto 16 corresponde al iDRAC del Dell R770 (P1, `192.168.0.247`); el S4148U puerto 21 corresponde al LAN P2 del R770 (`192.168.0.246`), y P4 del R770 está sin configurar. El medio de esos enlaces sigue sin confirmación.
