@@ -181,3 +181,14 @@ Todavía no se importaron en masa las posiciones de puerto a SQLite. Al hacerlo,
 7. No inventar datos ni presentar como implementado o verificado lo que el repositorio no demuestra.
 8. No incluir secretos aunque el repositorio sea público.
 9. No probar ni modificar la red de producción.
+
+
+## Ajustes de topología confirmados por el usuario
+
+- Referencia visual: frontal metálico esquemático con puertos numerados en dos hileras, inspirado en la imagen compartida; no presentar una ilustración genérica como fotografía real del modelo.
+- Cada switch debe abrir una página de detalle con su frontal y sus enlaces, además de aparecer en el mapa general.
+- Colores del frontal: ocupado en verde claro; libre confirmado en gris oscuro; estado desconocido en verde oscuro translúcido. El color siempre lleva texto accesible/ayuda emergente.
+- La ocupación del puerto y la presencia/modelo/fecha del SFP son datos independientes.
+- Correcciones del usuario: ProCurve `10.0.1.1`; 3Com `192.168.1.24`; HP 1920 puerto 16 al R770 P1/iDRAC `192.168.0.247`; S4148U puerto 21 al R770 P2/LAN `192.168.0.246`; R770 P4 sin configurar. El medio se conserva como no confirmado.
+- No inferir puerto remoto ni medio de cable por el tipo de bahía SFP o por el modelo de switch. Los enlaces de rack dudosos siguen «A verificar».
+- Mantener variables, comentarios y documentación en español; cada función nueva explica su objetivo y el efecto de cambiar parámetros. Actualizar README y este prompt con cada avance.
