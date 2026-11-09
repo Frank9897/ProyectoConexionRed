@@ -77,6 +77,16 @@ public class CorreccionesController : Controller
         if (formulario.EstadoUso == "Libre confirmado" && formulario.EstadoDatos != "Confirmado")
             ModelState.AddModelError(nameof(formulario.EstadoUso), "Confirma también la vigencia del puerto antes de marcarlo libre.");
 
+        // puertoTieneRelacion impide declarar libre una interfaz que ya tiene conexión completa o parcial.
+        var puertoTieneRelacion = await contextoInventario.EnlacesFisicos.AnyAsync(enlace =>
+            enlace.IdentificadorPuertoOrigen == interfazGuardada.Identificador
+            || enlace.IdentificadorPuertoDestino == interfazGuardada.Identificador, cancelacion)
+            || await contextoInventario.ConexionesDocumentadas.AnyAsync(relacion =>
+                relacion.IdentificadorPuertoLocal == interfazGuardada.Identificador, cancelacion);
+        if (formulario.EstadoUso == "Libre confirmado" && puertoTieneRelacion)
+            ModelState.AddModelError(nameof(formulario.EstadoUso),
+                "No se puede marcar libre un puerto que tiene una relación registrada.");
+
         if (!await contextoInventario.Equipos.AnyAsync(
                 equipo => equipo.Identificador == formulario.IdentificadorEquipo, cancelacion))
             ModelState.AddModelError(nameof(formulario.IdentificadorEquipo), "Selecciona un equipo existente.");
