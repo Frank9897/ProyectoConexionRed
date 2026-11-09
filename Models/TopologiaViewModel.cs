@@ -69,6 +69,8 @@ public class PuertoTopologiaViewModel
     public string ClaseVisual { get; set; } = "puerto-desconocido";
     /// <summary>Texto de estado; cambiarlo modifica el significado accesible del color.</summary>
     public string EstadoVisual { get; set; } = "Desconocido";
+    /// <summary>Destino documentado; cambiarlo modifica la referencia emergente del puerto.</summary>
+    public string? DestinoConexion { get; set; }
 }
 
 /// <summary>Presenta los extremos exactos y el estado de un enlace físico.</summary>
@@ -100,4 +102,13 @@ public class EnlaceTopologiaViewModel
     public string? Fuente { get; set; }
     /// <summary>Fecha real de revisión; cambiarla modifica la fecha mostrada.</summary>
     public DateOnly? FechaUltimaRevision { get; set; }
+}
+
+/// <summary>Reúne un switch, su frontal y las conexiones guardadas para la página de detalle.</summary>
+public class DetalleTopologiaViewModel
+{
+    /// <summary>Switch seleccionado; cambiarlo abre el detalle de otra ficha.</summary>
+    public DispositivoTopologiaViewModel Dispositivo { get; set; } = new();
+    /// <summary>Enlaces documentados del switch; cambiar la lista altera la tabla de conexiones.</summary>
+    public IReadOnlyList<EnlaceTopologiaViewModel> Enlaces { get; set; } = [];
 }
