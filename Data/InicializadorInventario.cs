@@ -2,6 +2,7 @@ using System.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ProyectoConexionRed.Web.Models;
+using ProyectoConexionRed.Web.Services;
 
 namespace ProyectoConexionRed.Web.Data;
 
@@ -284,6 +285,9 @@ public static class InicializadorInventario
         // transaccionImportacion asegura que los datos y su historial se confirmen o reviertan juntos.
         await using var transaccionImportacion = await contextoInventario.Database.BeginTransactionAsync(cancelacion);
 
+        // AplicarRolesYTiposV3 corrige la función y el tipo de los switches según el Visio y evita la ficha duplicada de Mesa.
+        await AplicarRolesYTiposV3Async(contextoInventario, cambiosAuditados, usuarioImportacion, cancelacion);
+
         // datoMac recorre los pares documentados; cambiar el catálogo cambia qué MAC pueden completarse.
         foreach (var datoMac in datosMacConfirmados)
         {
@@ -415,6 +419,188 @@ public static class InicializadorInventario
     }
 
     /// <summary>
+    /// Corrige roles y tipos confirmados y consolida el registro de Mesa de Entradas principal.
+    /// </summary>
+    /// <param name="contextoInventario">Base documental; cambiarla aplica la corrección en otro inventario.</param>
+    /// <param name="cambiosAuditados">Historial de cambios; cambiar la lista altera qué correcciones se registran.</param>
+    /// <param name="usuarioImportacion">Origen de la corrección; cambiarlo modifica el autor del historial.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla interrumpe las consultas y escrituras.</param>
+    private static async Task AplicarRolesYTiposV3Async(
+        InventarioDbContext contextoInventario,
+        List<EventoModificacion> cambiosAuditados,
+        string usuarioImportacion,
+        CancellationToken cancelacion)
+    {
+        // equipoMesaPrincipal conserva una sola ficha canónica para el Aruba 1930 de IP 192.168.1.1.
+        var equipoMesaPrincipal = await contextoInventario.Equipos
+            .SingleOrDefaultAsync(equipo => equipo.Nombre == "Switch principal de Mesa de Entradas", cancelacion);
+        // equipoMesaAnterior busca la ficha genérica que el catálogo inicial había creado para la misma IP.
+        var equipoMesaAnterior = await contextoInventario.Equipos
+            .SingleOrDefaultAsync(equipo => equipo.Nombre == "Switch de área sin identificar (1)", cancelacion);
+
+        if (equipoMesaPrincipal is null && equipoMesaAnterior is not null)
+        {
+            // Renombrar la ficha con IP conocida evita duplicar el equipo y conserva su identificador.
+            equipoMesaAnterior.Nombre = "Switch principal de Mesa de Entradas";
+            equipoMesaPrincipal = equipoMesaAnterior;
+            equipoMesaAnterior = null;
+        }
+
+        if (equipoMesaPrincipal is not null)
+        {
+            // ipAnterior conserva el valor para registrar la corrección de IP en auditoría.
+            var ipAnterior = equipoMesaPrincipal.IpAdministracion;
+            if (ipAnterior != "192.168.1.1")
+            {
+                equipoMesaPrincipal.IpAdministracion = "192.168.1.1";
+                UtilidadesConexiones.AgregarCambio(cambiosAuditados, equipoMesaPrincipal.Identificador,
+                    equipoMesaPrincipal.Nombre, usuarioImportacion, "IP de administración", ipAnterior,
+                    equipoMesaPrincipal.IpAdministracion);
+            }
+
+            // fabricanteAnterior y modeloAnterior conservan los datos previos para no ocultar correcciones.
+            var fabricanteAnterior = equipoMesaPrincipal.Fabricante;
+            var modeloAnterior = equipoMesaPrincipal.Modelo;
+            if (string.IsNullOrWhiteSpace(fabricanteAnterior)) equipoMesaPrincipal.Fabricante = "Aruba";
+            if (string.IsNullOrWhiteSpace(modeloAnterior)) equipoMesaPrincipal.Modelo = "1930";
+            UtilidadesConexiones.AgregarCambio(cambiosAuditados, equipoMesaPrincipal.Identificador,
+                equipoMesaPrincipal.Nombre, usuarioImportacion, "Fabricante", fabricanteAnterior, equipoMesaPrincipal.Fabricante);
+            UtilidadesConexiones.AgregarCambio(cambiosAuditados, equipoMesaPrincipal.Identificador,
+                equipoMesaPrincipal.Nombre, usuarioImportacion, "Modelo", modeloAnterior, equipoMesaPrincipal.Modelo);
+
+            // tipoAnterior identifica equipos que aún conservan la clasificación genérica del catálogo previo.
+            var tipoAnterior = equipoMesaPrincipal.TipoDispositivo;
+            if (tipoAnterior == "Equipo de red" || tipoAnterior == "No especificado")
+                equipoMesaPrincipal.TipoDispositivo = "Switch";
+            UtilidadesConexiones.AgregarCambio(cambiosAuditados, equipoMesaPrincipal.Identificador,
+                equipoMesaPrincipal.Nombre, usuarioImportacion, "Tipo de dispositivo", tipoAnterior, equipoMesaPrincipal.TipoDispositivo);
+
+            // rolAnterior conserva la etiqueta previa antes de aplicar el rol principal confirmado.
+            var rolAnterior = equipoMesaPrincipal.RolEnArea;
+            if (rolAnterior is "No indicado" or "No aplica" or "Secundario")
+                equipoMesaPrincipal.RolEnArea = "Principal";
+            UtilidadesConexiones.AgregarCambio(cambiosAuditados, equipoMesaPrincipal.Identificador,
+                equipoMesaPrincipal.Nombre, usuarioImportacion, "Rol del equipo", rolAnterior, equipoMesaPrincipal.RolEnArea);
+
+            // areaAnterior conserva la ubicación previa y estadoAnterior preserva el dato de acceso.
+            var areaAnterior = equipoMesaPrincipal.Area;
+            if (string.IsNullOrWhiteSpace(areaAnterior)) equipoMesaPrincipal.Area = "Mesa de Entradas";
+            UtilidadesConexiones.AgregarCambio(cambiosAuditados, equipoMesaPrincipal.Identificador,
+                equipoMesaPrincipal.Nombre, usuarioImportacion, "Área", areaAnterior, equipoMesaPrincipal.Area);
+            var estadoAnterior = equipoMesaPrincipal.EstadoAdministrativo;
+            if (estadoAnterior == "Sin información") equipoMesaPrincipal.EstadoAdministrativo = "Inaccesible: falta de credenciales";
+            UtilidadesConexiones.AgregarCambio(cambiosAuditados, equipoMesaPrincipal.Identificador,
+                equipoMesaPrincipal.Nombre, usuarioImportacion, "Acceso administrativo", estadoAnterior, equipoMesaPrincipal.EstadoAdministrativo);
+        }
+
+        if (equipoMesaAnterior is not null && equipoMesaPrincipal is not null
+            && equipoMesaAnterior.Identificador != equipoMesaPrincipal.Identificador)
+        {
+            // interfacesDeFichaAnterior evita borrar una ficha si conserva puertos o enlaces documentados.
+            var interfacesDeFichaAnterior = await contextoInventario.InterfacesEquipo
+                .Where(interfaz => interfaz.IdentificadorEquipo == equipoMesaAnterior.Identificador)
+                .ToListAsync(cancelacion);
+            // etiquetasCanonicas evita colisiones del índice único al transferir interfaces al registro principal.
+            var etiquetasCanonicas = await contextoInventario.InterfacesEquipo
+                .Where(interfaz => interfaz.IdentificadorEquipo == equipoMesaPrincipal.Identificador)
+                .Select(interfaz => interfaz.EtiquetaPuerto)
+                .ToListAsync(cancelacion);
+            // hayEtiquetasDuplicadas impide fusionar puertos con la misma etiqueta pero posiblemente distinta conexión.
+            var hayEtiquetasDuplicadas = interfacesDeFichaAnterior.Any(interfaz =>
+                etiquetasCanonicas.Contains(interfaz.EtiquetaPuerto, StringComparer.OrdinalIgnoreCase));
+
+            if (!hayEtiquetasDuplicadas)
+            {
+                // Mover las interfaces mantiene sus IDs, por lo que los enlaces existentes conservan sus extremos.
+                foreach (var interfazMovida in interfacesDeFichaAnterior)
+                    interfazMovida.IdentificadorEquipo = equipoMesaPrincipal.Identificador;
+
+                // eventoFusion conserva el motivo de la unificación aunque la ficha duplicada se quite del inventario.
+                cambiosAuditados.Add(new EventoModificacion
+                {
+                    IdentificadorEquipo = equipoMesaPrincipal.Identificador,
+                    NombreEquipo = equipoMesaPrincipal.Nombre,
+                    NombreUsuario = usuarioImportacion,
+                    FechaUtc = DateTime.UtcNow,
+                    Campo = "Ficha duplicada unificada",
+                    ValorAnterior = "Switch de área sin identificar (1)",
+                    ValorNuevo = equipoMesaPrincipal.Nombre
+                });
+                contextoInventario.Equipos.Remove(equipoMesaAnterior);
+            }
+            else
+            {
+                // La ficha con etiquetas duplicadas queda separada y marcada para evitar unir puertos ambiguos.
+                var nombreAnterior = equipoMesaAnterior.Nombre;
+                equipoMesaAnterior.Nombre = "Registro previo de Mesa de Entradas (revisar)";
+                equipoMesaAnterior.IpAdministracion = null;
+                equipoMesaAnterior.TipoDispositivo = "No especificado";
+                equipoMesaAnterior.RolEnArea = "No aplica";
+                equipoMesaAnterior.EstadoDatos = "A verificar";
+                equipoMesaAnterior.Observaciones = "Posible ficha duplicada del switch principal; conserva etiquetas de puerto que colisionan con la ficha canónica.";
+                UtilidadesConexiones.AgregarCambio(cambiosAuditados, equipoMesaAnterior.Identificador,
+                    equipoMesaAnterior.Nombre, usuarioImportacion, "Nombre anterior", nombreAnterior, equipoMesaAnterior.Nombre);
+            }
+        }
+
+        // clasificacionesSwitches separa función y tipo de switch para no confundirlos con marca o modelo.
+        var clasificacionesSwitches = CrearCatalogoRolesSwitchV3();
+        foreach (var clasificacion in clasificacionesSwitches)
+        {
+            // equipoClasificado requiere nombre e IP para no aplicar el rol a otra ficha homónima.
+            var equipoClasificado = await contextoInventario.Equipos.SingleOrDefaultAsync(
+                equipo => equipo.Nombre == clasificacion.Nombre
+                    && (clasificacion.IpAdministracion == null || equipo.IpAdministracion == clasificacion.IpAdministracion),
+                cancelacion);
+            if (equipoClasificado is null) continue;
+
+            // tipoAnterior conserva la categoría documentada antes de identificar el equipo como switch.
+            var tipoAnterior = equipoClasificado.TipoDispositivo;
+            if (tipoAnterior is "Equipo de red" or "No especificado")
+                equipoClasificado.TipoDispositivo = "Switch";
+            UtilidadesConexiones.AgregarCambio(cambiosAuditados, equipoClasificado.Identificador,
+                equipoClasificado.Nombre, usuarioImportacion, "Tipo de dispositivo", tipoAnterior, equipoClasificado.TipoDispositivo);
+
+            // rolAnterior conserva la función previa antes de aplicar el tipo confirmado por el usuario.
+            var rolAnterior = equipoClasificado.RolEnArea;
+            if (string.IsNullOrWhiteSpace(rolAnterior) || rolAnterior is "No indicado" or "No aplica"
+                || (clasificacion.Rol == "No principal" && rolAnterior == "Secundario"))
+                equipoClasificado.RolEnArea = clasificacion.Rol;
+            UtilidadesConexiones.AgregarCambio(cambiosAuditados, equipoClasificado.Identificador,
+                equipoClasificado.Nombre, usuarioImportacion, "Rol del equipo", rolAnterior, equipoClasificado.RolEnArea);
+        }
+    }
+
+    /// <summary>
+    /// Devuelve tipos y roles operativos que el usuario confirmó para los switches del V3.
+    /// </summary>
+    /// <returns>Clasificaciones exactas; cambiar una fila altera la ficha que puede recibir ese rol.</returns>
+    private static List<(string Nombre, string? IpAdministracion, string Rol)> CrearCatalogoRolesSwitchV3()
+    {
+        return
+        [
+            ("Switch HP 5500", "192.168.1.218", "Switch de servidores"),
+            ("Switch HP 1920", "192.168.1.115", "Distribución de switches de área"),
+            ("Dell S4148U-ON 48G", "192.168.1.44", "Puente hacia Dell R770 principal previsto"),
+            ("Switch Agrimensura 1 HP", "192.168.1.23", "Switch de área"),
+            ("Switch Agrimensura 3Com", "192.168.1.24", "Switch de área"),
+            ("Asuntos Jurídicos", "192.168.1.30", "Switch de área"),
+            ("Cartografía", "192.168.1.51", "Switch de área"),
+            ("Inmuebles", "192.168.1.26", "Switch de área"),
+            ("Mesa de Entrada (No principal)", "192.168.1.18", "No principal"),
+            ("Puerta Agrimensura", "192.168.1.19", "Switch de área"),
+            ("Regularización Dominial", "192.168.1.40", "Switch de área"),
+            ("Secretaría", "192.168.1.28", "Switch de área"),
+            ("Sistemas", "192.168.1.216", "Switch de área"),
+            ("Valuación R0", "192.168.1.32", "Switch de área"),
+            ("Valuación R1", "192.168.1.29", "Switch de área"),
+            ("Valuación R2", "192.168.1.20", "Switch de área"),
+            ("Switch de Régimen", null, "Switch de área"),
+            ("Switch de área sin identificar (2)", "192.168.1.17", "Switch de área")
+        ];
+    }
+
+    /// <summary>
     /// Devuelve las MAC del V3 asociadas a sus etiquetas e IP explícitas.
     /// </summary>
     /// <returns>Pares documentados; modificar una fila altera qué ficha puede completarse si aún no tiene MAC.</returns>
@@ -450,7 +636,7 @@ public static class InicializadorInventario
     {
         return
         [
-            ("Switch de área sin identificar (1)", "192.168.1.1", "Aruba"),
+            ("Switch principal de Mesa de Entradas", "192.168.1.1", "Aruba"),
             ("Switch de área sin identificar (2)", "192.168.1.17", "Aruba")
         ];
     }
@@ -512,29 +698,28 @@ public static class InicializadorInventario
         [
             new() { Nombre = "Switch Aruba 1930 (WDGC)", Fabricante = "Aruba", Modelo = "Instant On 1930", IpAdministracion = "192.168.1.19", Area = "Rack", TipoDispositivo = "Switch", RolEnArea = "Principal", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información", Observaciones = "El equipo y la IP están confirmados por el usuario; algunas conexiones del rack requieren revisión." },
             new() { Nombre = "HP ProCurve 29100I-24G", Fabricante = "HP", Modelo = "ProCurve 29100I-24G", IpAdministracion = "10.0.1.1", Area = "Rack", TipoDispositivo = "Switch", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información", Observaciones = "El Visio indica acceso SSH; algunas conexiones del rack requieren revisión." },
-            new() { Nombre = "Switch HP 5500", Fabricante = "HP", Modelo = "5500", IpAdministracion = "192.168.1.218", Area = "Rack", TipoDispositivo = "Switch", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información", Observaciones = "Algunas conexiones del rack requieren revisión." },
-            new() { Nombre = "Switch HP 1920", Fabricante = "HP", Modelo = "1920", IpAdministracion = "192.168.1.115", Area = "Rack", TipoDispositivo = "Switch", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información", Observaciones = "Algunas conexiones del rack requieren revisión." },
-            new() { Nombre = "Dell S4148U-ON 48G", Fabricante = "Dell", Modelo = "S4148U-ON", IpAdministracion = "192.168.1.44", Area = "Rack", TipoDispositivo = "Switch", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información", Observaciones = "El Visio indica acceso SSH; algunas conexiones del rack requieren revisión." },
+            new() { Nombre = "Switch HP 5500", Fabricante = "HP", Modelo = "5500", IpAdministracion = "192.168.1.218", Area = "Rack", TipoDispositivo = "Switch", RolEnArea = "Switch de servidores", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información", Observaciones = "Algunas conexiones del rack requieren revisión." },
+            new() { Nombre = "Switch HP 1920", Fabricante = "HP", Modelo = "1920", IpAdministracion = "192.168.1.115", Area = "Rack", TipoDispositivo = "Switch", RolEnArea = "Distribución de switches de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información", Observaciones = "Algunas conexiones del rack requieren revisión." },
+            new() { Nombre = "Dell S4148U-ON 48G", Fabricante = "Dell", Modelo = "S4148U-ON", IpAdministracion = "192.168.1.44", Area = "Rack", TipoDispositivo = "Switch", RolEnArea = "Puente hacia Dell R770 principal previsto", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información", Observaciones = "El Visio indica acceso SSH; algunas conexiones del rack requieren revisión." },
             new() { Nombre = "Switch HP 1920S", Fabricante = "HP", Modelo = "1920S", IpAdministracion = "192.168.1.217", Area = "Rack", TipoDispositivo = "Switch", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información", Observaciones = "Algunas conexiones del rack requieren revisión." },
             new() { Nombre = "Aruba 1930 (reserva)", Fabricante = "Aruba", Modelo = "Instant On 1930", IpAdministracion = "192.168.1.200", Area = "Reserva", TipoDispositivo = "Switch", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
             new() { Nombre = "Cisco Catalyst 3560", Fabricante = "Cisco", Modelo = "Catalyst 3560", Area = "Rack", TipoDispositivo = "Switch", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información", Observaciones = "El Visio no muestra una IP para este registro." },
-            new() { Nombre = "Switch Agrimensura 1 HP", Fabricante = "HP", IpAdministracion = "192.168.1.23", Area = "Agrimensura", TipoDispositivo = "Switch", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
-            new() { Nombre = "Switch Agrimensura 3Com", Fabricante = "3Com", IpAdministracion = "192.168.1.24", Area = "Agrimensura", TipoDispositivo = "Switch", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
-            new() { Nombre = "Asuntos Jurídicos", IpAdministracion = "192.168.1.30", Area = "Asuntos Jurídicos", TipoDispositivo = "Equipo de red", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
-            new() { Nombre = "Cartografía", IpAdministracion = "192.168.1.51", Area = "Cartografía", TipoDispositivo = "Equipo de red", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
-            new() { Nombre = "Inmuebles", IpAdministracion = "192.168.1.26", Area = "Inmuebles", TipoDispositivo = "Equipo de red", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
-            new() { Nombre = "Mesa de Entrada (No principal)", IpAdministracion = "192.168.1.18", Area = "Mesa de Entradas", RolEnArea = "Secundario", TipoDispositivo = "Switch", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información", Observaciones = "El usuario confirma su función de switch secundario; enlaza al principal del área y da conexión a tres equipos." },
-            new() { Nombre = "Puerta Agrimensura", IpAdministracion = "192.168.1.19", Area = "Agrimensura", TipoDispositivo = "Equipo de red", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
-            new() { Nombre = "Regularización Dominial", IpAdministracion = "192.168.1.40", Area = "Regularización Dominial", TipoDispositivo = "Equipo de red", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
-            new() { Nombre = "Secretaría", IpAdministracion = "192.168.1.28", Area = "Secretaría", TipoDispositivo = "Equipo de red", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
-            new() { Nombre = "Sistemas", IpAdministracion = "192.168.1.216", Area = "Sistemas", TipoDispositivo = "Equipo de red", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
-            new() { Nombre = "Valuación R0", IpAdministracion = "192.168.1.32", Area = "Valuación", TipoDispositivo = "Equipo de red", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
-            new() { Nombre = "Valuación R1", IpAdministracion = "192.168.1.29", Area = "Valuación", TipoDispositivo = "Equipo de red", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
-            new() { Nombre = "Valuación R2", IpAdministracion = "192.168.1.20", Area = "Valuación", TipoDispositivo = "Equipo de red", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
-            new() { Nombre = "Switch de Régimen", Area = "Régimen", TipoDispositivo = "Switch", RolEnArea = "No indicado", EstadoDatos = "Vigente", EstadoAdministrativo = "Inaccesible: falta de credenciales", Observaciones = "Equipo e inaccesibilidad confirmados por el usuario; IP no indicada en el registro base." },
-            new() { Nombre = "Switch principal de Mesa de Entradas", Area = "Mesa de Entradas", TipoDispositivo = "Switch", RolEnArea = "Principal", EstadoDatos = "Vigente", EstadoAdministrativo = "Inaccesible: falta de credenciales", Observaciones = "Equipo e inaccesibilidad confirmados por el usuario; IP no indicada en el registro base." },
-            new() { Nombre = "Switch de área sin identificar (1)", IpAdministracion = "192.168.1.1", TipoDispositivo = "Switch", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
-            new() { Nombre = "Switch de área sin identificar (2)", IpAdministracion = "192.168.1.17", TipoDispositivo = "Switch", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" }
+            new() { Nombre = "Switch Agrimensura 1 HP", Fabricante = "HP", IpAdministracion = "192.168.1.23", Area = "Agrimensura", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
+            new() { Nombre = "Switch Agrimensura 3Com", Fabricante = "3Com", IpAdministracion = "192.168.1.24", Area = "Agrimensura", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
+            new() { Nombre = "Asuntos Jurídicos", IpAdministracion = "192.168.1.30", Area = "Asuntos Jurídicos", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
+            new() { Nombre = "Cartografía", IpAdministracion = "192.168.1.51", Area = "Cartografía", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
+            new() { Nombre = "Inmuebles", IpAdministracion = "192.168.1.26", Area = "Inmuebles", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
+            new() { Nombre = "Mesa de Entrada (No principal)", IpAdministracion = "192.168.1.18", Area = "Mesa de Entradas", RolEnArea = "No principal", TipoDispositivo = "Switch", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información", Observaciones = "El usuario confirma su función de switch secundario; enlaza al principal del área y da conexión a tres equipos." },
+            new() { Nombre = "Puerta Agrimensura", IpAdministracion = "192.168.1.19", Area = "Agrimensura", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
+            new() { Nombre = "Regularización Dominial", IpAdministracion = "192.168.1.40", Area = "Regularización Dominial", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
+            new() { Nombre = "Secretaría", IpAdministracion = "192.168.1.28", Area = "Secretaría", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
+            new() { Nombre = "Sistemas", IpAdministracion = "192.168.1.216", Area = "Sistemas", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
+            new() { Nombre = "Valuación R0", IpAdministracion = "192.168.1.32", Area = "Valuación", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
+            new() { Nombre = "Valuación R1", IpAdministracion = "192.168.1.29", Area = "Valuación", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
+            new() { Nombre = "Valuación R2", IpAdministracion = "192.168.1.20", Area = "Valuación", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
+            new() { Nombre = "Switch de Régimen", Area = "Régimen", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Inaccesible: falta de credenciales", Observaciones = "Equipo e inaccesibilidad confirmados por el usuario; IP no indicada en el registro base." },
+            new() { Nombre = "Switch principal de Mesa de Entradas", Fabricante = "Aruba", Modelo = "1930", IpAdministracion = "192.168.1.1", Area = "Mesa de Entradas", TipoDispositivo = "Switch", RolEnArea = "Principal", EstadoDatos = "Vigente", EstadoAdministrativo = "Inaccesible: falta de credenciales", Observaciones = "Aruba 1930 principal del área; inaccesible por falta de credenciales según el usuario." },
+            new() { Nombre = "Switch de área sin identificar (2)", IpAdministracion = "192.168.1.17", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" }
         ];
     }
 }

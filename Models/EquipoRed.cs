@@ -56,7 +56,7 @@ public class EquipoRed
     public string? FuenteDatos { get; set; }
 
     /// <summary>
-    /// Función jerárquica conocida; cambiarla puede presentar al equipo como principal o secundario en vistas futuras.
+    /// Función operativa conocida; cambiarla clasifica el equipo como switch de área, servidores, distribución, puente, principal o secundario, separada del fabricante y modelo.
     /// </summary>
     public string RolEnArea { get; set; } = "No indicado";
 

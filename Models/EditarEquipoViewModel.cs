@@ -56,7 +56,7 @@ public class EditarEquipoViewModel
     public string? Piso { get; set; }
 
     /// <summary>
-    /// Función jerárquica documentada; cambiarla modifica la clasificación principal o secundaria.
+    /// Función del equipo en la red; cambiarla modifica su clasificación operativa, independiente del fabricante y modelo.
     /// </summary>
     [Required]
     [StringLength(60)]
