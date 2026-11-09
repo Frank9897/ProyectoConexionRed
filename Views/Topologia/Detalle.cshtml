@@ -1,0 +1,61 @@
+@model ProyectoConexionRed.Web.Models.DetalleTopologiaViewModel
+@{
+    ViewData["Title"] = $"Switch · {Model.Dispositivo.Nombre}";
+}
+
+<section class="encabezado-pagina encabezado-topologia">
+    <div>
+        <p class="sobrelinea">DETALLE DE SWITCH</p>
+        <h1>@Model.Dispositivo.Nombre</h1>
+        <p>Frontal de puertos y relaciones físicas que están registradas para este equipo.</p>
+    </div>
+    <a class="boton boton-secundario" asp-action="Index">← Volver a topología</a>
+</section>
+
+<section class="detalle-topologia-switch">
+    <div>
+        @await Html.PartialAsync("_FrontalSwitch", Model.Dispositivo)
+    </div>
+    <dl class="datos-detalle-switch">
+        <div><dt>Modelo</dt><dd>@(Model.Dispositivo.Modelo ?? "No indicado")</dd></div>
+        <div><dt>Área</dt><dd>@(Model.Dispositivo.Area ?? "No indicada")</dd></div>
+        <div><dt>Rol</dt><dd>@Model.Dispositivo.RolEnArea</dd></div>
+        <div><dt>IP</dt><dd>@(Model.Dispositivo.IpAdministracion ?? "No indicada")</dd></div>
+        <div><dt>Estado</dt><dd>@Model.Dispositivo.EstadoCapacidad</dd></div>
+        @if (!string.IsNullOrWhiteSpace(Model.Dispositivo.FuentePerfil))
+        {
+            <div><dt>Perfil</dt><dd><a href="@Model.Dispositivo.FuentePerfil" target="_blank" rel="noopener noreferrer">Fuente técnica del perfil</a></dd></div>
+        }
+    </dl>
+</section>
+
+<section class="panel panel-enlaces">
+    <div class="encabezado-seccion-topologia">
+        <div><p class="sobrelinea">CONEXIONES REGISTRADAS</p><h2>Enlaces de @Model.Dispositivo.Nombre</h2></div>
+        <span class="contador-enlaces">@Model.Enlaces.Count enlaces</span>
+    </div>
+    @if (Model.Enlaces.Count == 0)
+    {
+        <p class="aclaracion-topologia-grafica">No hay enlaces guardados con ambos extremos identificados. Las posiciones y los puertos remotos desconocidos no se completan automáticamente.</p>
+    }
+    else
+    {
+        <div class="tabla-contenedor">
+            <table>
+                <thead><tr><th>Extremo local</th><th>Extremo remoto</th><th>Medio</th><th>Estado</th><th>Fuente</th></tr></thead>
+                <tbody>
+                @foreach (var enlace in Model.Enlaces)
+                {
+                    <tr>
+                        <td><strong>@(enlace.IdentificadorEquipoOrigen == Model.Dispositivo.Identificador ? enlace.EquipoOrigen : enlace.EquipoDestino)</strong><small>@(enlace.IdentificadorEquipoOrigen == Model.Dispositivo.Identificador ? enlace.PuertoOrigen : enlace.PuertoDestino)</small></td>
+                        <td><strong>@(enlace.IdentificadorEquipoOrigen == Model.Dispositivo.Identificador ? enlace.EquipoDestino : enlace.EquipoOrigen)</strong><small>@(enlace.IdentificadorEquipoOrigen == Model.Dispositivo.Identificador ? enlace.PuertoDestino : enlace.PuertoOrigen)</small></td>
+                        <td>@enlace.Medio</td>
+                        <td>@enlace.EstadoDatos</td>
+                        <td>@(enlace.Fuente ?? "No indicada")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
