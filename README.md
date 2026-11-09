@@ -84,3 +84,12 @@ La inicialización SQLite agrega de forma idempotente las columnas nuevas de cap
 - Actualizar este README y [docs/PROMPT_IA.md](docs/PROMPT_IA.md) en cada modificación.
 - Usar mensajes de commit breves y en español.
 - No incluir secretos en código, documentación, ejemplos, capturas o commits.
+
+
+## Avance de topología visual
+
+La vista de topología incorpora un frontal esquemático para cada switch con capacidad documentada o ingresada. Las bocas se distribuyen en dos filas numeradas; el verde claro marca ocupación registrada, el gris oscuro marca puerto libre confirmado y el verde oscuro translúcido representa estado desconocido. Las bahías SFP se dibujan por separado y la presencia/modelo del transceptor no se deduce de la bahía. Cada puerto ocupado muestra su destino en la ayuda emergente cuando existe un enlace de dos extremos. El enlace «Ver puertos y enlaces» abre el detalle del switch.
+
+Los registros que solo indican un equipo conectado a un puerto local de una hoja Visio aún no se importan automáticamente porque el esquema actual exige dos interfaces enlazadas. No se crean puertos remotos ni medios de cable ficticios; esta limitación queda para la siguiente etapa de importación con extremo remoto opcional.
+
+Correcciones confirmadas para el análisis: HP ProCurve `10.0.1.1`; switch 3Com `192.168.1.24`; el HP 1920 puerto 16 corresponde al iDRAC del Dell R770 (P1, `192.168.0.247`); el S4148U puerto 21 corresponde al LAN P2 del R770 (`192.168.0.246`), y P4 del R770 está sin configurar. El medio de esos enlaces sigue sin confirmación.
