@@ -1,0 +1,59 @@
+@model ProyectoConexionRed.Web.Models.NuevaConexionDocumentadaViewModel
+@{
+    ViewData["Title"] = "Registrar conexión documental";
+}
+
+<section class="panel-formulario panel-formulario-ancho">
+    <p class="sobrelinea">FUENTE VISIO · EXTREMO REMOTO OPCIONAL</p>
+    <h1>Registrar una relación documentada</h1>
+    <p>Usa esta opción cuando la fuente identifique el puerto local pero no permita confirmar el puerto remoto. Los datos faltantes quedan vacíos y el medio inicia como «No confirmado».</p>
+    <form asp-action="CrearRelacion" method="post">
+        <div asp-validation-summary="ModelOnly" class="mensaje-error"></div>
+        <div class="grupo-formulario">
+            <label asp-for="IdentificadorPuertoLocal">Puerto local conocido</label>
+            <select asp-for="IdentificadorPuertoLocal" asp-items="Model.InterfacesDisponibles">
+                <option value="0">Selecciona equipo y puerto</option>
+            </select>
+            <span asp-validation-for="IdentificadorPuertoLocal" class="mensaje-error"></span>
+        </div>
+        <fieldset class="grupo-formulario">
+            <legend>Extremo remoto (dejar en blanco si no se conoce)</legend>
+            <label asp-for="EquipoRemoto">Equipo</label><input asp-for="EquipoRemoto" />
+            <label asp-for="IpRemota">IP</label><input asp-for="IpRemota" />
+            <label asp-for="PuertoRemoto">Puerto</label><input asp-for="PuertoRemoto" />
+        </fieldset>
+        <div class="grupo-formulario">
+            <label asp-for="Medio">Medio</label>
+            <select asp-for="Medio">
+                <option>No confirmado</option><option>Cobre RJ45</option><option>Fibra</option><option>DAC</option><option>Otro</option>
+            </select>
+            <span asp-validation-for="Medio" class="mensaje-error"></span>
+        </div>
+        <div class="grupo-formulario">
+            <label asp-for="EstadoDatos">Estado de la información</label>
+            <select asp-for="EstadoDatos">
+                <option>A verificar</option><option>Pendiente de revisión</option><option>Confirmado</option><option>Desactualizado</option>
+            </select>
+            <span asp-validation-for="EstadoDatos" class="mensaje-error"></span>
+        </div>
+        <div class="grupo-formulario">
+            <label asp-for="FechaUltimaRevision">Fecha de revisión (solo si se realizó)</label>
+            <input asp-for="FechaUltimaRevision" type="date" />
+        </div>
+        <fieldset class="grupo-formulario">
+            <legend>Procedencia</legend>
+            <label asp-for="FuentePagina">Página del Visio</label><input asp-for="FuentePagina" required />
+            <span asp-validation-for="FuentePagina" class="mensaje-error"></span>
+            <label asp-for="FuenteLibro">Libro Excel incrustado (opcional)</label><input asp-for="FuenteLibro" />
+            <label asp-for="FuenteFila">Fila o referencia (opcional)</label><input asp-for="FuenteFila" />
+        </fieldset>
+        <div class="grupo-formulario">
+            <label asp-for="Observaciones">Notas</label>
+            <textarea asp-for="Observaciones" rows="3"></textarea>
+        </div>
+        <div class="acciones-formulario">
+            <button class="boton" type="submit">Guardar relación</button>
+            <a class="boton boton-secundario" asp-action="Index">Cancelar</a>
+        </div>
+    </form>
+</section>
