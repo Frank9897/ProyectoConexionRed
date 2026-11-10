@@ -119,9 +119,9 @@
     </div>
 
     <div class="selector-capas-topologia" role="group" aria-label="Seleccionar vista de topología">
-        <button type="button" class="selector-capa-topologia activa" data-seleccionar-capa="fisica" aria-pressed="true">Física</button>
-        <button type="button" class="selector-capa-topologia" data-seleccionar-capa="switching" aria-pressed="false">Switching</button>
-        <button type="button" class="selector-capa-topologia" data-seleccionar-capa="acceso" aria-pressed="false">Acceso</button>
+        <button type="button" class="selector-capa-topologia activa" data-seleccionar-capa="fisica" aria-pressed="true">Capa 1 · Física</button>
+        <button type="button" class="selector-capa-topologia" data-seleccionar-capa="switching" aria-pressed="false">Capa 2 · Switching</button>
+        <button type="button" class="selector-capa-topologia" data-seleccionar-capa="acceso" aria-pressed="false">Capa 3 · Acceso</button>
         <span data-resumen-mapa>@Model.Dispositivos.Count equipos · @Model.Enlaces.Count enlaces</span>
     </div>
 
@@ -130,10 +130,11 @@
         <span><i class="muestra-puerto puerto-libre" aria-hidden="true"></i> Libre confirmado</span>
         <span><i class="muestra-puerto puerto-desconocido" aria-hidden="true"></i> Desconocido</span>
         <span><i class="muestra-enlace enlace-confirmado" aria-hidden="true"></i> Enlace confirmado</span>
-        <span><i class="muestra-enlace enlace-pendiente" aria-hidden="true"></i> Enlace pendiente</span>
+        <span><i class="muestra-enlace enlace-parcial-switch" aria-hidden="true"></i> Uplink confirmado sin contraparte única</span>
+        <span><i class="muestra-enlace enlace-parcial-switch" aria-hidden="true"></i> Switch documentado; contraparte sin tabla recíproca</span>
     </div>
 
-    <p class="aclaracion-topologia-grafica">Un enlace registrado no confirma que el equipo responda ahora. Un puerto sin enlace solo se considera libre si alguien lo marcó explícitamente como libre confirmado.</p>
+    <p class="aclaracion-topologia-grafica">Capa 3 muestra PCs y equipos finales conectados al puerto local del switch. Capa 2 muestra enlaces entre switches y coteja ambas tablas para completar los dos puertos cuando se pueden emparejar. Capa 1 representa la infraestructura física. El Visio confirma las relaciones documentadas; esta vista no consulta la red en vivo.</p>
 
     <div class="mapa-topologia" data-mapa-topologia data-capa-actual="fisica">
         <svg class="capa-svg-enlaces" data-capa-enlaces aria-hidden="true"></svg>
@@ -218,8 +219,25 @@
                   data-equipo-destino="@enlace.IdentificadorEquipoDestino"
                   data-puerto-origen="@enlace.IdentificadorPuertoOrigen"
                   data-puerto-destino="@enlace.IdentificadorPuertoDestino"
+                  data-capa-relacional="@enlace.CapaRelacional"
                   data-confirmado="@(enlace.Confirmado ? "true" : "false")"
                   data-etiqueta="@($"{enlace.EquipoOrigen} · Puerto {enlace.PuertoOrigen} → {enlace.EquipoDestino} · Puerto {enlace.PuertoDestino} · {enlace.Medio} · {enlace.EstadoDatos}")"></span>
+        }
+        @foreach (var relacion in Model.RelacionesParciales.Where(relacion =>
+            relacion.IdentificadorEquipoRemoto.HasValue
+            && (!relacion.IdentificadorRelacionReciproca.HasValue
+                || relacion.Identificador < relacion.IdentificadorRelacionReciproca.Value)))
+        {
+            <span data-enlace-topologia
+                  data-relacion-parcial="true"
+                  data-equipo-origen="@relacion.IdentificadorEquipoLocal"
+                  data-equipo-destino="@relacion.IdentificadorEquipoRemoto"
+                  data-puerto-origen="@relacion.IdentificadorPuertoLocal"
+                  data-puerto-destino="@relacion.IdentificadorPuertoRemoto"
+                  data-capa-relacional="@relacion.CapaRelacional"
+                  data-cotejo-reciproco="@(relacion.IdentificadorRelacionReciproca.HasValue ? "true" : "false")"
+                  data-confirmado="true"
+                  data-etiqueta="@relacion.EquipoLocal · Puerto @relacion.PuertoLocal → @(relacion.EquipoRemoto ?? "Equipo sin identificar") · Puerto remoto @(relacion.PuertoRemoto ?? "sin par recíproco")"></span>
         }
     </div>
 </section>
@@ -237,8 +255,8 @@
             </svg>
         </div>
         <p class="sobrelinea">CAPA FÍSICA</p>
-        <h2>Los nodos aún no tienen enlaces registrados</h2>
-        <p>Las líneas aparecerán cuando estén documentados ambos puertos. Las conexiones incompletas se conservan para revisión sin inventar el extremo remoto.</p>
+        <h2>No hay enlaces físicos con ambos puertos guardados</h2>
+        <p>Las relaciones con switch o equipo final identificado se muestran en las capas 2 y 3. La vista no inventa el puerto de red de una PC.</p>
         <a class="boton boton-secundario" asp-controller="Inventario" asp-action="Index">Revisar inventario</a>
     </section>
 }
@@ -308,7 +326,7 @@ else
                 <button class="boton-paginacion" type="button" data-pagina-siguiente aria-label="Página siguiente">Siguiente →</button>
             </div>
         </div>
-        <p class="aclaracion-topologia-grafica">Estos puertos se marcan ocupados en el frontal. No se dibuja una línea de extremo a extremo porque el puerto remoto todavía no está confirmado.</p>
+        <p class="aclaracion-topologia-grafica">Las relaciones del Visio se muestran por capa: equipos finales en Capa 3, enlaces entre switches en Capa 2 y patcheras o recorrido físico en Capa 1. En un equipo final se indica el puerto del switch; no hace falta un puerto remoto de PC.</p>
         <div class="lista-fichas-conexion listado-topologia-enlaces" data-lista-paginada>
             @* relacion conserva el puerto local y el extremo remoto parcial tal como aparece en la fuente. *@
             @foreach (var relacion in Model.RelacionesParciales)
@@ -316,19 +334,22 @@ else
                 <article class="ficha-conexion ficha-enlace" data-registro-paginable>
                     <div class="trayecto-enlace">
                         <div class="extremo-enlace">
-                            <p class="identificador-secundario">PUERTO LOCAL</p>
+                            <p class="identificador-secundario">@(relacion.CapaRelacional == "switching" ? "SWITCH LOCAL · CAPA 2" : relacion.CapaRelacional == "acceso" ? "SWITCH LOCAL · CAPA 3" : "EXTREMO LOCAL · CAPA 1")</p>
                             <h3>@relacion.EquipoLocal</h3>
                             <small class="ip-extremo-conexion">@(relacion.IpLocal ?? "IP no indicada")</small>
                             <span class="puerto-extremo-conexion">Puerto @relacion.PuertoLocal</span>
                         </div>
-                        <span class="flecha-enlace flecha-pendiente" aria-hidden="true">→</span>
+                        <span class="flecha-enlace flecha-confirmada" aria-hidden="true">→</span>
                         <div class="extremo-enlace">
-                            <p class="identificador-secundario">EXTREMO DOCUMENTADO</p>
+                            <p class="identificador-secundario">@(relacion.CapaRelacional == "switching" ? "SWITCH REMOTO" : "USUARIO / EQUIPO FINAL / SERVICIO")</p>
                             <h3>@(relacion.EquipoRemoto ?? "No identificado")</h3>
                             <small class="ip-extremo-conexion">@(relacion.IpRemota ?? "IP no indicada")</small>
-                            <span class="puerto-extremo-conexion">@(relacion.PuertoRemoto ?? "Puerto remoto no documentado")</span>
+                            @if (relacion.CapaRelacional == "switching")
+                            {
+                                <span class="puerto-extremo-conexion">@(relacion.PuertoRemoto is null ? "Puerto remoto sin par único en las tablas" : $"Puerto {relacion.PuertoRemoto}")</span>
+                            }
                         </div>
-                        <span class="etiqueta-estado-conexion">@relacion.EstadoDatos</span>
+                        <span class="etiqueta-estado-conexion">@(relacion.CapaRelacional == "switching" ? "Capa 2 · Enlace entre switches" : relacion.CapaRelacional == "acceso" ? "Capa 3 · Equipo final" : "Capa 1 · Relación física") · @relacion.EstadoDatos</span>
                     </div>
                     @if ((relacion.EstadoDatos.Equals("Confirmado", StringComparison.OrdinalIgnoreCase)
                          || relacion.EstadoDatos.Equals("Vigente", StringComparison.OrdinalIgnoreCase))
