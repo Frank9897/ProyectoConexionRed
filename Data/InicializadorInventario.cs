@@ -870,22 +870,30 @@ public static class InicializadorInventario
     /// <param name="cambiosAuditados">Eventos de alta; cambiar la lista modifica el historial persistido en la misma transacción.</param>
     /// <param name="usuarioImportacion">Origen de la carga; cambiarlo altera la atribución visible en auditoría.</param>
     /// <param name="cancelacion">Señal de cancelación; activarla detiene la consulta o escritura pendientes.</param>
+    /// <summary>
+    /// Incorpora puestos del PDF, conserva roles ya editados y prioriza las direcciones del V3.
+    /// </summary>
+    /// <param name="contextoInventario">Contexto SQLite; cambiarlo selecciona el inventario que recibe los equipos.</param>
+    /// <param name="cambiosAuditados">Eventos de auditoría; cambiar la lista modifica qué altas y ajustes quedan registrados.</param>
+    /// <param name="usuarioImportacion">Origen de la carga; cambiarlo altera la atribución del historial.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla detiene las consultas y escrituras pendientes.</param>
     private static async Task ImportarPuestosUbicacionAsync(
         InventarioDbContext contextoInventario,
         List<EventoModificacion> cambiosAuditados,
         string usuarioImportacion,
         CancellationToken cancelacion)
     {
-        // filasPdf contiene etiquetas, octetos y ubicación; cambiar el catálogo modifica los puestos candidatos.
+        // filasPdf mantiene las ubicaciones y etiquetas del PDF; cambiar una fila modifica el conjunto de importación.
         var filasPdf = CatalogoUbicacionesEquiposPdf.ObtenerFilas();
-        // filasV3 permite resolver IP actuales por nombre; cambiar el catálogo V3 altera las coincidencias disponibles.
+        // filasV3 permite usar las IP y nombres canónicos del diagrama vigente.
         var filasV3 = CatalogoPuertosAreasV3.ObtenerFilas();
-        // direccionesPorNombre agrupa las IP documentadas en V3; cambiar su contenido modifica la prioridad aplicada.
+        // direccionesPorNombre agrupa las IP de V3 por etiqueta; cambiar el nombre modifica la relación buscada.
         var direccionesPorNombre = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
 
+        // filaV3 recorre cada posición fuente para asociar IP literales al equipo remoto indicado.
         foreach (var filaV3 in filasV3)
         {
-            // direccionesDetectadas extrae solo IPv4 literales, sin convertir nombres o estados en direcciones.
+            // direccionesDetectadas extrae solo IPv4 escritas, sin transformar estados o nombres en direcciones.
             var direccionesDetectadas = System.Text.RegularExpressions.Regex
                 .Matches(filaV3.IpRemota ?? string.Empty, @"(?:\d{1,3}\.){3}\d{1,3}")
                 .Select(coincidencia => coincidencia.Value)
@@ -893,7 +901,7 @@ public static class InicializadorInventario
 
             if (!direccionesPorNombre.TryGetValue(filaV3.Destino, out var conjuntoDirecciones))
             {
-                // conjuntoDirecciones acumula IP del mismo destino; cambiar la clave agrupa otro nombre documental.
+                // conjuntoDirecciones acumula candidatos V3 para el mismo nombre documental.
                 conjuntoDirecciones = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 direccionesPorNombre[filaV3.Destino] = conjuntoDirecciones;
             }
@@ -901,54 +909,111 @@ public static class InicializadorInventario
             conjuntoDirecciones.UnionWith(direccionesDetectadas);
         }
 
-        // nombresExistentes evita duplicar equipos y conserva cualquier ficha que un técnico ya haya editado.
+        // equiposExistentes permite conservar cambios manuales y actualizar solo el rol genérico por defecto.
+        var equiposExistentes = await contextoInventario.Equipos.ToListAsync(cancelacion);
+        // nombresExistentes previene altas duplicadas sin sobrescribir la ficha existente.
         var nombresExistentes = new HashSet<string>(
-            await contextoInventario.Equipos.Select(equipo => equipo.Nombre).ToListAsync(cancelacion),
+            equiposExistentes.Select(equipo => equipo.Nombre),
             StringComparer.OrdinalIgnoreCase);
-        // equiposNuevos reúne altas sin persistir hasta completar la lectura de fuentes.
+        // equiposNuevos agrupa las fichas nuevas antes de persistirlas.
         var equiposNuevos = new List<EquipoRed>();
-        // filasEquiposNuevos enlaza los registros importados con la fuente usada para su auditoría.
-        var filasEquiposNuevos = new List<(EquipoRed Equipo, FilaUbicacionEquipo Fila, string? IpPdf, string? IpV3, string? Observaciones)>();
+        // filasEquiposNuevos enlaza cada alta con su fila de origen para guardar el historial.
+        var filasEquiposNuevos = new List<(EquipoRed Equipo, FilaUbicacionEquipo Fila, string? Observaciones)>();
 
+        // equipoExistente asigna el rol Usuario a puestos previos que aún conservan el valor genérico vacío.
+        foreach (var equipoExistente in equiposExistentes)
+        {
+            if (equipoExistente.TipoDispositivo != "Puesto de usuario" || equipoExistente.RolEnArea != "No indicado")
+                continue;
+
+            // rolAnterior conserva el valor previo y deja historial del cambio predeterminado.
+            var rolAnterior = equipoExistente.RolEnArea;
+            equipoExistente.RolEnArea = "Usuario";
+            UtilidadesConexiones.AgregarCambio(
+                cambiosAuditados,
+                equipoExistente.Identificador,
+                equipoExistente.Nombre,
+                usuarioImportacion,
+                "Rol del equipo",
+                rolAnterior,
+                equipoExistente.RolEnArea);
+        }
+
+        // filaPdf recorre puestos, relojes y periféricos sin crear usuarios personales.
         foreach (var filaPdf in filasPdf)
         {
-            // nombreNormalizado es la identidad corregida para errores de OCR conocidos; cambiarla ajusta la correspondencia con V3.
+            // nombreNormalizado usa la etiqueta canónica confirmada para que las IP V3 coincidan por nombre.
             var nombreNormalizado = filaPdf.Nombre.Trim();
+            // tipoDispositivo conserva el tipo explícito de periféricos y clasifica como puesto al resto de estaciones.
+            var tipoDispositivo = filaPdf.TipoDispositivo
+                ?? (nombreNormalizado.StartsWith("Reloj", StringComparison.OrdinalIgnoreCase)
+                    ? "Reloj"
+                    : "Puesto de usuario");
+            // rolPredeterminado da rol Usuario a puestos; otras clases conservan su función documental.
+            var rolPredeterminado = filaPdf.RolEnArea
+                ?? (tipoDispositivo == "Puesto de usuario" ? "Usuario" : "No aplica");
 
             if (!nombresExistentes.Add(nombreNormalizado))
             {
+                // equipoExistente localiza una ficha previa para corregir solo el rol genérico no personalizado.
+                var equipoExistente = equiposExistentes.FirstOrDefault(equipo =>
+                    string.Equals(equipo.Nombre, nombreNormalizado, StringComparison.OrdinalIgnoreCase));
+                if (equipoExistente is not null
+                    && tipoDispositivo == "Puesto de usuario"
+                    && equipoExistente.RolEnArea == "No indicado")
+                {
+                    // rolAnterior conserva el valor para hacer visible la actualización automática.
+                    var rolAnterior = equipoExistente.RolEnArea;
+                    equipoExistente.RolEnArea = "Usuario";
+                    UtilidadesConexiones.AgregarCambio(
+                        cambiosAuditados,
+                        equipoExistente.Identificador,
+                        equipoExistente.Nombre,
+                        usuarioImportacion,
+                        "Rol del equipo",
+                        rolAnterior,
+                        equipoExistente.RolEnArea);
+                }
+
                 continue;
             }
 
-            // ipsPdf convierte cada octeto entre paréntesis en la red 192.168.0.x indicada por el usuario.
+            // ipsPdf forma direcciones completas desde el octeto entre paréntesis confirmado por el usuario.
             var ipsPdf = filaPdf.OctetosPdf
                 .Where(octeto => octeto is >= 1 and <= 254)
                 .Select(octeto => $"192.168.0.{octeto}")
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
-            // ipPdf representa una dirección inequívoca del PDF; cambiar octetos múltiples impide usarla como dato único.
+            // ipPdf solo identifica una dirección cuando el PDF tiene un único octeto para este nombre.
             var ipPdf = ipsPdf.Count == 1 ? ipsPdf[0] : null;
-            // ipsV3 recoge las IP del mismo nombre en el diagrama que el usuario prioriza.
+            // ipsV3 trae las alternativas documentadas bajo el nombre canónico del diagrama vigente.
             var ipsV3 = direccionesPorNombre.TryGetValue(nombreNormalizado, out var direccionesEncontradas)
                 ? direccionesEncontradas
                 : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            // coincidenciasPdfV3 busca si un octeto del PDF identifica una de las IP actuales V3.
-            var coincidenciasPdfV3 = ipsV3.Where(direccion => ipsPdf.Contains(direccion, StringComparer.OrdinalIgnoreCase)).ToList();
-            // ipV3 se asigna si V3 tiene una única IP o si el PDF permite escoger una entre varias.
+            // coincidenciasPdfV3 identifica si el valor de ubicación permite escoger una alternativa V3.
+            var coincidenciasPdfV3 = ipsV3
+                .Where(direccion => ipsPdf.Contains(direccion, StringComparer.OrdinalIgnoreCase))
+                .ToList();
+            // ipV3 conserva la IP V3 única o la única alternativa que coincide con el PDF.
             var ipV3 = ipsV3.Count == 1 ? ipsV3.Single()
                 : coincidenciasPdfV3.Count == 1 ? coincidenciasPdfV3[0]
                 : null;
-            // ipAsignada da prioridad al V3 resuelto; si no hay IP V3, conserva el octeto único del PDF.
+            // ipAsignada prioriza V3; usa PDF solo cuando V3 no aporta una IP para ese equipo.
             var ipAsignada = ipV3 ?? (ipsV3.Count == 0 ? ipPdf : null);
-            // observaciones explican si hay diferencias o si queda una ambigüedad pendiente.
+            // observaciones registra octetos PDF, direcciones V3 y diferencias sin ocultar candidatas.
             var observaciones = new List<string>
             {
                 $"PDF: {string.Join(", ", ipsPdf.DefaultIfEmpty("sin IP legible"))} (págs. {string.Join(", ", filaPdf.Paginas)})."
             };
 
+            if (!string.IsNullOrWhiteSpace(filaPdf.EtiquetaPdf))
+            {
+                observaciones.Add($"Etiqueta en ubicación: {filaPdf.EtiquetaPdf}; nombre canónico V3: {nombreNormalizado}.");
+            }
+
             if (ipsV3.Count > 0)
             {
-                // listaV3 hace visible toda dirección de V3 sin descartar candidatos alternativos.
+                // listaV3 hace visibles todos los valores del V3 sin descartar los no elegidos.
                 var listaV3 = string.Join(", ", ipsV3.OrderBy(direccion => direccion, StringComparer.OrdinalIgnoreCase));
                 observaciones.Add($"V3: {listaV3}.");
                 if (ipV3 is null)
@@ -965,17 +1030,16 @@ public static class InicializadorInventario
                 observaciones.Add("No se encontró una IP del equipo en V3; se conserva el octeto del PDF pendiente de cotejo.");
             }
 
-            // tipoDispositivo separa los relojes de asistencia de los puestos de usuario en el inventario.
-            var tipoDispositivo = nombreNormalizado.StartsWith("Reloj", StringComparison.OrdinalIgnoreCase)
-                ? "Reloj"
-                : "Puesto de usuario";
-            // equipoNuevo conserva usuario sin asignar y procedencia sin crear datos personales.
+            // equipoNuevo conserva la ubicación y deja el usuario real sin asignar hasta recibir los Visios pendientes.
             var equipoNuevo = new EquipoRed
             {
                 Nombre = nombreNormalizado,
+                Fabricante = filaPdf.Fabricante,
+                Modelo = filaPdf.Modelo,
                 IpAdministracion = ipAsignada,
                 Area = filaPdf.Area,
                 Piso = filaPdf.Piso,
+                RolEnArea = rolPredeterminado,
                 TipoDispositivo = tipoDispositivo,
                 EstadoDatos = ipV3 is not null ? "Vigente" : "A verificar",
                 EstadoAdministrativo = "Sin información",
@@ -984,21 +1048,19 @@ public static class InicializadorInventario
             };
 
             equiposNuevos.Add(equipoNuevo);
-            filasEquiposNuevos.Add((equipoNuevo, filaPdf, ipPdf, ipV3, equipoNuevo.Observaciones));
+            filasEquiposNuevos.Add((equipoNuevo, filaPdf, equipoNuevo.Observaciones));
         }
 
-        if (equiposNuevos.Count == 0)
+        if (equiposNuevos.Count > 0)
         {
-            return;
+            // Guardar las fichas asigna IDs antes de registrar los eventos de alta asociados.
+            await contextoInventario.Equipos.AddRangeAsync(equiposNuevos, cancelacion);
+            await contextoInventario.SaveChangesAsync(cancelacion);
         }
 
-        // Guardar primero asigna identificadores SQLite para que cada evento de alta apunte al equipo correcto.
-        await contextoInventario.Equipos.AddRangeAsync(equiposNuevos, cancelacion);
-        await contextoInventario.SaveChangesAsync(cancelacion);
-
+        // alta enlaza la ficha guardada con su página fuente; cambiar el registro altera el evento auditado.
         foreach (var alta in filasEquiposNuevos)
         {
-            // eventoAlta conserva el antes/después y el documento fuente del equipo incorporado.
             cambiosAuditados.Add(new EventoModificacion
             {
                 IdentificadorEquipo = alta.Equipo.Identificador,
