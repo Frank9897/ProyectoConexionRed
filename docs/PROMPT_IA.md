@@ -258,3 +258,9 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 - Si una tabla de switch documenta una PC/equipo final sin ficha de inventario, la topología puede crear un nodo visual temporal con nombre/IP documentados para dibujar la conexión de Capa 3. No persiste ni inventa una ficha de SQLite. Si existe equipo inventariado que coincide, reutilizarlo.
 
 - Al añadir filas a un JSON incrustado en C#, validar el bloque JSON completo antes de actualizar el repositorio; una fila mal separada impide el arranque del inicializador.
+
+## Impresión y UX de topología
+- El detalle de un switch debe imprimirse completo en una página A4 horizontal: frontal, información del equipo y relaciones. Usar una plantilla de página acotada y calcular en `beforeprint` una escala proporcional al contenido; restaurar estilos en `afterprint`.
+- El mapa general imprime un resumen gráfico compacto en una hoja. No incluir fichas largas de enlaces en esa hoja panorámica; conservarlas en la vista interactiva y en el detalle del switch.
+- No marcar conexiones documentadas como pendientes cuando solo falte el puerto remoto. Mantener textos, métricas y leyendas coherentes con la capa y la fuente.
+- Actualizar README y este prompt al cambiar impresión o interacción.
