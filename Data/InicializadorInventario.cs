@@ -306,7 +306,7 @@ public static class InicializadorInventario
         // AplicarRolesYTiposV3 corrige la función y el tipo de los switches según el Visio y evita la ficha duplicada de Mesa.
         await AplicarRolesYTiposV3Async(contextoInventario, cambiosAuditados, usuarioImportacion, cancelacion);
 
-        // ImportarPuertosAreasV3 agrega solo posiciones ausentes de las trece tablas de área y conserva cada fuente.
+        // ImportarPuertosAreasV3 incorpora tablas de área y el switch secundario documentado en Inmuebles.
         await ImportarPuertosAreasV3Async(contextoInventario, cambiosAuditados, usuarioImportacion, cancelacion);
 
         // datoMac recorre los pares documentados; cambiar el catálogo cambia qué MAC pueden completarse.
@@ -452,9 +452,41 @@ public static class InicializadorInventario
         string usuarioImportacion,
         CancellationToken cancelacion)
     {
-        // filasV3 contiene filas literales de las trece hojas de área seleccionadas; cambiar el catálogo altera la carga.
+        // filasV3 conserva páginas, libros y filas literales; cambiar el catálogo modifica las posiciones importadas.
         var filasV3 = CatalogoPuertosAreasV3.ObtenerFilas();
-        // equiposRegistrados permite mapear las etiquetas del catálogo a fichas existentes sin crear equipos remotos.
+        // nombreSwitchInmuebles conserva la etiqueta literal usada en las dos hojas de Inmuebles.
+        const string nombreSwitchInmuebles = "SWITCH DE 8 PUERTOS";
+        // switchInmuebles busca una ficha existente para no duplicarla al iniciar de nuevo.
+        var switchInmuebles = await contextoInventario.Equipos
+            .SingleOrDefaultAsync(equipo => equipo.Nombre == nombreSwitchInmuebles, cancelacion);
+        if (switchInmuebles is null)
+        {
+            // switchInmueblesNuevo registra el equipo como switch sin inventar marca, modelo, IP o tipo de conector.
+            var switchInmueblesNuevo = new EquipoRed
+            {
+                Nombre = nombreSwitchInmuebles,
+                Area = "Inmuebles",
+                RolEnArea = "Secundario",
+                TipoDispositivo = "Switch",
+                EstadoDatos = "Vigente",
+                Observaciones = "La hoja Excel16 de INMUEBLES lo identifica como switch de 8 puertos. Modelo, IP y tipo físico de puertos no documentados; los renglones 17, 18 y 22 de esa hoja se dejan fuera por exceder las 8 posiciones declaradas."
+            };
+            await contextoInventario.Equipos.AddAsync(switchInmueblesNuevo, cancelacion);
+            await contextoInventario.SaveChangesAsync(cancelacion);
+
+            // eventoAltaSwitchInmuebles audita la creación de esta ficha sin atribuir datos técnicos ausentes.
+            cambiosAuditados.Add(new EventoModificacion
+            {
+                IdentificadorEquipo = switchInmueblesNuevo.Identificador,
+                NombreEquipo = switchInmueblesNuevo.Nombre,
+                NombreUsuario = usuarioImportacion,
+                FechaUtc = DateTime.UtcNow,
+                Campo = "Alta de equipo",
+                ValorNuevo = "Switch secundario de Inmuebles; 8 posiciones del libro Excel16; modelo e IP no documentados."
+            });
+        }
+
+        // equiposRegistrados mapea las etiquetas locales, incluido el switch secundario recién encontrado o creado.
         var equiposRegistrados = await contextoInventario.Equipos.AsNoTracking().ToListAsync(cancelacion);
         // equiposPorNombre resuelve nombres canónicos ignorando mayúsculas; cambiarlo modifica la asignación de hojas.
         var equiposPorNombre = equiposRegistrados.ToDictionary(
