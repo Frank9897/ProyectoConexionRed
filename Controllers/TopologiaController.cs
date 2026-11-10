@@ -55,6 +55,7 @@ public class TopologiaController : Controller
                 Identificador = relacion.Identificador,
                 IdentificadorPuertoLocal = relacion.IdentificadorPuertoLocal,
                 EquipoLocal = equipoLocal.Nombre,
+                IpLocal = equipoLocal.IpAdministracion,
                 PuertoLocal = puertoLocal.EtiquetaPuerto,
                 EquipoRemoto = relacion.EquipoRemoto,
                 IpRemota = relacion.IpRemota,
@@ -86,8 +87,8 @@ public class TopologiaController : Controller
                 || !equiposPorId.TryGetValue(interfazOrigen.IdentificadorEquipo, out var equipoOrigen)
                 || !equiposPorId.TryGetValue(interfazDestino.IdentificadorEquipo, out var equipoDestino))
                 continue;
-            destinosPorInterfaz[interfazOrigen.Identificador] = $"{equipoDestino.Nombre} · {interfazDestino.EtiquetaPuerto}";
-            destinosPorInterfaz[interfazDestino.Identificador] = $"{equipoOrigen.Nombre} · {interfazOrigen.EtiquetaPuerto}";
+            destinosPorInterfaz[interfazOrigen.Identificador] = $"{equipoDestino.Nombre} · {equipoDestino.IpAdministracion ?? "IP no indicada"} · {interfazDestino.EtiquetaPuerto}";
+            destinosPorInterfaz[interfazDestino.Identificador] = $"{equipoOrigen.Nombre} · {equipoOrigen.IpAdministracion ?? "IP no indicada"} · {interfazOrigen.EtiquetaPuerto}";
         }
         foreach (var relacion in relacionesParciales)
         {
@@ -98,8 +99,7 @@ public class TopologiaController : Controller
             }.Where(texto => !string.IsNullOrWhiteSpace(texto)));
             if (string.IsNullOrWhiteSpace(destinoParcial))
                 destinoParcial = "Extremo remoto no identificado";
-            destinosPorInterfaz[relacion.IdentificadorPuertoLocal] =
-                $"{destinoParcial} · {relacion.Medio} · {relacion.EstadoDatos} · Fuente: {relacion.FuentePagina}";
+            destinosPorInterfaz[relacion.IdentificadorPuertoLocal] = destinoParcial;
         }
         // interfacesPorEquipo agrupa los puertos reales; cambiar el agrupamiento altera cada frontal.
         var interfacesPorEquipo = interfacesRegistradas.ToLookup(interfaz => interfaz.IdentificadorEquipo);
@@ -165,10 +165,12 @@ public class TopologiaController : Controller
                 IdentificadorEquipoOrigen = equipoOrigen.Identificador,
                 IdentificadorPuertoOrigen = puertoOrigen.Identificador,
                 EquipoOrigen = equipoOrigen.Nombre,
+                IpEquipoOrigen = equipoOrigen.IpAdministracion,
                 PuertoOrigen = puertoOrigen.EtiquetaPuerto,
                 IdentificadorEquipoDestino = equipoDestino.Identificador,
                 IdentificadorPuertoDestino = puertoDestino.Identificador,
                 EquipoDestino = equipoDestino.Nombre,
+                IpEquipoDestino = equipoDestino.IpAdministracion,
                 PuertoDestino = puertoDestino.EtiquetaPuerto,
                 Medio = enlace.Medio,
                 EstadoDatos = enlace.EstadoDatos,
