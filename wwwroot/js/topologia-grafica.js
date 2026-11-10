@@ -9,8 +9,6 @@
     const puertosInteractivos = Array.from(document.querySelectorAll("[data-puerto-topologia]"));
     // tarjetasConexion reúne fichas con una etiqueta local para enlazarlas con el frontal.
     const tarjetasConexion = Array.from(document.querySelectorAll("[data-puerto-local]"));
-    // mensajesPuerto muestra el estado y destino del puerto seleccionado sin alterar los datos.
-    const mensajesPuerto = Array.from(document.querySelectorAll("[data-mensaje-puerto]"));
 
     /**
      * Activa una boca y, si se solicita, desplaza la vista hasta su ficha de conexión.
@@ -33,11 +31,15 @@
                 tarjeta.dataset.puertoLocal === etiquetaSeleccionada);
         });
         // mensaje recorre las regiones accesibles que anuncian la selección.
-        mensajesPuerto.forEach(mensaje => {
-            mensaje.textContent = etiquetaSeleccionada
+        // contenedorFrontal limita el aviso a la vista del switch que contiene el puerto pulsado.
+        const contenedorFrontal = puerto.closest(".panel-frontal-switch");
+        // mensajePuerto evita anunciar la misma selección desde todos los switches del mapa.
+        const mensajePuerto = contenedorFrontal?.querySelector("[data-mensaje-puerto]");
+        if (mensajePuerto) {
+            mensajePuerto.textContent = etiquetaSeleccionada
                 ? `Puerto ${etiquetaSeleccionada}: ${puerto.dataset.estadoPuerto}. Destino: ${puerto.dataset.destinoPuerto}.`
                 : "Puerto sin etiqueta documentada.";
-        });
+        }
         if (desplazarAConexion) {
             // tarjetaCoincidente busca la primera ficha cuyo puerto local coincide literalmente.
             const tarjetaCoincidente = tarjetasConexion.find(tarjeta =>
