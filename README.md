@@ -50,11 +50,11 @@ La revisión se hizo sobre la rama publicada. En esta sesión no hay un checkout
 
 ## Próximas etapas
 
-1. Incorporar las posiciones locales de puertos de las hojas Excel de V3 y dibujar junto a cada puerto el equipo/IP indicado.
-2. Resolver discrepancias entre tablas y mostrar como no documentado el puerto remoto cuando falte.
-3. Separar estado del puerto, vigencia de la información y presencia del módulo SFP.
-4. Enriquecer PCs y usuarios cuando lleguen los dos Visios pendientes; después completar switching/VLAN.
-5. Agregar simulaciones aisladas y exportación imprimible; completar migraciones, respaldos y controles de acceso.
+1. Completar la revisión de hojas Excel del V3 cuyo switch propietario o conexión de rack siga ambiguo; no convertir notas parciales en enlaces.
+2. Separar en datos estructurados el uso del puerto, la vigencia del registro y la presencia/modelo/fecha del transceptor SFP.
+3. Enriquecer PCs y usuarios cuando lleguen los dos Visios pendientes; luego completar jerarquía de switching y VLAN con relaciones confirmadas.
+4. Agregar simulaciones únicamente sobre datos locales, sin comandos ni consultas a la red real.
+5. Completar exportación gráfica de topología, migraciones, respaldos y controles de acceso antes de restaurar el login.
 
 
 ### Topología gráfica implementada
@@ -127,3 +127,8 @@ El inicializador deja constancia de cada alta en el historial de cambios, con or
 La vista Switching organiza los switches en dos columnas en escritorio y una columna en pantallas estrechas. El frontal diferencia ocupado (verde brillante), libre confirmado (gris) y desconocido (verde oscuro con borde discontinuo ámbar), además de resumir sus cantidades. La ficha de cada switch abre su detalle con modelo, IP, rol, frontal, conexiones completas y relaciones pendientes.
 
 Las conexiones muestran nombre del equipo, IP en gris, etiqueta de puerto y estado. El medio solo aparece cuando está documentado y confirmado; página/libro/fila quedan bajo un desplegable para mantener la lectura compacta. La lista permite buscar por nombre, IP y puerto, filtrar por estado, paginar y abrir directamente el frontal del switch. También se puede imprimir la vista actual.
+
+
+### Recorrido sincronizado entre puertos y conexiones
+
+En el detalle de un switch, cada puerto del frontal se puede seleccionar con ratón, Enter o Espacio. La selección anuncia estado y destino documentados, destaca la ficha que comparte la etiqueta del puerto y desplaza la página hacia ella. Al pulsar una ficha se resalta el puerto correspondiente. Si el remoto no está documentado, se muestra esa falta explícitamente y no se crea un enlace ficticio. El foco de teclado y el movimiento respetan la preferencia de movimiento reducido del navegador.
