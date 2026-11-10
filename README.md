@@ -168,3 +168,8 @@ El detalle individual de switch se imprime en A4 horizontal, ajustando automáti
 ### Mapa navegable e impresión en una hoja
 
 La topología mantiene el lienzo en un área visible estable, con desplazamiento interno para recorrer las tarjetas. El botón **Maximizar mapa** expande el panel y conserva filtros y controles de capa. La impresión del detalle del switch ajusta las conexiones en columnas según su cantidad, conserva un margen A4 y reduce el contenido solo cuando hace falta. La impresión panorámica muestra el mapa en formato compacto en una página.
+
+
+### Navegación visual del mapa
+
+Las tarjetas de topología se organizan siempre en dos columnas, con separación para que el recorrido de las conexiones se vea entre ellas. El mapa conserva una ventana de tamaño estable y se navega con scroll o arrastrando el espacio libre. **Maximizar mapa** expande el panel completo; **Centrar vista** devuelve el lienzo al origen. Las conexiones se distinguen con colores por capa y mantienen su posición relativa al desplazarse.
