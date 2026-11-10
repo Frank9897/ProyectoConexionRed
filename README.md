@@ -162,12 +162,12 @@ Se corrigió un separador faltante entre filas del JSON incrustado de `CatalogoP
 
 ### Impresión de switch y mapa en una hoja
 
-El detalle individual de switch se imprime en A4 horizontal, ajustando automáticamente su escala para mantener el frontal, los datos y las conexiones en una sola página. El mapa general omite los paneles ajenos al mapa y encaja las tarjetas y enlaces en casi toda el área imprimible (287 × 180 mm, con margen de 5 mm). El cálculo panorámico usa solo el mapa visible, puede ampliarlo por encima del 100 % y restablece el zoom de pantalla al cerrar la vista previa.
+El detalle individual de switch se imprime en A4 horizontal al ancho útil de la hoja. El diseño de impresión compacta el frontal, los datos y las conexiones; no reduce la página completa por la altura de la vista web. El mapa general omite los paneles ajenos al mapa y encaja las tarjetas y enlaces en casi toda el área imprimible (287 × 180 mm, con margen de 5 mm). El cálculo panorámico usa solo el mapa visible, puede ampliarlo por encima del 100 % y restablece el zoom de pantalla al cerrar la vista previa.
 
 
 ### Mapa navegable e impresión en una hoja
 
-La topología mantiene el lienzo en un área visible estable, con desplazamiento interno para recorrer las tarjetas. El botón **Maximizar mapa** expande el panel y conserva filtros y controles de capa. La impresión del detalle del switch ajusta las conexiones en columnas según su cantidad, conserva un margen A4 y reduce el contenido solo cuando hace falta. La impresión panorámica muestra el mapa en formato compacto en una página.
+La topología mantiene el lienzo en un área visible estable, con desplazamiento interno para recorrer las tarjetas. El botón **Maximizar mapa** expande el panel y conserva filtros y controles de capa. La impresión del detalle del switch reparte las conexiones en columnas según su cantidad, conserva el margen A4 y mantiene el contenido al ancho natural de impresión. La impresión panorámica muestra el mapa en formato compacto en una página.
 
 
 ### Navegación visual del mapa
