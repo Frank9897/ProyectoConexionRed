@@ -1358,7 +1358,7 @@ internal static class CatalogoUbicacionesEquiposPdf
                 Paginas = [11],
                 Area = "Valuación Principal",
                 Piso = "1.er piso"
-            }
+            },
             new()
             {
                 Nombre = "PLOTTER EPSON T7200",

@@ -172,9 +172,15 @@ La topología mantiene el lienzo en un área visible estable, con desplazamiento
 
 ### Navegación visual del mapa
 
-Las tarjetas de topología se organizan siempre en dos columnas, con separación para que el recorrido de las conexiones se vea entre ellas. El mapa conserva una ventana de tamaño estable y se navega con scroll o arrastrando el espacio libre. **Maximizar mapa** expande el panel completo; **Centrar vista** devuelve el lienzo al origen. Las conexiones se distinguen con colores por capa y mantienen su posición relativa al desplazarse.
+Desde el 10 de noviembre de 2026 las tarjetas del mapa ya no están limitadas a dos columnas: cada una es independiente y se puede arrastrar libremente, y sus líneas la siguen. El mapa se navega arrastrando el fondo, con Ctrl + rueda o con los botones **Acercar**/**Alejar**; **Vista inicial** vuelve al zoom legible centrado en el equipo principal, **Ver todo** encaja todas las tarjetas y **Distribuir** reparte de nuevo las tarjetas con el modo elegido (mosaico para verlo todo, filas por grupo o cuadrícula por área). **Maximizar mapa** expande el panel completo. Las conexiones se distinguen con colores por capa y salen a la altura del puerto documentado, con su número rotulado.
 
 
 ### Caja del mapa y expansión dentro de la página
 
 Los controles **Centrar vista** y **Maximizar mapa** están dentro del marco del mapa. Maximizar amplía la caja en la misma página con fondo atenuado; no solicita pantalla completa al navegador. Se puede restaurar con el botón o con Escape. Las tarjetas quedan en una composición escalonada con conexiones visibles entre ellas.
+
+### Mapa de tarjetas libres
+
+Cada equipo se muestra como una tarjeta sobre un lienzo libre. La disposición inicial agrupa los equipos en clústeres (el equipo central a la izquierda y, a su derecha, cada switch con los equipos que cuelgan de él). Puedes mover cada tarjeta con el ratón o con las flechas del teclado (con la tarjeta enfocada); las posiciones movidas se recuerdan por capa en el navegador. Al hacer clic en una tarjeta se resaltan sus conexiones y las tarjetas vecinas. La casilla «Solo equipos con conexión» oculta los equipos sin enlaces en la capa elegida. Los archivos implicados son `Views/Topologia/Index.cshtml`, `wwwroot/js/topologia-grafica.js` y el bloque final «Mapa de tarjetas libres» de `wwwroot/css/site.css`.
+
+Para despejar el esquema puedes **contraer** una tarjeta (queda solo su cabecera) o **ocultar el grupo** de un switch con el botón «Ocultar N» de su tarjeta; **Contraer todo** y **Colapsar grupos** lo hacen en bloque y redistribuyen el mapa. Estos estados solo valen durante la visita.

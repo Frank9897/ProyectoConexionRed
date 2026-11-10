@@ -265,18 +265,36 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 - No marcar conexiones documentadas como pendientes cuando solo falte el puerto remoto. Mantener textos, métricas y leyendas coherentes con la capa y la fuente.
 - Actualizar README y este prompt al cambiar impresión o interacción.
 
-- El mapa de topología usa un área de desplazamiento interna con ancho legible de tarjetas; permitir maximizar el panel completo para navegarlo en cualquiera de las capas y conservar sus controles.
-- Al maximizar, redimensionar también el SVG y calcular las coordenadas de los extremos con el desplazamiento interno del lienzo.
+- (Reemplazado el 10 de noviembre de 2026) El mapa de topología es un lienzo libre dentro de una ventana recortada; se desplaza con el fondo y se acerca con zoom en lugar de usar barras de desplazamiento. Permitir maximizar el panel completo para navegarlo en cualquiera de las capas y conservar sus controles.
+- Las líneas se dibujan en coordenadas del lienzo (mismo sistema que las tarjetas) y el lienzo se traslada y escala como un bloque, por lo que maximizar o hacer zoom no obliga a recalcular las coordenadas de los extremos.
 - Para la impresión A4 horizontal, distribuir tarjetas de conexión en más columnas según su cantidad antes de aplicar la escala final. Mantener margen y evitar reducir excesivamente la página por el diseño vertical de pantalla.
 - Actualizar README y este prompt junto con las mejoras de mapa o impresión.
 
-- El mapa debe mantener exactamente dos columnas de tarjetas en todas las capas y tamaños de ventana; en móviles se puede navegar horizontalmente dentro del mapa en vez de apilar tarjetas.
+- (Reemplazado el 10 de noviembre de 2026) Las tarjetas ya no se limitan a dos columnas: cada tarjeta es independiente, se puede arrastrar libremente y sus líneas la siguen. La disposición automática inicial agrupa en clústeres (equipo central a la izquierda; cada switch con sus equipos a su derecha).
 - Dejar espacio visible entre tarjetas para que las líneas no se confundan con el contenido. Las conexiones deben llevar color de alto contraste y una clave visual por capa.
-- Permitir desplazar el fondo con puntero/scroll, restaurar la vista inicial y maximizar el panel conservando los filtros de capa.
-- Si el SVG cubre un lienzo desplazable, dimensionarlo al contenido y sumar el scroll actual al calcular las coordenadas de las aristas.
+- Permitir desplazar el fondo arrastrando o con la rueda, acercar con Ctrl + rueda o los botones Acercar/Alejar, restaurar la vista inicial, ver todo y maximizar el panel conservando los filtros de capa.
+- El SVG es de 1 px con overflow visible dentro del lienzo transformado; no dimensionarlo al contenido ni sumar scroll a las coordenadas.
 - Actualizar README y este prompt junto con cambios del mapa.
 
 - El mapa debe estar contenido en una caja propia con sus controles de centrar y maximizar dentro del marco.
 - Maximizar significa expandir el marco dentro de la página con un fondo atenuado, botón para restaurar y tecla Escape; no usar la API de pantalla completa del navegador.
-- Evitar que la topología parezca una tabla: dejar espacio entre tarjetas y usar una distribución escalonada/canvas donde las conexiones documentadas se distingan por capa.
-- Mantener el lienzo SVG, las tarjetas y sus líneas dentro del mismo marco desplazable para conservar su alineación.
+- Evitar que la topología parezca una tabla: dejar espacio entre tarjetas para que las conexiones documentadas se vean por capa. Las tarjetas se posicionan de forma absoluta en el lienzo.
+- Mantener el lienzo SVG, las tarjetas y sus líneas dentro del mismo lienzo transformado para conservar su alineación.
+
+## Mapa de tarjetas libres (10 de noviembre de 2026)
+
+- Cada equipo es una tarjeta con posición absoluta (`transform: translate`) sobre `[data-lienzo-topologia]`; el visor `[data-mapa-topologia]` recorta (`overflow: hidden`) y el script aplica traslación y zoom al lienzo.
+- Arrastre por Pointer Events: con ratón desde cualquier punto libre de la tarjeta; en táctil solo desde la cabecera. Los puertos, enlaces y botones internos conservan su acción. Un clic sin movimiento selecciona la tarjeta y resalta sus conexiones; las flechas del teclado mueven la tarjeta enfocada (Mayús: paso grande).
+- Las líneas salen del lado que mira a la otra tarjeta, a la altura del puerto documentado, con una pastilla de número de puerto. Si un extremo no tiene puerto documentado, la línea sale del centro del lado. No inferir conexiones nuevas.
+- Color por capa: Capa 1 morado, Capa 2 azul, Capa 3 verde; ámbar discontinuo para pendientes y azul discontinuo para uplinks sin contraparte única.
+- Las posiciones movidas por la persona se guardan por capa en `localStorage` (`topologia-tarjetas-v1`); el resto usa la disposición automática. **Distribuir** descarta las posiciones de la capa actual y reparte de nuevo con el modo elegido.
+- La casilla «Solo equipos con conexión» (activa por defecto) oculta los equipos sin ninguna conexión en la capa elegida; desmarcarla muestra todo el inventario.
+- La impresión encaja el mapa en una zona fija de A4 horizontal con las tarjetas a su tamaño real, para que las líneas sigan alineadas.
+- Actualizar README y este prompt junto con cambios del mapa. No usar emojis ni iconos en los textos de la interfaz.
+
+### Distribuir y colapsar (10 de noviembre de 2026)
+
+- Modos de distribución (`data-modo-distribucion`): **mosaico** (por defecto; clústeres repartidos en varias columnas para que el esquema quepa en la ventana), **filas** (clústeres apilados en una columna) y **cuadrícula** por área (ignora las conexiones). Cambiar de modo o pulsar Distribuir reubica las tarjetas visibles de la capa.
+- Cada tarjeta tiene botones de texto: **Contraer/Expandir** (solo cabecera) y **Ocultar N/Mostrar N** (oculta o muestra los N equipos que cuelgan de ella en el árbol de recorrido). Los equipos ocultos por grupo no se cuentan como «sin conexión»: la conectividad se evalúa antes de colapsar.
+- Botones globales: Contraer todo, Expandir todo, Colapsar grupos (oculta los equipos finales de cada switch) y Expandir grupos; todos redistribuyen la capa. El estado de contraído/colapsado vale solo para la visita actual y no se guarda.
+- Cualquier función nueva del mapa debe usar botones de texto, sin emojis ni iconos, y mantener las líneas ancladas al puerto o al centro del lado cuando el puerto queda oculto.

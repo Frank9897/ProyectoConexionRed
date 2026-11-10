@@ -97,7 +97,7 @@
         <div>
             <p class="sobrelinea">VISTA INTERACTIVA</p>
             <h2 id="titulo-mapa-topologia">Mapa de conexiones documentadas</h2>
-            <p>Las líneas representan relaciones documentadas; el puerto remoto aparece cuando está identificado. Desplázate dentro del mapa o maximízalo para recorrer todas las tarjetas.</p>
+            <p>Cada tarjeta es un equipo y cada línea una relación documentada; el puerto aparece junto a la línea cuando está identificado. Arrastra las tarjetas para reubicarlas: las líneas las siguen.</p>
         </div>
         <div class="acciones-topologia">
             <span class="contador-enlaces">@Model.Dispositivos.Count equipos · @Model.Enlaces.Count enlaces</span>
@@ -132,17 +132,39 @@
         <span><i class="muestra-puerto puerto-ocupado" aria-hidden="true"></i> Ocupado en la documentación</span>
         <span><i class="muestra-puerto puerto-libre" aria-hidden="true"></i> Libre confirmado</span>
         <span><i class="muestra-puerto puerto-desconocido" aria-hidden="true"></i> Desconocido</span>
-        <span><i class="muestra-enlace enlace-confirmado" aria-hidden="true"></i> Enlace confirmado</span>
+        <span><i class="muestra-enlace capa-fisica" aria-hidden="true"></i> Capa 1 · Física</span>
+        <span><i class="muestra-enlace capa-switching" aria-hidden="true"></i> Capa 2 · Switching</span>
+        <span><i class="muestra-enlace capa-acceso" aria-hidden="true"></i> Capa 3 · Acceso</span>
         <span><i class="muestra-enlace enlace-parcial-switch" aria-hidden="true"></i> Uplink confirmado sin contraparte única</span>
+        <span><i class="muestra-enlace enlace-pendiente" aria-hidden="true"></i> Relación pendiente de confirmar</span>
     </div>
 
     <p class="aclaracion-topologia-grafica">Capa 3 muestra PCs y equipos finales conectados al puerto local del switch. Capa 2 muestra enlaces entre switches y coteja ambas tablas para completar los dos puertos cuando se pueden emparejar. Capa 1 representa la infraestructura física. El Visio confirma las relaciones documentadas; esta vista no consulta la red en vivo.</p>
 
     <div class="marco-mapa-topologia" data-marco-mapa>
         <div class="barra-herramientas-mapa">
-            <span>Mapa de conexiones · Arrastra el fondo para desplazarte</span>
+            <span class="ayuda-mapa-topologia">Arrastra una tarjeta para moverla · arrastra el fondo para desplazarte · Ctrl + rueda para acercar · «Ocultar» colapsa el grupo de un switch</span>
             <div class="acciones-mapa-topologia">
-                <button class="boton boton-secundario" type="button" data-restablecer-mapa title="Centra el mapa">Centrar vista</button>
+                <label class="control-solo-conectados" title="Oculta los equipos que no tienen ninguna conexión en la capa elegida">
+                    <input type="checkbox" data-solo-conectados checked /> Solo equipos con conexión
+                </label>
+                <button class="boton boton-secundario" type="button" data-zoom-mapa="alejar" title="Aleja el mapa">Alejar</button>
+                <span class="nivel-zoom-mapa" data-nivel-zoom aria-live="polite">100 %</span>
+                <button class="boton boton-secundario" type="button" data-zoom-mapa="acercar" title="Acerca el mapa">Acercar</button>
+                <label class="selector-distribucion">Distribución
+                    <select data-modo-distribucion title="Elige cómo se reparten las tarjetas">
+                        <option value="mosaico" selected>Mosaico (ver todo)</option>
+                        <option value="filas">Filas por grupo</option>
+                        <option value="cuadricula">Cuadrícula por área</option>
+                    </select>
+                </label>
+                <button class="boton boton-secundario" type="button" data-distribuir-mapa title="Reparte de nuevo las tarjetas de esta capa con la distribución elegida">Distribuir</button>
+                <button class="boton boton-secundario" type="button" data-contraer-todo title="Reduce todas las tarjetas a su cabecera y las redistribuye">Contraer todo</button>
+                <button class="boton boton-secundario" type="button" data-expandir-todo title="Restaura el contenido de todas las tarjetas y las redistribuye">Expandir todo</button>
+                <button class="boton boton-secundario" type="button" data-colapsar-grupos title="Oculta los equipos finales que cuelgan de cada switch">Colapsar grupos</button>
+                <button class="boton boton-secundario" type="button" data-expandir-grupos title="Muestra de nuevo todos los equipos ocultos">Expandir grupos</button>
+                <button class="boton boton-secundario" type="button" data-restablecer-mapa title="Vuelve al zoom legible centrado en el equipo principal">Vista inicial</button>
+                <button class="boton boton-secundario" type="button" data-ver-todo-mapa title="Encaja todas las tarjetas visibles en la ventana">Ver todo</button>
                 <button class="boton boton-secundario" type="button" data-maximizar-mapa aria-pressed="false" title="Expande el mapa dentro de esta página">Maximizar mapa</button>
             </div>
         </div>
@@ -155,10 +177,13 @@
         }
         else
         {
-            <div class="rejilla-dispositivos-topologia">
+            @* Cada tarjeta se posiciona de forma absoluta en el lienzo y se puede arrastrar de forma independiente. *@
             @foreach (var dispositivo in Model.Dispositivos)
             {
                 <article class="nodo-dispositivo-topologia" data-dispositivo
+                         tabindex="0"
+                         role="group"
+                         aria-label="@($"{dispositivo.Nombre}. Arrastra la tarjeta o usa las flechas del teclado para moverla.")"
                          data-identificador-dispositivo="@dispositivo.Identificador"
                          data-dispositivo-nombre="@dispositivo.Nombre"
                          data-dispositivo-tipo="@dispositivo.TipoDispositivo"
@@ -218,10 +243,15 @@
                     }
                 </article>
             }
-            </div>
         }
+                <svg class="capa-svg-enlaces capa-svg-enlaces-activos" data-capa-enlaces-activos aria-hidden="true"></svg>
+            </div>
+            <div class="mapa-sin-elementos" data-mapa-vacio hidden>
+                <strong>Ningún equipo cumple los filtros</strong>
+                <p>Cambia la capa, el área o la búsqueda, o desmarca «Solo equipos con conexión» para ver todo el inventario.</p>
             </div>
         </div>
+        <p class="estado-mapa-topologia solo-lectores-pantalla" data-estado-mapa role="status" aria-live="polite"></p>
     </div>
 
     <div class="metadatos-enlaces-topologia" hidden>

@@ -867,18 +867,7 @@ tbody tr:hover { background: #f7fafb; }
     .hoja-impresion-topologia .controles-capa-topologia,
     .hoja-impresion-topologia .acciones-topologia,
     .hoja-impresion-topologia .aclaracion-topologia-grafica,
-    .hoja-impresion-topologia .lista-fichas-conexion,
-    .hoja-impresion-topologia .frontal-switch-scroll,
-    .hoja-impresion-topologia .datos-nodo-topologia,
-    .hoja-impresion-topologia .estado-capacidad-topologia,
-    .hoja-impresion-topologia .enlace-detalle-switch { display: none !important; }
-    .hoja-impresion-topologia .mapa-topologia { min-height: 0 !important; overflow: visible !important; padding: 0 !important; }
-    .hoja-impresion-topologia .rejilla-dispositivos-topologia { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 1.5mm !important; }
-    .hoja-impresion-topologia .nodo-dispositivo-topologia { min-width: 0; padding: 1.5mm !important; border-radius: 1.5mm; box-shadow: none !important; break-inside: avoid; }
-    .hoja-impresion-topologia .cabecera-nodo-topologia { gap: 1.5mm; }
-    .hoja-impresion-topologia .cabecera-nodo-topologia img { width: 8mm; height: 6mm; }
-    .hoja-impresion-topologia .cabecera-nodo-topologia .sobrelinea { margin: 0; font-size: 5pt; }
-    .hoja-impresion-topologia .cabecera-nodo-topologia h3 { margin: .5mm 0 0; font-size: 7pt; overflow-wrap: anywhere; }
+    .hoja-impresion-topologia .lista-fichas-conexion { display: none !important; }
 }
 
 
@@ -1073,4 +1062,150 @@ body.mapa-ampliado-en-pagina::before {
     .hoja-impresion-topologia .barra-herramientas-mapa { display: none !important; }
     .hoja-impresion-topologia .mapa-topologia { height: auto; min-height: 0; max-height: none; overflow: visible; border: 0; }
     .hoja-impresion-topologia .lienzo-topologia { min-height: 0; padding: 0; }
+}
+
+
+/* ==========================================================================================
+   Mapa de tarjetas libres (10 de noviembre de 2026)
+   Cada tarjeta se posiciona de forma absoluta sobre un lienzo que se desplaza y se acerca.
+   Estas reglas reemplazan la rejilla y el desplazamiento con barras de las versiones anteriores.
+   ========================================================================================== */
+.barra-herramientas-mapa { flex-wrap: wrap; }
+.ayuda-mapa-topologia { color: #5a707c; font-weight: 600; }
+.acciones-mapa-topologia { align-items: center; }
+.control-solo-conectados { display: inline-flex; align-items: center; gap: 6px; color: #3f5866; font-size: .82rem; font-weight: 650; cursor: pointer; }
+.nivel-zoom-mapa { min-width: 3.6em; color: #47616c; font-size: .8rem; font-variant-numeric: tabular-nums; text-align: center; }
+
+/* La ventana recorta el lienzo; el desplazamiento y el zoom los aplica el script con transform. */
+.mapa-topologia {
+    position: relative;
+    padding: 0;
+    overflow: hidden;
+    cursor: grab;
+    touch-action: none;
+    overscroll-behavior: contain;
+    -webkit-user-select: none;
+    user-select: none;
+}
+.mapa-topologia.mapa-desplazando { cursor: grabbing; }
+.marco-mapa-topologia.mapa-ampliado .mapa-topologia { min-height: 0 !important; }
+.mapa-topologia:focus-visible { outline: 3px solid #f2b544; outline-offset: 2px; }
+
+.lienzo-topologia {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    transform-origin: 0 0;
+}
+.lienzo-topologia > .capa-svg-enlaces {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    width: 1px;
+    height: 1px;
+    overflow: visible;
+    pointer-events: none;
+}
+.lienzo-topologia > .capa-svg-enlaces-activos { z-index: 4; }
+
+/* Tarjetas: ancho fijo, posición por transform y arrastre independiente. */
+.nodo-dispositivo-topologia {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    width: 460px;
+    cursor: grab;
+    -webkit-user-select: none;
+    user-select: none;
+    transition: box-shadow .15s ease, opacity .15s ease, border-color .15s ease;
+}
+.nodo-dispositivo-topologia.nodo-compacto { width: 270px; }
+.nodo-dispositivo-topologia.nodo-compacto .cabecera-nodo-topologia { gap: 10px; min-height: 56px; }
+.nodo-dispositivo-topologia.nodo-compacto .cabecera-nodo-topologia img { width: 56px; height: 42px; flex-basis: 56px; }
+.nodo-dispositivo-topologia.nodo-compacto .datos-nodo-topologia { margin: 8px 0 0; }
+.nodo-dispositivo-topologia.arrastrando { cursor: grabbing; transition: none; box-shadow: 0 20px 44px #19374440; }
+.nodo-dispositivo-topologia:focus-visible { outline: 3px solid #f2b544; outline-offset: 3px; }
+.nodo-dispositivo-topologia.nodo-seleccionado { border-color: #176b78; box-shadow: 0 0 0 3px #176b7833, 0 14px 34px #19374430; }
+.nodo-dispositivo-topologia.nodo-vecino { border-color: #6aa7b2; }
+.mapa-con-seleccion .nodo-dispositivo-topologia:not(.nodo-seleccionado):not(.nodo-vecino) { opacity: .5; }
+.mapa-con-seleccion .enlace-topologia:not(.enlace-activo):not(.enlace-superpuesto) { opacity: .15; }
+
+/* El frontal se compacta en todas las capas para que quepa en el ancho de la tarjeta. */
+.mapa-topologia[data-capa-actual] .nodo-dispositivo-topologia .frontal-switch-panel { min-width: 0; padding: 10px; }
+.mapa-topologia[data-capa-actual] .nodo-dispositivo-topologia .frontal-switch-cabecera { align-items: flex-start; flex-direction: column; gap: 3px; }
+.mapa-topologia[data-capa-actual] .nodo-dispositivo-topologia .fila-frontal-puertos { grid-auto-columns: minmax(13px, 1fr); gap: 3px; }
+.mapa-topologia[data-capa-actual] .nodo-dispositivo-topologia .puerto-frontal { min-width: 13px; min-height: 30px; font-size: .54rem; }
+.mapa-topologia[data-capa-actual] .nodo-dispositivo-topologia .puerto-frontal::after { height: 10px; }
+.mapa-topologia[data-capa-actual] .nodo-dispositivo-topologia .puerto-frontal.puerto-sfp::after { height: 14px; }
+.mapa-topologia[data-capa-actual] .nodo-dispositivo-topologia .resumen-puerto { font-size: .64rem; }
+
+/* Líneas: un color de alto contraste por capa; ámbar discontinuo para lo pendiente de confirmar. */
+.enlace-topologia { stroke-width: 3; stroke-linecap: round; }
+.enlace-topologia.capa-fisica { stroke: #7a4cc2; }
+.enlace-topologia.capa-switching { stroke: #1565c0; }
+.enlace-topologia.capa-acceso { stroke: #168a56; }
+.enlace-topologia.enlace-pendiente { stroke: #b3762c; stroke-dasharray: 7 6; }
+.enlace-topologia.enlace-parcial-switch { stroke: #1565c0; stroke-dasharray: 5 4; opacity: .9; }
+.enlace-topologia.enlace-resaltado, .enlace-topologia.enlace-activo { stroke-width: 5; opacity: 1; }
+.enlace-topologia.enlace-superpuesto { stroke-width: 4.5; opacity: 1; pointer-events: none; }
+.punto-enlace { stroke: #fff; stroke-width: 2; }
+.punto-enlace.capa-fisica { fill: #7a4cc2; }
+.punto-enlace.capa-switching { fill: #1565c0; }
+.punto-enlace.capa-acceso { fill: #168a56; }
+.pastilla-puerto-enlace { pointer-events: none; }
+.pastilla-puerto-enlace rect { fill: #fff; stroke: #9fb4bd; stroke-width: 1; }
+.pastilla-puerto-enlace text { fill: #173440; font-size: 11px; font-weight: 700; }
+
+/* Claves de la leyenda por capa. */
+.muestra-enlace.capa-fisica { border-top-color: #7a4cc2; }
+.muestra-enlace.capa-switching { border-top-color: #1565c0; }
+.muestra-enlace.capa-acceso { border-top-color: #168a56; }
+.muestra-enlace.enlace-parcial-switch { border-top: 3px dashed #1565c0; }
+
+.mapa-sin-elementos { position: absolute; inset: 0; display: grid; place-content: center; padding: 24px; color: #47616c; text-align: center; pointer-events: none; }
+.mapa-sin-elementos[hidden] { display: none; }
+.mapa-sin-elementos p { margin: 4px 0 0; font-size: .86rem; }
+
+/* Controles por tarjeta y tarjeta contraída. */
+.acciones-tarjeta-topologia { display: flex; justify-content: flex-end; gap: 6px; margin: -2px 0 6px; }
+.control-tarjeta { padding: 2px 8px; border: 1px solid #c8d7de; border-radius: 6px; background: #fff; color: #2d5360; font: inherit; font-size: .68rem; font-weight: 700; line-height: 1.5; cursor: pointer; }
+.control-tarjeta:hover { background: #eef5f7; }
+.control-tarjeta:focus-visible { outline: 3px solid #f2b544; outline-offset: 1px; }
+.control-tarjeta[hidden] { display: none; }
+.nodo-dispositivo-topologia.nodo-contraido { width: 270px; }
+.nodo-dispositivo-topologia.nodo-contraido > :not(.acciones-tarjeta-topologia):not(.cabecera-nodo-topologia) { display: none; }
+.nodo-dispositivo-topologia.nodo-contraido .cabecera-nodo-topologia { gap: 10px; min-height: 52px; }
+.nodo-dispositivo-topologia.nodo-contraido .cabecera-nodo-topologia img { width: 48px; height: 36px; flex-basis: 48px; }
+.nodo-dispositivo-topologia.nodo-contraido .detalle-nodo-topologia { display: none; }
+.selector-distribucion { display: inline-flex; align-items: center; gap: 6px; color: #3f5866; font-size: .82rem; font-weight: 650; }
+.selector-distribucion select { padding: 4px 8px; border: 1px solid #c8d7de; border-radius: 8px; background: #fff; color: inherit; font: inherit; }
+
+@media (prefers-reduced-motion: reduce) {
+    .nodo-dispositivo-topologia { transition: none; }
+}
+
+/* Impresión: el mapa se encaja en una zona fija de la hoja A4 horizontal y las tarjetas conservan su tamaño real. */
+@media print {
+    .hoja-impresion-topologia .mapa-topologia {
+        width: 287mm !important;
+        height: 150mm !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        border: 1px solid #c8d7de !important;
+        background: #fff !important;
+        cursor: auto;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .hoja-impresion-topologia .mapa-sin-elementos { display: none !important; }
+    .hoja-impresion-topologia .acciones-tarjeta-topologia { visibility: hidden; }
 }
