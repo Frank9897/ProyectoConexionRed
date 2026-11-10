@@ -256,3 +256,5 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 - Actualizar README y este prompt con todo cambio de modelo/capa. Mantener variables, comentarios y commits en español conforme a las reglas del proyecto.
 
 - Si una tabla de switch documenta una PC/equipo final sin ficha de inventario, la topología puede crear un nodo visual temporal con nombre/IP documentados para dibujar la conexión de Capa 3. No persiste ni inventa una ficha de SQLite. Si existe equipo inventariado que coincide, reutilizarlo.
+
+- Al añadir filas a un JSON incrustado en C#, validar el bloque JSON completo antes de actualizar el repositorio; una fila mal separada impide el arranque del inicializador.
