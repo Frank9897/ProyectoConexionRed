@@ -109,3 +109,14 @@ El importador no asigna medio, modelo de transceptor ni fecha de revisión que l
 Las filas de rack se conservan como aparecen en el Visio, con página, libro y fila. Los 33 rótulos LIBRE del rack no se marcan como libres confirmados; sus conexiones pueden estar desactualizadas. Las filas SIN SFP, SFP LIBRE y OCUPADO se preservan como estados literales: OCUPADO ocupa el puerto documentalmente, pero no crea nombre, IP ni extremo remoto ficticio. Los estados de transceptor no se deducen de la capacidad del switch. Para S4148U, las 24 posiciones importadas se clasifican como jaulas SFP+ según el perfil exacto del modelo; no se afirma qué módulos están instalados.
 
 El nodo Dell R770 no recibe dirección IP de administración porque la celda 192.168.1.22 de Excel1 no tiene una atribución inequívoca. Se registran las interfaces P1–P4: P1 e iDRAC 192.168.0.247, P2/LAN 192.168.0.246, P3 libre según Excel1 y P4 sin configurar según la aclaración del usuario. Solo P1 y P2 participan en los dos enlaces confirmados del mapa; no se asigna fecha de revisión ni medio físico.
+
+
+## Importación de puestos y ubicaciones
+
+Se incorporan 168 puestos únicos desde `UBICACION-EQUIPOS-OCTUBRE 2026.pdf`, con etiqueta normalizada, área, piso, páginas fuente y octeto de IP. El valor entre paréntesis se interpreta como último octeto de `192.168.0.x`. Las cinco repeticiones del PDF se consolidan y se conservan las páginas de referencia; el usuario asignado queda vacío hasta recibir los Visios de PCs y usuarios.
+
+Para escoger IP prevalece `DIAGRAMA RED V3.0`: 123 puestos encuentran una IP V3 resoluble, incluyendo seis casos donde el PDF ayuda a escoger una de varias direcciones; 15 diferencias quedan anotadas con la IP V3 como vigente. Hay 44 IP que solo aparecen en el PDF y se importan como `A verificar`. `Sistemas23` conserva las dos candidatas V3 en observaciones y queda sin IP principal. Se excluyeron provisionalmente `T7200` y `TrimbleNET-R9` porque todavía hay que confirmar la identidad frente a las etiquetas de V3.
+
+El catálogo C# tipado es únicamente una carga documental idempotente para poblar SQLite cuando falten esas fichas; SQLite continúa como base operativa. No se añade un segundo catálogo JSON ni se publica el archivo `.db`. Si las fichas ya existen, la carga las conserva para no sobrescribir ediciones de técnicos.
+
+El inicializador deja constancia de cada alta en el historial de cambios, con origen y descripción del dato. Las IP y conexiones se documentan dentro de la aplicación; no se ejecutan pruebas ni cambios en la red real.
