@@ -92,6 +92,10 @@ public class EnlaceTopologiaViewModel
     public int IdentificadorPuertoDestino { get; set; }
     /// <summary>Nombre del equipo destino; cambiarlo altera su etiqueta en la lista de relaciones.</summary>
     public string EquipoDestino { get; set; } = string.Empty;
+    /// <summary>IP del equipo origen; cambiarla modifica la dirección secundaria mostrada.</summary>
+    public string? IpEquipoOrigen { get; set; }
+    /// <summary>IP del equipo destino; cambiarla modifica la dirección secundaria mostrada.</summary>
+    public string? IpEquipoDestino { get; set; }
     /// <summary>Etiqueta exacta del puerto destino; cambiarla señala otra boca física.</summary>
     public string PuertoDestino { get; set; } = string.Empty;
     /// <summary>Medio registrado; cambiarlo modifica la descripción del enlace.</summary>
@@ -126,6 +130,8 @@ public class ConexionParcialTopologiaViewModel
     public int IdentificadorPuertoLocal { get; set; }
     /// <summary>Equipo local; cambiarlo modifica el extremo inventariado.</summary>
     public string EquipoLocal { get; set; } = string.Empty;
+    /// <summary>IP del equipo local; cambiarla modifica la dirección secundaria mostrada.</summary>
+    public string? IpLocal { get; set; } = null;
     /// <summary>Puerto local; cambiarlo señala otra interfaz conocida.</summary>
     public string PuertoLocal { get; set; } = string.Empty;
     /// <summary>Equipo remoto opcional; cambiarlo actualiza el nombre disponible.</summary>
