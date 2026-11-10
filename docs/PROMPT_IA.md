@@ -269,3 +269,9 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 - Al maximizar, redimensionar también el SVG y calcular las coordenadas de los extremos con el desplazamiento interno del lienzo.
 - Para la impresión A4 horizontal, distribuir tarjetas de conexión en más columnas según su cantidad antes de aplicar la escala final. Mantener margen y evitar reducir excesivamente la página por el diseño vertical de pantalla.
 - Actualizar README y este prompt junto con las mejoras de mapa o impresión.
+
+- El mapa debe mantener exactamente dos columnas de tarjetas en todas las capas y tamaños de ventana; en móviles se puede navegar horizontalmente dentro del mapa en vez de apilar tarjetas.
+- Dejar espacio visible entre tarjetas para que las líneas no se confundan con el contenido. Las conexiones deben llevar color de alto contraste y una clave visual por capa.
+- Permitir desplazar el fondo con puntero/scroll, restaurar la vista inicial y maximizar el panel conservando los filtros de capa.
+- Si el SVG cubre un lienzo desplazable, dimensionarlo al contenido y sumar el scroll actual al calcular las coordenadas de las aristas.
+- Actualizar README y este prompt junto con cambios del mapa.
