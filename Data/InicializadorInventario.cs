@@ -535,6 +535,8 @@ public static class InicializadorInventario
             interfaz => (interfaz.IdentificadorEquipo, NormalizarEtiquetaPuertoV3(interfaz.EtiquetaPuerto)));
         // interfacesNuevas agrupa únicamente posiciones que aún no existen en SQLite.
         var interfacesNuevas = new List<InterfazEquipo>();
+        // hayInterfacesActualizadas informa si el usuario confirmó filas V3 que ya estaban guardadas.
+        var hayInterfacesActualizadas = false;
 
         foreach (var filaPuerto in filasV3)
         {
@@ -545,21 +547,61 @@ public static class InicializadorInventario
             var etiquetaPuertoNormalizada = NormalizarEtiquetaPuertoV3(filaPuerto.EtiquetaPuerto);
             // claveInterfaz mantiene juntas la ficha local y su etiqueta exacta.
             var claveInterfaz = (equipoLocal.Identificador, etiquetaPuertoNormalizada);
-            if (interfacesPorClave.ContainsKey(claveInterfaz))
-                continue;
-
-            // filaLibre y filaDesconocida conservan estados explícitos sin tratarlos como conexión de usuario.
+            // filaLibre y filaDesconocida conservan estados explícitos del Visio sin convertirlos en conexiones.
             var filaLibre = string.Equals(filaPuerto.Destino.Trim(), "LIBRE", StringComparison.OrdinalIgnoreCase);
             var filaDesconocida = string.Equals(filaPuerto.Destino.Trim(), "DESCONOCIDO", StringComparison.OrdinalIgnoreCase);
-            // destinoEsSwitch reserva las relaciones entre switches para revisión de rack/enlace.
-            var destinoEsSwitch = !filaLibre && !filaDesconocida && EsDestinoSwitchV3(filaPuerto.Destino);
-            // estadoFuente mantiene rack pendiente, salvo las dos relaciones que el usuario confirmó expresamente.
-            var estadoFuente = filaPuerto.EstadoRelacion
-                ?? (filaPuerto.EsRack ? "A verificar" : destinoEsSwitch ? "A verificar" : "Confirmado");
-            // observacionFuente conserva origen y vigencia del rack sin asignar una fecha inexistente.
-            var observacionFuente = $"Fuente V3: {filaPuerto.Pagina} · {filaPuerto.Libro} · fila {filaPuerto.FilaFuente}; valor: {filaPuerto.Destino}.";
-            if (filaPuerto.EsRack && estadoFuente == "A verificar")
-                observacionFuente += " Tabla de rack: comprobar vigencia física.";
+            // identificadorFuente identifica la fila V3 para actualizar solo datos importados desde esa fuente.
+            var identificadorFuente = $"Fuente V3: {filaPuerto.Pagina} · {filaPuerto.Libro} · fila {filaPuerto.FilaFuente}";
+            if (interfacesPorClave.TryGetValue(claveInterfaz, out var interfazExistente))
+            {
+                // fuenteCoincidente protege campos manuales y limita la actualización a la fila original del Visio.
+                var fuenteCoincidente = interfazExistente.Observaciones?.Contains(identificadorFuente, StringComparison.OrdinalIgnoreCase) == true;
+                if (!fuenteCoincidente)
+                    continue;
+
+                // estadoAnterior y usoAnterior documentan el valor previo si se actualiza la confianza o la ocupación.
+                var estadoAnterior = $"{interfazExistente.EstadoDatos} · {interfazExistente.EstadoUso}";
+                // cambioEstadoInterfaz señala si la confirmación del usuario modifica los datos guardados.
+                var cambioEstadoInterfaz = false;
+                if (interfazExistente.EstadoDatos == "A verificar")
+                {
+                    interfazExistente.EstadoDatos = "Confirmado";
+                    cambioEstadoInterfaz = true;
+                }
+                if (filaLibre && interfazExistente.EstadoUso == "Desconocido")
+                {
+                    interfazExistente.EstadoUso = "Libre confirmado";
+                    cambioEstadoInterfaz = true;
+                }
+                if (interfazExistente.Observaciones?.Contains("Tabla de rack: comprobar vigencia física.", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    interfazExistente.Observaciones = interfazExistente.Observaciones.Replace(
+                        " Tabla de rack: comprobar vigencia física.", " Datos del Visio confirmados por el usuario.", StringComparison.OrdinalIgnoreCase);
+                    cambioEstadoInterfaz = true;
+                }
+                if (cambioEstadoInterfaz)
+                {
+                    // estadoNuevo muestra la confianza y uso resultantes tras aplicar la confirmación del usuario.
+                    var estadoNuevo = $"{interfazExistente.EstadoDatos} · {interfazExistente.EstadoUso}";
+                    hayInterfacesActualizadas = true;
+                    cambiosAuditados.Add(new EventoModificacion
+                    {
+                        IdentificadorEquipo = equipoLocal.Identificador,
+                        NombreEquipo = equipoLocal.Nombre,
+                        NombreUsuario = usuarioImportacion,
+                        FechaUtc = DateTime.UtcNow,
+                        Campo = "Confirmación de datos del Visio",
+                        ValorAnterior = estadoAnterior,
+                        ValorNuevo = $"{estadoNuevo} · {filaPuerto.Pagina}/{filaPuerto.Libro}/fila {filaPuerto.FilaFuente}"
+                    });
+                }
+                continue;
+            }
+
+            // estadoFuente respeta una marca explícita y confirma los valores extraídos de los Visios del usuario.
+            var estadoFuente = filaPuerto.EstadoRelacion ?? "Confirmado";
+            // observacionFuente conserva origen documental y diferencia la jaula SFP de la presencia del transceptor.
+            var observacionFuente = $"{identificadorFuente}; valor: {filaPuerto.Destino}.";
             if (filaPuerto.TipoInterfaz == "SFP+")
                 observacionFuente += " Tipo de jaula SFP+ según el perfil del modelo; transceptor instalado no confirmado.";
             // interfazNueva conserva el tipo solo cuando está identificado y no deduce conectividad de un estado SFP.
@@ -569,7 +611,7 @@ public static class InicializadorInventario
                 EtiquetaPuerto = etiquetaPuertoNormalizada,
                 TipoInterfaz = filaPuerto.TipoInterfaz ?? "No confirmado",
                 EstadoDatos = estadoFuente,
-                EstadoUso = filaLibre && !filaPuerto.EsRack ? "Libre confirmado" : "Desconocido",
+                EstadoUso = filaLibre ? "Libre confirmado" : "Desconocido",
                 Observaciones = observacionFuente
             };
             interfacesNuevas.Add(interfazNueva);
@@ -589,8 +631,12 @@ public static class InicializadorInventario
 
         if (interfacesNuevas.Count > 0)
         {
-            // SaveChanges asigna IDs locales antes de crear las relaciones opcionales.
+            // AddRangeAsync agrega las posiciones faltantes sin reemplazar interfaces anteriores.
             await contextoInventario.InterfacesEquipo.AddRangeAsync(interfacesNuevas, cancelacion);
+        }
+        if (interfacesNuevas.Count > 0 || hayInterfacesActualizadas)
+        {
+            // SaveChanges persiste altas y confirmaciones idempotentes de filas V3 ya existentes.
             await contextoInventario.SaveChangesAsync(cancelacion);
         }
 
@@ -606,14 +652,16 @@ public static class InicializadorInventario
         var puertosConEnlaceCompleto = enlacesExistentes
             .SelectMany(enlace => new[] { enlace.IdentificadorPuertoOrigen, enlace.IdentificadorPuertoDestino })
             .ToHashSet();
-        // relacionesExistentes evita repetir vínculos parciales cuando se reinicia la aplicación.
-        var relacionesExistentes = await contextoInventario.ConexionesDocumentadas.AsNoTracking()
-            .Select(relacion => relacion.IdentificadorPuertoLocal)
-            .ToListAsync(cancelacion);
+        // relacionesRegistradas permite actualizar el estado antiguo sin reemplazar datos manuales de los puertos.
+        var relacionesRegistradas = await contextoInventario.ConexionesDocumentadas.ToListAsync(cancelacion);
+        // relacionesPorPuerto localiza la única nota parcial esperada por puerto local.
+        var relacionesPorPuerto = relacionesRegistradas.ToDictionary(relacion => relacion.IdentificadorPuertoLocal);
         // puertosConRelacionParcial reserva los extremos documentales que ya tienen fila remota opcional.
-        var puertosConRelacionParcial = relacionesExistentes.ToHashSet();
+        var puertosConRelacionParcial = relacionesPorPuerto.Keys.ToHashSet();
         // relacionesNuevas agrupa solo datos de destino escritos en las tablas del Visio.
         var relacionesNuevas = new List<ConexionDocumentada>();
+        // hayRelacionesActualizadas registra confirmaciones de fuente aplicadas a notas existentes.
+        var hayRelacionesActualizadas = false;
 
         foreach (var filaPuerto in filasV3)
         {
@@ -636,9 +684,58 @@ public static class InicializadorInventario
                 continue;
             // interfazLocal.EstadoUso protege una corrección manual de puerto libre frente a una fuente antigua en conflicto.
             if (puertosConEnlaceCompleto.Contains(interfazLocal.Identificador)
-                || puertosConRelacionParcial.Contains(interfazLocal.Identificador)
                 || interfazLocal.EstadoUso == "Libre confirmado")
                 continue;
+            if (puertosConRelacionParcial.Contains(interfazLocal.Identificador))
+            {
+                // relacionExistente mantiene la nota previa y solo actualiza su confianza según la confirmación del usuario.
+                var relacionExistente = relacionesPorPuerto[interfazLocal.Identificador];
+                var mismaFilaFuente = relacionExistente.FuentePagina == filaPuerto.Pagina
+                    && relacionExistente.FuenteLibro == filaPuerto.Libro
+                    && relacionExistente.FuenteFila == filaPuerto.FilaFuente;
+                if (!mismaFilaFuente)
+                    continue;
+
+                // estadoAnteriorRelacion permite auditar el estado y destino que estaban guardados.
+                var estadoAnteriorRelacion = relacionExistente.EstadoDatos;
+                // ipRemotaExistente conserva IP anterior salvo la corrección ProCurve confirmada.
+                var ipRemotaExistente = relacionExistente.IpRemota;
+                // cambioRelacion indica si la confirmación documental altera un dato ya guardado.
+                var cambioRelacion = false;
+                if (relacionExistente.EstadoDatos == "A verificar")
+                {
+                    relacionExistente.EstadoDatos = "Confirmado";
+                    cambioRelacion = true;
+                }
+                if (filaPuerto.EquipoLocal == "Puerta Agrimensura"
+                    && filaPuerto.EtiquetaPuerto == "1"
+                    && filaPuerto.Destino.Contains("ProCurve", StringComparison.OrdinalIgnoreCase)
+                    && relacionExistente.IpRemota == "10.0.1.0")
+                {
+                    relacionExistente.IpRemota = "10.0.1.1";
+                    cambioRelacion = true;
+                }
+                if (relacionExistente.Observaciones?.Contains("verificar la vigencia física", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    relacionExistente.Observaciones = "Conexión de switch confirmada en el Visio; el puerto remoto se muestra cuando la tabla contraparte lo identifica.";
+                    cambioRelacion = true;
+                }
+                if (cambioRelacion)
+                {
+                    hayRelacionesActualizadas = true;
+                    cambiosAuditados.Add(new EventoModificacion
+                    {
+                        IdentificadorEquipo = equipoLocal.Identificador,
+                        NombreEquipo = equipoLocal.Nombre,
+                        NombreUsuario = usuarioImportacion,
+                        FechaUtc = DateTime.UtcNow,
+                        Campo = "Confirmación de conexión del Visio",
+                        ValorAnterior = $"{estadoAnteriorRelacion} · {ipRemotaExistente ?? "IP no indicada"}",
+                        ValorNuevo = $"{relacionExistente.EstadoDatos} · {relacionExistente.IpRemota ?? "IP no indicada"} · {filaPuerto.Pagina}/{filaPuerto.Libro}/fila {filaPuerto.FilaFuente}"
+                    });
+                }
+                continue;
+            }
 
             // ipRemota conserva el texto original salvo la corrección expresa del ProCurve confirmada por el usuario.
             var ipRemota = filaPuerto.IpRemota?.Trim();
@@ -651,28 +748,23 @@ public static class InicializadorInventario
             if (esFilaProCurveCorregida)
             {
                 ipRemota = "10.0.1.1";
-                observacionesRelacion = "La fila del Visio muestra 10.0.1.0; el usuario confirmó 10.0.1.1. El enlace queda a verificar.";
+                observacionesRelacion = "La fila del Visio muestra 10.0.1.0; el usuario confirmó que 10.0.1.1 es la IP vigente.";
             }
 
-            // destinoEsSwitch evita tratar uplinks pendientes como conexiones confirmadas a puestos.
+            // destinoEsSwitch identifica relaciones entre equipos de switching para describir el puerto remoto ausente.
             var destinoEsSwitch = EsDestinoSwitchV3(filaPuerto.Destino);
-            // enlaceMesaConfirmado aplica la aclaración directa del usuario sobre el principal de Mesa de Entradas.
-            var enlaceMesaConfirmado = filaPuerto.EquipoLocal == "Mesa de Entrada (No principal)"
-                && filaPuerto.EtiquetaPuerto == "24"
-                && filaPuerto.Destino.Contains("Mentrada", StringComparison.OrdinalIgnoreCase)
-                && ipRemota == "192.168.1.1";
-            // estadoRelacion confirma las relaciones de usuario y deja uplinks como pendientes, salvo la aclaración de Mesa.
-            var estadoRelacion = destinoEsSwitch && !enlaceMesaConfirmado ? "A verificar" : "Confirmado";
-            if (destinoEsSwitch && !enlaceMesaConfirmado && observacionesRelacion is null)
-                observacionesRelacion = "La tabla identifica otro switch; verificar la vigencia física del enlace y su extremo remoto.";
+            // estadoRelacion respeta la fuente marcada y confirma lo que el usuario validó de los Visios.
+            var estadoRelacion = filaPuerto.EstadoRelacion ?? "Confirmado";
+            if (destinoEsSwitch && filaPuerto.PuertoRemoto is null && observacionesRelacion is null)
+                observacionesRelacion = "Conexión entre switches confirmada en el Visio; el puerto remoto se coteja con la tabla del switch contraparte.";
 
-            // nuevaRelacion conserva el extremo local exacto y deja sin completar el puerto remoto no documentado.
+            // nuevaRelacion conserva el puerto local y solo completa el remoto cuando lo documenta la fuente.
             var nuevaRelacion = new ConexionDocumentada
             {
                 IdentificadorPuertoLocal = interfazLocal.Identificador,
                 EquipoRemoto = filaPuerto.Destino.Trim(),
                 IpRemota = ipRemota,
-                PuertoRemoto = null,
+                PuertoRemoto = filaPuerto.PuertoRemoto,
                 Medio = "No confirmado",
                 EstadoDatos = estadoRelacion,
                 FuentePagina = filaPuerto.Pagina,
@@ -697,6 +789,11 @@ public static class InicializadorInventario
 
         if (relacionesNuevas.Count > 0)
             await contextoInventario.ConexionesDocumentadas.AddRangeAsync(relacionesNuevas, cancelacion);
+        if (hayRelacionesActualizadas || relacionesNuevas.Count > 0)
+        {
+            // SaveChanges persiste notas nuevas y actualizaciones de confianza de las filas V3 existentes.
+            await contextoInventario.SaveChangesAsync(cancelacion);
+        }
     }
 
     /// <summary>
