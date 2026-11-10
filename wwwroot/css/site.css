@@ -612,3 +612,114 @@ tbody tr:hover { background: #f7fafb; }
 .datos-detalle-switch dd { margin: 0; font-size: .88rem; font-weight: 650; }
 @media (max-width: 760px) { .detalle-topologia-switch { grid-template-columns: 1fr; } .frontal-switch-panel { min-width: 650px; } }
 @media print { .enlace-detalle-switch, .boton { display:none!important; } .frontal-switch-scroll { overflow: visible; } .frontal-switch-panel { min-width: 0; box-shadow: none; } }
+
+
+/* estadosPuerto prioriza contraste y formas distintas; cambiar estos tonos modifica cómo se distinguen los estados. */
+.puerto-frontal.puerto-ocupado::after,
+.puerto-frontal.puerto-sfp.puerto-ocupado::after {
+    border-color: #087a3d;
+    background: #28e978;
+    box-shadow: 0 0 0 2px #0b663a, 0 0 11px #22db7188;
+    opacity: 1;
+}
+.puerto-frontal.puerto-libre::after,
+.puerto-frontal.puerto-sfp.puerto-libre::after {
+    border-color: #263238;
+    background: #7c8a91;
+    box-shadow: inset 0 1px #ffffff70;
+    opacity: 1;
+}
+.puerto-frontal.puerto-desconocido::after,
+.puerto-frontal.puerto-sfp.puerto-desconocido::after {
+    border: 2px dashed #e0b34e;
+    background: #14532d;
+    box-shadow: 0 0 0 1px #0b3821;
+    opacity: 1;
+}
+.puerto-frontal .numero-puerto-frontal { color: #24343b; font-weight: 800; }
+.puerto-frontal.puerto-ocupado .numero-puerto-frontal { color: #087a3d; }
+.puerto-frontal.puerto-libre .numero-puerto-frontal { color: #46535a; }
+.puerto-frontal.puerto-desconocido .numero-puerto-frontal { color: #7b5b11; }
+.puerto-frontal { transition: transform .14s ease, filter .14s ease; }
+.puerto-frontal:hover, .puerto-frontal:focus { position: relative; z-index: 3; transform: translateY(-2px); filter: brightness(1.08); }
+
+.resumen-puertos-frontal { display: flex; flex-wrap: wrap; gap: 7px 14px; margin: 0 0 10px; }
+.resumen-puerto { display: inline-flex; align-items: center; gap: 6px; color: #334954; font-size: .72rem; }
+.resumen-puerto b { color: #183341; font-variant-numeric: tabular-nums; }
+.indicador-estado-puerto { display: inline-block; width: 11px; height: 11px; flex: 0 0 auto; border-radius: 3px; }
+.indicador-estado-puerto.ocupado { background: #19c968; box-shadow: 0 0 0 2px #c9f4d9; }
+.indicador-estado-puerto.libre { background: #73818a; box-shadow: 0 0 0 2px #e4e9ec; }
+.indicador-estado-puerto.desconocido { border: 2px dashed #d69e22; background: #14532d; }
+.indicador-estado-puerto.enlace { border-radius: 99px; background: #25865b; }
+
+.resumen-puertos-switch { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 0 0 18px; }
+.resumen-puertos-switch article { display: flex; min-width: 0; align-items: center; gap: 9px; padding: 12px 14px; border: 1px solid #dce5e9; border-radius: 11px; background: #fff; }
+.resumen-puertos-switch article strong { color: #183341; font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.resumen-puertos-switch article > span:last-child { color: #526575; font-size: .78rem; }
+.panel-frontal-detalle-switch .frontal-switch-panel { min-width: 700px; }
+
+.acciones-topologia { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 9px; }
+.acciones-topologia .boton { min-height: 36px; padding: 8px 12px; font-size: .82rem; }
+.acciones-topologia .contador-enlaces { display: inline-flex; }
+.acciones-topologia .boton-secundario { border: 1px solid #d8e2e7; }
+.ip-extremo-conexion { display: block; margin-top: 3px; color: #85949a !important; font-size: .78rem !important; font-weight: 500; font-variant-numeric: tabular-nums; }
+.puerto-extremo-conexion { display: inline-flex; margin-top: 5px; padding: 3px 8px; border-radius: 6px; background: #eef3f5; color: #334d59 !important; font-size: .76rem !important; font-weight: 700; }
+.medio-confirmado-conexion { display: inline-flex; align-items: center; margin-top: 10px; padding: 5px 9px; border: 1px solid #b9e5ce; border-radius: 7px; background: #effaf3; color: #176747; font-size: .78rem; font-weight: 700; }
+.detalles-fuente-conexion { margin-top: 10px; color: #657b86; font-size: .78rem; }
+.detalles-fuente-conexion summary { width: fit-content; cursor: pointer; color: #496775; font-weight: 650; }
+.detalles-fuente-conexion p { margin: 6px 0 0; overflow-wrap: anywhere; }
+.nota-conexion-pendiente { margin: 9px 0 0; padding: 8px 10px; border-left: 3px solid #d69e22; border-radius: 0 7px 7px 0; background: #fff9e9; color: #66552b; font-size: .82rem; }
+.enlace-frontal-conexion { display: inline-block; margin-top: 5px; color: #126b83; font-size: .76rem; font-weight: 700; text-decoration: none; }
+.enlace-frontal-conexion:hover { text-decoration: underline; }
+.flecha-pendiente { color: #b3762c; }
+.datos-interfaz-compactos { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+.datos-interfaz-compactos .dato-ficha-ancho { grid-column: 1 / -1; }
+
+.filtros-listado-conexion { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(125px, .55fr); gap: 8px; min-width: min(390px, 100%); }
+.filtros-listado-conexion label { display: grid; gap: 4px; color: #607583; font-size: .74rem; font-weight: 650; }
+.filtros-listado-conexion input, .filtros-listado-conexion select { width: 100%; min-height: 38px; border: 1px solid #d1dde2; border-radius: 8px; padding: 7px 9px; background: #fff; color: #183341; font: inherit; }
+.filtros-listado-conexion input:focus, .filtros-listado-conexion select:focus { outline: 3px solid #126b8325; border-color: var(--azul); }
+.acciones-ficha-conexion { flex-wrap: wrap; gap: 8px; }
+.acciones-ficha-conexion .boton { min-height: 34px; padding: 7px 10px; font-size: .8rem; }
+.listado-topologia-enlaces { gap: 10px; }
+.listado-topologia-enlaces .ficha-enlace { box-shadow: 0 4px 13px #172b3a08; }
+.listado-topologia-enlaces .trayecto-enlace { align-items: start; }
+.listado-topologia-enlaces .extremo-enlace { padding: 8px 10px; border: 1px solid #e5ecef; border-radius: 9px; background: #fbfcfd; }
+.lista-fichas-conexion [data-registro-paginable][hidden] { display: none !important; }
+
+.mapa-topologia[data-capa-actual="switching"] .rejilla-dispositivos-topologia { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.mapa-topologia[data-capa-actual="switching"] .nodo-dispositivo-topologia { padding: 12px; }
+.mapa-topologia[data-capa-actual="switching"] .frontal-switch-panel { min-width: 0; padding: 10px; }
+.mapa-topologia[data-capa-actual="switching"] .frontal-switch-cabecera { align-items: flex-start; flex-direction: column; gap: 3px; }
+.mapa-topologia[data-capa-actual="switching"] .fila-frontal-puertos { grid-auto-columns: minmax(13px, 1fr); gap: 3px; }
+.mapa-topologia[data-capa-actual="switching"] .puerto-frontal { min-width: 13px; min-height: 30px; font-size: .54rem; }
+.mapa-topologia[data-capa-actual="switching"] .puerto-frontal::after { height: 10px; }
+.mapa-topologia[data-capa-actual="switching"] .puerto-frontal.puerto-sfp::after { height: 14px; }
+.mapa-topologia[data-capa-actual="switching"] .resumen-puerto { font-size: .64rem; }
+
+@media (max-width: 1050px) {
+    .cabecera-listado-conexiones { align-items: flex-start; flex-direction: column; }
+    .filtros-listado-conexion { width: 100%; min-width: 0; }
+    .controles-paginacion { width: 100%; justify-content: flex-start; }
+}
+@media (max-width: 760px) {
+    .resumen-puertos-switch { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .mapa-topologia[data-capa-actual="switching"] .rejilla-dispositivos-topologia { grid-template-columns: 1fr; }
+    .mapa-topologia[data-capa-actual="switching"] .frontal-switch-panel { min-width: 500px; }
+}
+@media (max-width: 520px) {
+    .resumen-puertos-switch { grid-template-columns: 1fr 1fr; }
+    .resumen-puertos-switch article { align-items: flex-start; flex-wrap: wrap; padding: 10px; }
+    .filtros-listado-conexion { grid-template-columns: 1fr; }
+    .acciones-topologia { justify-content: flex-start; }
+    .listado-topologia-enlaces .trayecto-enlace { grid-template-columns: 1fr; }
+    .listado-topologia-enlaces .flecha-enlace { transform: rotate(90deg); }
+}
+@media print {
+    .acciones-topologia, .filtros-listado-conexion, .controles-paginacion, .acciones-ficha-conexion,
+    .enlace-frontal-conexion { display: none !important; }
+    .mapa-topologia[data-capa-actual="switching"] .rejilla-dispositivos-topologia { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .detalles-fuente-conexion[open] summary { display: none; }
+}
+
+.sin-resultados-conexion { margin: 12px 0 0; padding: 12px 14px; border: 1px dashed #cbd8df; border-radius: 9px; color: #607583; font-size: .84rem; }
