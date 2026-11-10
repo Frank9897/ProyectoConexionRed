@@ -920,7 +920,7 @@ tbody tr:hover { background: #f7fafb; }
     min-height: 360px;
     max-height: none;
 }
-body.mapa-a-pantalla-completa { overflow: hidden; }
+body.mapa-ampliado-en-pagina { overflow: hidden; }
 
 @media (max-height: 760px) {
     .mapa-topologia { height: calc(100vh - 220px); min-height: 420px; }
@@ -978,52 +978,99 @@ body.mapa-a-pantalla-completa { overflow: hidden; }
 }
 
 
-/* La topología mantiene exactamente dos columnas para que cada tarjeta conserve su tamaño. */
-.rejilla-dispositivos-topologia {
+/* marcoMapa dibuja el mapa dentro de una caja propia con controles integrados. */
+.marco-mapa-topologia {
+    position: relative;
+    z-index: 1;
+    padding: 12px;
+    border: 1px solid #cedde4;
+    border-radius: 18px;
+    background: linear-gradient(145deg, #ffffff, #f5f9fa);
+    box-shadow: 0 12px 30px #19374412;
+}
+.barra-herramientas-mapa {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+    padding: 2px 2px 10px;
+    border-bottom: 1px solid #e3ebef;
+    color: #47616c;
+    font-size: .84rem;
+    font-weight: 650;
+}
+.acciones-mapa-topologia { display: flex; flex-wrap: wrap; gap: 8px; }
+.mapa-topologia {
+    height: min(70vh, 780px);
+    min-height: 520px;
+    max-height: calc(100vh - 260px);
+    overflow: auto;
+    border: 1px solid #c8d7de;
+    border-radius: 14px;
+    background: radial-gradient(circle at 1px 1px, #d1dde2 1px, transparent 0) 0 0 / 26px 26px, #f3f7f8;
+}
+.lienzo-topologia {
+    position: relative;
     width: max-content;
     min-width: 100%;
-    grid-template-columns: repeat(2, minmax(0, 540px)) !important;
-    justify-content: center;
-    column-gap: 76px !important;
-    row-gap: 88px !important;
+    height: max-content;
+    min-height: 100%;
+    padding: 36px 72px;
 }
-.mapa-topologia {
-    cursor: grab;
-    touch-action: pan-x pan-y;
-    scroll-behavior: smooth;
+.lienzo-topologia > .capa-svg-enlaces {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    pointer-events: none;
 }
-.mapa-topologia:focus-visible { outline: 3px solid #24758b; outline-offset: 2px; }
-.mapa-topologia.arrastrando-mapa {
-    cursor: grabbing;
-    scroll-behavior: auto;
-    user-select: none;
+.lienzo-topologia > .rejilla-dispositivos-topologia { position: relative; z-index: 2; }
+.marco-mapa-topologia.mapa-ampliado {
+    position: fixed !important;
+    inset: 16px !important;
+    z-index: 2001 !important;
+    display: flex !important;
+    width: auto !important;
+    height: auto !important;
+    max-height: none !important;
+    flex-direction: column;
+    margin: 0 !important;
+    padding: 14px !important;
+    border: 1px solid #c9d8df;
+    border-radius: 16px;
+    background: #f7fafb;
+    box-shadow: 0 22px 70px #10253245;
 }
-.enlace-topologia {
-    stroke-width: 4;
-    stroke-linecap: round;
-    opacity: 1;
-    filter: drop-shadow(0 0 2px #ffffff);
+body.mapa-ampliado-en-pagina { overflow: hidden; }
+body.mapa-ampliado-en-pagina::before {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: #102532b8;
+    content: "";
 }
-.enlace-topologia.enlace-capa-1.enlace-confirmado { stroke: #7857c5; }
-.enlace-topologia.enlace-capa-2.enlace-confirmado { stroke: #087c9b; }
-.enlace-topologia.enlace-capa-3.enlace-confirmado { stroke: #16834a; }
-.enlace-topologia.enlace-capa-2.enlace-parcial-switch {
-    stroke: #477b9c;
-    stroke-width: 4.5;
-    stroke-dasharray: 10 7;
-    opacity: 1;
+.marco-mapa-topologia.mapa-ampliado .barra-herramientas-mapa { flex: 0 0 auto; }
+.marco-mapa-topologia.mapa-ampliado .mapa-topologia {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    flex: 1 1 auto;
 }
-.muestra-enlace.enlace-capa-1 { border-color: #7857c5; }
-.muestra-enlace.enlace-capa-2 { border-color: #087c9b; }
-.muestra-enlace.enlace-capa-3 { border-color: #16834a; }
+@media screen {
+    .rejilla-dispositivos-topologia > .nodo-dispositivo-topologia:nth-child(4n + 2) { margin-top: 104px; }
+    .rejilla-dispositivos-topologia > .nodo-dispositivo-topologia:nth-child(4n + 3) { margin-top: 48px; }
+    .rejilla-dispositivos-topologia > .nodo-dispositivo-topologia:nth-child(4n) { margin-top: 136px; }
+}
 @media (max-width: 760px) {
-    .rejilla-dispositivos-topologia,
-    .mapa-topologia[data-capa-actual="switching"] .rejilla-dispositivos-topologia {
-        width: max-content;
-        min-width: 1132px;
-        grid-template-columns: repeat(2, 540px) !important;
-        justify-content: start;
-        column-gap: 52px !important;
-        row-gap: 72px !important;
-    }
+    .barra-herramientas-mapa { align-items: flex-start; flex-direction: column; }
+    .marco-mapa-topologia { padding: 8px; }
+    .mapa-topologia { height: calc(100dvh - 340px); min-height: 420px; }
+    .marco-mapa-topologia.mapa-ampliado { inset: 8px !important; }
+}
+@media print {
+    .hoja-impresion-topologia .marco-mapa-topologia { margin: 0; padding: 0; border: 0; box-shadow: none; }
+    .hoja-impresion-topologia .barra-herramientas-mapa { display: none !important; }
+    .hoja-impresion-topologia .mapa-topologia { height: auto; min-height: 0; max-height: none; overflow: visible; border: 0; }
+    .hoja-impresion-topologia .lienzo-topologia { min-height: 0; padding: 0; }
 }
