@@ -1195,7 +1195,7 @@ body.mapa-ampliado-en-pagina::before {
 @media print {
     .hoja-impresion-topologia .mapa-topologia {
         width: 287mm !important;
-        height: 150mm !important;
+        height: 180mm !important;
         min-height: 0 !important;
         max-height: none !important;
         overflow: hidden !important;
