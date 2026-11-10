@@ -153,3 +153,8 @@ Las correcciones confirmadas aplicadas incluyen ProCurve `10.0.1.1`, 3Com `192.1
 
 
 Cuando una tabla de puerto documenta un endpoint Capa 3 que todavía no tiene una ficha independiente, el mapa dibuja un nodo visual temporal con su nombre/IP y el icono correspondiente. Ese nodo solo existe en la topología generada y no crea un registro nuevo en SQLite; si luego se incorpora al inventario, el mapa usa la ficha persistida.
+
+
+### Corrección del importador V3
+
+Se corrigió un separador faltante entre filas del JSON incrustado de `CatalogoPuertosAreasV3.cs`, que impedía iniciar la importación. El contenido JSON del catálogo quedó validado antes de guardar el cambio.
