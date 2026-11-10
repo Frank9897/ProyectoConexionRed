@@ -1,6 +1,10 @@
 (() => {
     "use strict";
 
+    // botonesImprimir permite imprimir el mapa o el detalle del switch desde el navegador.
+    const botonesImprimir = Array.from(document.querySelectorAll("[data-imprimir-topologia]"));
+    botonesImprimir.forEach(boton => boton.addEventListener("click", () => window.print()));
+
     // mapaTopologia contiene los nodos y el SVG superpuesto para las aristas documentales.
     const mapaTopologia = document.querySelector("[data-mapa-topologia]");
     if (!mapaTopologia) {
@@ -127,6 +131,7 @@
         // modoValido evita activar una vista desconocida si el HTML recibe un valor inesperado.
         const modoValido = ["fisica", "switching", "acceso"].includes(modoSolicitado) ? modoSolicitado : "fisica";
         modoCapaActual = modoValido;
+        mapaTopologia.dataset.capaActual = modoValido;
         // boton cambia su estado accesible y visual según la capa seleccionada.
         botonesCapa.forEach(boton => {
             // estaActiva evita marcar simultáneamente dos perspectivas.
