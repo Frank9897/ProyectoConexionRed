@@ -106,6 +106,25 @@ public class ConexionesController : Controller
                 Observaciones = relacion.Observaciones
             }).ToListAsync(cancelacion);
 
+        // fichasEquipo aporta nombres, IP e identificadores para los extremos visuales.
+        var fichasEquipo = await contextoInventario.Equipos.AsNoTracking()
+            .Select(equipo => new { equipo.Identificador, equipo.Nombre, equipo.IpAdministracion, equipo.TipoDispositivo })
+            .ToListAsync(cancelacion);
+        // ipsPorEquipo muestra la IP como dato secundario bajo el nombre.
+        var ipsPorEquipo = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        // identificadoresPorEquipo enlaza cada equipo con su ficha visual.
+        var identificadoresPorEquipo = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        // identificadoresSwitch restringe el enlace directo a equipos clasificados como switch.
+        var identificadoresSwitch = new HashSet<int>();
+        foreach (var fichaEquipo in fichasEquipo)
+        {
+            // fichaEquipo registra los datos actuales que se consultarán desde las tarjetas.
+            ipsPorEquipo[fichaEquipo.Nombre] = fichaEquipo.IpAdministracion;
+            identificadoresPorEquipo[fichaEquipo.Nombre] = fichaEquipo.Identificador;
+            if (string.Equals(fichaEquipo.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase))
+                identificadoresSwitch.Add(fichaEquipo.Identificador);
+        }
+
         // modeloConexiones agrupa los listados completos y parciales sin confundirlos entre sí.
         var modeloConexiones = new ConexionesIndexViewModel
         {
@@ -114,6 +133,9 @@ public class ConexionesController : Controller
             RelacionesParciales = relacionesParciales
         };
 
+        ViewData["IpsPorEquipo"] = ipsPorEquipo;
+        ViewData["IdentificadoresPorEquipo"] = identificadoresPorEquipo;
+        ViewData["IdentificadoresSwitch"] = identificadoresSwitch;
         return View(modeloConexiones);
     }
 
