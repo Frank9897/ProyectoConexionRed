@@ -1,18 +1,26 @@
 @model ProyectoConexionRed.Web.Models.ConexionesIndexViewModel
 @{
     ViewData["Title"] = "Puertos y enlaces";
+    // ipsPorEquipo muestra la IP en tipografía secundaria bajo la etiqueta de cada dispositivo.
+    var ipsPorEquipo = ViewData["IpsPorEquipo"] as IReadOnlyDictionary<string, string?>
+        ?? new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+    // identificadoresPorEquipo enlaza tarjetas con las fichas del mapa principal.
+    var identificadoresPorEquipo = ViewData["IdentificadoresPorEquipo"] as IReadOnlyDictionary<string, int>
+        ?? new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+    // identificadoresSwitch permite mostrar enlaces de detalle solo para equipos realmente clasificados como switch.
+    var identificadoresSwitch = ViewData["IdentificadoresSwitch"] as HashSet<int> ?? new HashSet<int>();
 }
 
 <section class="encabezado-pagina encabezado-conexiones">
     <div>
         <p class="sobrelinea">DATOS PARA LA TOPOLOGÍA</p>
         <h1>Puertos y enlaces</h1>
-        <p>Consulta las conexiones documentadas en fichas claras y compactas.</p>
+        <p>Filtra por equipo, IP, puerto o estado. Cada ficha separa conexiones completas de referencias pendientes.</p>
     </div>
     <div class="acciones-encabezado-conexiones">
         <a class="boton boton-secundario" asp-action="CrearInterfaz">Registrar puerto</a>
         <a class="boton" asp-action="CrearEnlace">Registrar enlace entre puertos</a>
-        <a class="boton boton-secundario" asp-action="CrearRelacion">Registrar conexión con extremo pendiente</a>
+        <a class="boton boton-secundario" asp-action="CrearRelacion">Registrar extremo pendiente</a>
     </div>
 </section>
 
@@ -28,14 +36,19 @@
             <p class="sobrelinea">EQUIPOS Y PUERTOS</p>
             <h2 id="titulo-interfaces">Interfaces registradas <span class="contador-enlaces">@Model.Interfaces.Count</span></h2>
         </div>
+        <div class="filtros-listado-conexion">
+            <label>Buscar<input type="search" data-busqueda-lista placeholder="Equipo, IP o puerto" /></label>
+            <label>Estado<select data-filtro-estado><option value="">Todos</option><option>Vigente</option><option>Confirmado</option><option>A verificar</option><option>Desconocido</option></select></label>
+        </div>
         <div class="controles-paginacion">
-            <label for="tamano-interfaces">Mostrar</label>
-            <select id="tamano-interfaces" data-tamano-pagina aria-label="Cantidad de interfaces por página">
-                <option value="10" selected>10</option><option value="20">20</option><option value="30">30</option><option value="0">Todas</option>
-            </select>
+            <label>Mostrar
+                <select data-tamano-pagina aria-label="Cantidad de interfaces por página">
+                    <option value="10" selected>10</option><option value="20">20</option><option value="30">30</option><option value="0">Todas</option>
+                </select>
+            </label>
             <span data-resumen-pagina aria-live="polite"></span>
-            <button class="boton-paginacion" type="button" data-pagina-anterior aria-label="Mostrar la página anterior">← Anterior</button>
-            <button class="boton-paginacion" type="button" data-pagina-siguiente aria-label="Mostrar la página siguiente">Siguiente →</button>
+            <button class="boton-paginacion" type="button" data-pagina-anterior aria-label="Página anterior">←</button>
+            <button class="boton-paginacion" type="button" data-pagina-siguiente aria-label="Página siguiente">→</button>
         </div>
     </div>
     @if (Model.Interfaces.Count == 0)
@@ -45,21 +58,35 @@
     else
     {
         <div class="lista-fichas-conexion" data-lista-paginada>
-            @* interfaz recorre cada puerto; cambiar Model.Interfaces modifica las fichas disponibles. *@
+            @* interfaz representa una posición física; cambiar Model.Interfaces cambia los puertos que se pueden revisar. *@
             @foreach (var interfaz in Model.Interfaces)
             {
-                <article class="ficha-conexion ficha-interfaz" data-registro-paginable>
+                <article class="ficha-conexion ficha-interfaz" data-registro-paginable data-estado="@interfaz.EstadoDatos @interfaz.EstadoUso">
                     <div class="cabecera-ficha-conexion">
-                        <div><p class="identificador-secundario">@(interfaz.IpAdministracion ?? "IP no indicada")</p><h3>@interfaz.Equipo <span>· Puerto @interfaz.Puerto</span></h3></div>
-                        <span class="etiqueta-estado-conexion">@interfaz.EstadoDatos</span>
+                        <div>
+                            <h3>@interfaz.Equipo <span>· Puerto @interfaz.Puerto</span></h3>
+                            <p class="ip-extremo-conexion">@((interfaz.IpAdministracion ?? "IP no indicada"))</p>
+                        </div>
+                        <span class="etiqueta-estado-conexion">@interfaz.EstadoUso</span>
                     </div>
-                    <dl class="datos-ficha-conexion">
-                        <div><dt>Tipo</dt><dd>@interfaz.Tipo</dd></div>
-                        <div><dt>Uso</dt><dd>@interfaz.EstadoUso</dd></div>
-                        <div><dt>Última revisión</dt><dd>@(interfaz.FechaUltimaRevision?.ToString("dd/MM/yyyy") ?? "Sin fecha confirmada")</dd></div>
-                        <div class="dato-ficha-ancho"><dt>Observaciones</dt><dd>@(interfaz.Observaciones ?? "Sin observaciones")</dd></div>
+                    <dl class="datos-ficha-conexion datos-interfaz-compactos">
+                        <div><dt>Conector</dt><dd>@interfaz.Tipo</dd></div>
+                        <div><dt>Vigencia</dt><dd>@interfaz.EstadoDatos</dd></div>
+                        @if (interfaz.FechaUltimaRevision.HasValue)
+                        {
+                            <div><dt>Revisado</dt><dd>@interfaz.FechaUltimaRevision.Value.ToString("dd/MM/yyyy")</dd></div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(interfaz.Observaciones))
+                        {
+                            <div class="dato-ficha-ancho"><dt>Nota</dt><dd>@interfaz.Observaciones</dd></div>
+                        }
                     </dl>
                     <div class="acciones-ficha-conexion">
+                        @if (identificadoresPorEquipo.TryGetValue(interfaz.Equipo, out var identificadorEquipo)
+                             && identificadoresSwitch.Contains(identificadorEquipo))
+                        {
+                            <a class="boton boton-secundario" asp-controller="Topologia" asp-action="Detalle" asp-route-identificador="@identificadorEquipo">Ver frontal y conexiones</a>
+                        }
                         <a class="boton boton-secundario" asp-controller="Correcciones" asp-action="EditarInterfaz" asp-route-identificador="@interfaz.Identificador">Corregir puerto</a>
                     </div>
                 </article>
@@ -71,41 +98,76 @@
 <section class="panel panel-conexiones seccion-registros" data-paginador="enlaces" aria-labelledby="titulo-enlaces">
     <div class="cabecera-listado-conexiones">
         <div>
-            <p class="sobrelinea">RELACIONES ENTRE PUERTOS</p>
+            <p class="sobrelinea">DOS EXTREMOS IDENTIFICADOS</p>
             <h2 id="titulo-enlaces">Enlaces físicos <span class="contador-enlaces">@Model.Enlaces.Count</span></h2>
         </div>
+        <div class="filtros-listado-conexion">
+            <label>Buscar<input type="search" data-busqueda-lista placeholder="Equipo, IP, puerto o medio" /></label>
+            <label>Estado<select data-filtro-estado><option value="">Todos</option><option>Confirmado</option><option>Vigente</option><option>A verificar</option></select></label>
+        </div>
         <div class="controles-paginacion">
-            <label for="tamano-enlaces">Mostrar</label>
-            <select id="tamano-enlaces" data-tamano-pagina aria-label="Cantidad de enlaces por página">
-                <option value="10" selected>10</option><option value="20">20</option><option value="30">30</option><option value="0">Todos</option>
-            </select>
+            <label>Mostrar
+                <select data-tamano-pagina aria-label="Cantidad de enlaces por página">
+                    <option value="10" selected>10</option><option value="20">20</option><option value="30">30</option><option value="0">Todos</option>
+                </select>
+            </label>
             <span data-resumen-pagina aria-live="polite"></span>
-            <button class="boton-paginacion" type="button" data-pagina-anterior aria-label="Mostrar la página anterior">← Anterior</button>
-            <button class="boton-paginacion" type="button" data-pagina-siguiente aria-label="Mostrar la página siguiente">Siguiente →</button>
+            <button class="boton-paginacion" type="button" data-pagina-anterior aria-label="Página anterior">←</button>
+            <button class="boton-paginacion" type="button" data-pagina-siguiente aria-label="Página siguiente">→</button>
         </div>
     </div>
     @if (Model.Enlaces.Count == 0)
     {
-        <div class="estado-vacio-conexiones"><strong>Todavía no hay enlaces registrados</strong><p>Los enlaces documentados aquí podrán alimentar la vista de topología.</p></div>
+        <div class="estado-vacio-conexiones"><strong>Todavía no hay enlaces completos</strong><p>Los enlaces aparecen cuando se registran los dos puertos que forman la conexión.</p></div>
     }
     else
     {
         <div class="lista-fichas-conexion" data-lista-paginada>
-            @* enlace recorre cada conexión física; cambiar Model.Enlaces modifica las fichas disponibles. *@
+            @* enlace une ambos extremos existentes y mantiene visible el nombre/IP de cada equipo. *@
             @foreach (var enlace in Model.Enlaces)
             {
-                <article class="ficha-conexion ficha-enlace" data-registro-paginable>
+                // ipOrigen y ipDestino muestran la IP bajo la etiqueta sin añadir una columna repetida.
+                ipsPorEquipo.TryGetValue(enlace.EquipoOrigen, out var ipOrigen);
+                ipsPorEquipo.TryGetValue(enlace.EquipoDestino, out var ipDestino);
+                // identificadorOrigen y identificadorDestino habilitan acceso directo a los frontales de switch.
+                identificadoresPorEquipo.TryGetValue(enlace.EquipoOrigen, out var identificadorOrigen);
+                identificadoresPorEquipo.TryGetValue(enlace.EquipoDestino, out var identificadorDestino);
+                <article class="ficha-conexion ficha-enlace" data-registro-paginable data-estado="@enlace.EstadoDatos">
                     <div class="trayecto-enlace">
-                        <div class="extremo-enlace"><p class="identificador-secundario">ORIGEN</p><h3>@enlace.EquipoOrigen</h3><span>Puerto @enlace.PuertoOrigen</span></div>
+                        <div class="extremo-enlace">
+                            <p class="identificador-secundario">ORIGEN</p>
+                            <h3>@enlace.EquipoOrigen</h3>
+                            <small class="ip-extremo-conexion">@(ipOrigen ?? "IP no indicada")</small>
+                            <span class="puerto-extremo-conexion">Puerto @enlace.PuertoOrigen</span>
+                            @if (identificadoresSwitch.Contains(identificadorOrigen))
+                            {
+                                <a class="enlace-frontal-conexion" asp-controller="Topologia" asp-action="Detalle" asp-route-identificador="@identificadorOrigen">Abrir switch</a>
+                            }
+                        </div>
                         <span class="flecha-enlace" aria-hidden="true">→</span>
-                        <div class="extremo-enlace"><p class="identificador-secundario">DESTINO</p><h3>@enlace.EquipoDestino</h3><span>Puerto @enlace.PuertoDestino</span></div>
+                        <div class="extremo-enlace">
+                            <p class="identificador-secundario">DESTINO</p>
+                            <h3>@enlace.EquipoDestino</h3>
+                            <small class="ip-extremo-conexion">@(ipDestino ?? "IP no indicada")</small>
+                            <span class="puerto-extremo-conexion">Puerto @enlace.PuertoDestino</span>
+                            @if (identificadoresSwitch.Contains(identificadorDestino))
+                            {
+                                <a class="enlace-frontal-conexion" asp-controller="Topologia" asp-action="Detalle" asp-route-identificador="@identificadorDestino">Abrir switch</a>
+                            }
+                        </div>
                         <span class="etiqueta-estado-conexion">@enlace.EstadoDatos</span>
                     </div>
-                    <dl class="datos-ficha-conexion datos-enlace">
-                        <div><dt>Medio</dt><dd>@enlace.Medio</dd></div>
-                        <div><dt>Última revisión</dt><dd>@(enlace.FechaUltimaRevision?.ToString("dd/MM/yyyy") ?? "Sin fecha confirmada")</dd></div>
-                        <div class="dato-ficha-ancho"><dt>Fuente</dt><dd>@(enlace.Fuente ?? "Sin fuente indicada")</dd></div>
-                    </dl>
+                    @if ((enlace.EstadoDatos.Equals("Confirmado", StringComparison.OrdinalIgnoreCase)
+                         || enlace.EstadoDatos.Equals("Vigente", StringComparison.OrdinalIgnoreCase))
+                         && !string.IsNullOrWhiteSpace(enlace.Medio)
+                         && !enlace.Medio.Equals("No confirmado", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <span class="medio-confirmado-conexion">Medio confirmado: @enlace.Medio</span>
+                    }
+                    <details class="detalles-fuente-conexion">
+                        <summary>Ver revisión y fuente</summary>
+                        <p>Revisión: @(enlace.FechaUltimaRevision?.ToString("dd/MM/yyyy") ?? "Sin fecha confirmada") · Fuente: @(enlace.Fuente ?? "No indicada")</p>
+                    </details>
                     <div class="acciones-ficha-conexion">
                         <a class="boton boton-secundario" asp-controller="Correcciones" asp-action="EditarEnlace" asp-route-identificador="@enlace.Identificador">Corregir enlace</a>
                     </div>
@@ -114,49 +176,82 @@
         </div>
     }
 </section>
+
 <section class="panel panel-conexiones seccion-registros" data-paginador="relaciones-parciales" aria-labelledby="titulo-relaciones-parciales">
     <div class="cabecera-listado-conexiones">
         <div>
-            <p class="sobrelinea">IMPORTACIÓN DOCUMENTAL</p>
-            <h2 id="titulo-relaciones-parciales">Relaciones con extremo remoto pendiente <span class="contador-enlaces">@Model.RelacionesParciales.Count</span></h2>
+            <p class="sobrelinea">UN SOLO EXTREMO CONFIRMADO</p>
+            <h2 id="titulo-relaciones-parciales">Conexiones para completar <span class="contador-enlaces">@Model.RelacionesParciales.Count</span></h2>
+        </div>
+        <div class="filtros-listado-conexion">
+            <label>Buscar<input type="search" data-busqueda-lista placeholder="Equipo, IP, puerto o nota" /></label>
+            <label>Estado<select data-filtro-estado><option value="">Todos</option><option>Confirmado</option><option>Vigente</option><option>A verificar</option></select></label>
         </div>
         <div class="controles-paginacion">
-            <label for="tamano-relaciones-parciales">Mostrar</label>
-            <select id="tamano-relaciones-parciales" data-tamano-pagina aria-label="Cantidad de relaciones parciales por página">
-                <option value="10" selected>10</option><option value="20">20</option><option value="30">30</option><option value="0">Todas</option>
-            </select>
+            <label>Mostrar
+                <select data-tamano-pagina aria-label="Cantidad de relaciones parciales por página">
+                    <option value="10" selected>10</option><option value="20">20</option><option value="30">30</option><option value="0">Todas</option>
+                </select>
+            </label>
             <span data-resumen-pagina aria-live="polite"></span>
-            <button class="boton-paginacion" type="button" data-pagina-anterior aria-label="Mostrar página anterior">← Anterior</button>
-            <button class="boton-paginacion" type="button" data-pagina-siguiente aria-label="Mostrar página siguiente">Siguiente →</button>
+            <button class="boton-paginacion" type="button" data-pagina-anterior aria-label="Página anterior">←</button>
+            <button class="boton-paginacion" type="button" data-pagina-siguiente aria-label="Página siguiente">→</button>
         </div>
     </div>
     @if (Model.RelacionesParciales.Count == 0)
     {
-        <div class="estado-vacio-conexiones"><strong>No hay relaciones parciales</strong><p>Usa esta sección cuando una tabla identifique el puerto local pero no confirme el remoto.</p></div>
+        <div class="estado-vacio-conexiones"><strong>No hay conexiones pendientes</strong><p>Las referencias parciales aparecen cuando la fuente conoce un puerto local y deja pendiente el remoto.</p></div>
     }
     else
     {
         <div class="lista-fichas-conexion" data-lista-paginada>
-            @* relacion recorre conexiones con puerto remoto opcional y conserva visible su procedencia. *@
+            @* relacion muestra nombres e IP disponibles y conserva el detalle fuente bajo demanda. *@
             @foreach (var relacion in Model.RelacionesParciales)
             {
-                <article class="ficha-conexion ficha-enlace" data-registro-paginable>
+                // ipLocal mantiene la IP secundaria debajo del equipo donde nace la referencia.
+                ipsPorEquipo.TryGetValue(relacion.EquipoLocal, out var ipLocal);
+                // identificadorLocal permite abrir el frontal si el extremo es un switch.
+                identificadoresPorEquipo.TryGetValue(relacion.EquipoLocal, out var identificadorLocal);
+                <article class="ficha-conexion ficha-enlace" data-registro-paginable data-estado="@relacion.EstadoDatos">
                     <div class="trayecto-enlace">
-                        <div class="extremo-enlace"><p class="identificador-secundario">PUERTO LOCAL</p><h3>@relacion.EquipoLocal</h3><span>@relacion.PuertoLocal</span></div>
-                        <span class="flecha-enlace" aria-hidden="true">→</span>
-                        <div class="extremo-enlace"><p class="identificador-secundario">REMOTO DOCUMENTADO</p><h3>@(relacion.EquipoRemoto ?? "No identificado")</h3><span>@(relacion.PuertoRemoto ?? "Puerto no documentado") · @(relacion.IpRemota ?? "IP no indicada")</span></div>
+                        <div class="extremo-enlace">
+                            <p class="identificador-secundario">PUERTO LOCAL</p>
+                            <h3>@relacion.EquipoLocal</h3>
+                            <small class="ip-extremo-conexion">@(ipLocal ?? "IP no indicada")</small>
+                            <span class="puerto-extremo-conexion">Puerto @relacion.PuertoLocal</span>
+                            @if (identificadoresSwitch.Contains(identificadorLocal))
+                            {
+                                <a class="enlace-frontal-conexion" asp-controller="Topologia" asp-action="Detalle" asp-route-identificador="@identificadorLocal">Abrir switch</a>
+                            }
+                        </div>
+                        <span class="flecha-enlace flecha-pendiente" aria-hidden="true">→</span>
+                        <div class="extremo-enlace">
+                            <p class="identificador-secundario">EXTREMO DOCUMENTADO</p>
+                            <h3>@(relacion.EquipoRemoto ?? "No identificado")</h3>
+                            <small class="ip-extremo-conexion">@(relacion.IpRemota ?? "IP no indicada")</small>
+                            <span class="puerto-extremo-conexion">@(relacion.PuertoRemoto ?? "Puerto remoto no documentado")</span>
+                        </div>
                         <span class="etiqueta-estado-conexion">@relacion.EstadoDatos</span>
                     </div>
-                    <dl class="datos-ficha-conexion datos-enlace">
-                        <div><dt>Medio</dt><dd>@relacion.Medio</dd></div>
-                        <div><dt>Página</dt><dd>@relacion.FuentePagina</dd></div>
-                        <div><dt>Libro</dt><dd>@(relacion.FuenteLibro ?? "No indicado")</dd></div>
-                        <div><dt>Fila</dt><dd>@(relacion.FuenteFila ?? "No indicada")</dd></div>
-                        <div class="dato-ficha-ancho"><dt>Notas</dt><dd>@(relacion.Observaciones ?? "Sin observaciones")</dd></div>
-                    </dl>
+                    @if ((relacion.EstadoDatos.Equals("Confirmado", StringComparison.OrdinalIgnoreCase)
+                         || relacion.EstadoDatos.Equals("Vigente", StringComparison.OrdinalIgnoreCase))
+                         && !string.IsNullOrWhiteSpace(relacion.Medio)
+                         && !relacion.Medio.Equals("No confirmado", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <span class="medio-confirmado-conexion">Medio confirmado: @relacion.Medio</span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(relacion.Observaciones))
+                    {
+                        <p class="nota-conexion-pendiente">@relacion.Observaciones</p>
+                    }
+                    <details class="detalles-fuente-conexion">
+                        <summary>Ver ubicación del dato</summary>
+                        <p>@relacion.FuentePagina · @(relacion.FuenteLibro ?? "Sin libro") · fila @(relacion.FuenteFila ?? "sin indicar")</p>
+                    </details>
                 </article>
             }
         </div>
     }
 </section>
+
 <script src="~/js/paginacion-conexiones.js" asp-append-version="true"></script>
