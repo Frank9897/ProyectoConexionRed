@@ -111,7 +111,7 @@ td small { margin-top: 3px; color: var(--secundario); line-height: 1.35; }
 }
 
 @media print {
-    @page { margin: 14mm; }
+    @page { size: A4 landscape; margin: 5mm; }
     body { background: #fff; color: #111; font-size: 9pt; }
     .barra-superior, .pie, .busqueda, .acciones-tabla, .formulario-salida { display: none !important; }
     .contenedor { width: 100%; margin: 0; }
@@ -751,4 +751,61 @@ tbody tr:hover { background: #f7fafb; }
 @media (prefers-reduced-motion: reduce) {
     .puerto-topologia.puerto-seleccionado { transform: none; }
     html:focus-within { scroll-behavior: auto; }
+}
+
+
+/* La rejilla de topología reserva ancho suficiente para que cada switch muestre más puertos y datos. */
+.rejilla-dispositivos-topologia { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+
+/* La impresión del detalle se ajusta a una hoja A4 apaisada y conserva los datos de conexiones visibles. */
+@media print {
+    html, body { width: 100%; height: auto; background: #fff !important; color: #172b3a; font-size: 7pt; }
+    .barra-superior, .pie, .acciones-topologia, .estado-seleccion-puerto,
+    .detalles-fuente-conexion, .enlace-detalle-switch { display: none !important; }
+    .contenedor { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
+    .encabezado-topologia { display: flex; align-items: center; gap: 4mm; margin: 0 0 2mm; }
+    .encabezado-topologia h1 { margin: 0; font-size: 14pt; }
+    .encabezado-topologia p { margin: 0; font-size: 7pt; }
+    .encabezado-topologia .sobrelinea { font-size: 6pt; }
+    .resumen-puertos-switch { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2mm; margin: 0 0 2mm; }
+    .resumen-puertos-switch article { gap: 1.5mm; padding: 1.5mm 2mm; border-radius: 2mm; }
+    .resumen-puertos-switch article strong { font-size: 10pt; }
+    .resumen-puertos-switch article > span:last-child { font-size: 6pt; }
+    .detalle-topologia-switch { grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 2mm; margin: 0; }
+    .panel-frontal-detalle-switch .frontal-switch-panel { min-width: 0 !important; padding: 2mm; border-radius: 2mm; box-shadow: none; }
+    .frontal-switch-scroll { overflow: visible !important; padding: 0; }
+    .frontal-switch-cabecera { margin-bottom: 1mm; font-size: 7pt; }
+    .resumen-puertos-frontal { gap: 2mm; margin-bottom: 1mm; }
+    .resumen-puerto { font-size: 6pt; }
+    .grupo-frontal-puertos { margin-top: 1mm; }
+    .etiqueta-grupo-frontal { margin-bottom: .5mm; font-size: 5pt; }
+    .filas-frontal-puertos { gap: .6mm; }
+    .fila-frontal-puertos { gap: .6mm; grid-auto-columns: minmax(0, 1fr); }
+    .puerto-frontal { min-width: 0; min-height: 6mm; border-radius: 1mm; font-size: 5pt; }
+    .puerto-frontal::after { height: 2mm; }
+    .puerto-frontal.puerto-sfp::after { height: 2.5mm; }
+    .datos-detalle-switch { gap: 1mm; padding: 2mm; border-radius: 2mm; }
+    .datos-detalle-switch div { grid-template-columns: 22mm 1fr; gap: 1mm; }
+    .datos-detalle-switch dt, .datos-detalle-switch dd { font-size: 6.5pt; }
+    .panel-enlaces { margin-top: 2mm; padding: 2mm; border-radius: 2mm; break-inside: avoid; }
+    .encabezado-seccion-topologia { margin-bottom: 1mm; }
+    .encabezado-seccion-topologia .sobrelinea { font-size: 5.5pt; }
+    .encabezado-seccion-topologia h2 { font-size: 9pt; }
+    .contador-enlaces { padding: 1mm 2mm; font-size: 6pt; }
+    .aclaracion-topologia-grafica { margin: 0 0 1mm; padding: 1mm 2mm; font-size: 6pt; }
+    .lista-fichas-conexion { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2mm; }
+    .ficha-conexion { padding: 1.5mm 2mm; border-radius: 1.5mm; break-inside: avoid; }
+    .trayecto-enlace { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto; gap: 1.5mm; }
+    .identificador-secundario { margin-bottom: .5mm; font-size: 5pt; }
+    .extremo-enlace h3 { font-size: 7pt; overflow-wrap: anywhere; }
+    .ip-extremo-conexion { margin-top: .3mm; font-size: 5.5pt !important; }
+    .puerto-extremo-conexion { margin-top: .5mm; padding: .5mm 1mm; font-size: 5.5pt !important; }
+    .etiqueta-estado-conexion { padding: 1mm 1.5mm; font-size: 5.5pt; }
+    .flecha-enlace { font-size: 8pt; }
+    .medio-confirmado-conexion { margin-top: 1mm; padding: .5mm 1mm; font-size: 5.5pt; }
+    .ficha-conexion, .panel-enlaces, .frontal-switch-panel, .datos-detalle-switch {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        box-shadow: none;
+    }
 }
