@@ -822,3 +822,61 @@ tbody tr:hover { background: #f7fafb; }
 
 /* flecha-confirmada usa el tono normal de un vínculo documentado, aunque falte el puerto opuesto. */
 .flecha-confirmada { color: #548278; }
+
+
+/* Plantillas imprimibles acotan switch y mapa a una sola página A4 horizontal. */
+.hoja-impresion-switch { page: hoja-switch-a4; }
+.hoja-impresion-topologia { page: hoja-mapa-a4; }
+@page hoja-switch-a4 { size: A4 landscape; margin: 5mm; }
+@page hoja-mapa-a4 { size: A4 landscape; margin: 5mm; }
+@media print {
+    html, body { width: 100%; height: auto !important; margin: 0 !important; }
+    .contenedor { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
+    .hoja-impresion {
+        display: block !important;
+        width: 287mm !important;
+        max-width: none !important;
+        height: 200mm !important;
+        max-height: 200mm !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+        break-after: avoid-page !important;
+        page-break-after: avoid !important;
+    }
+    .contenido-hoja-impresion {
+        width: 287mm !important;
+        max-width: none !important;
+        transform: scale(var(--escala-impresion, 1));
+        transform-origin: top left;
+    }
+    .hoja-impresion-switch .panel-enlaces,
+    .hoja-impresion-switch .ficha-conexion { break-inside: auto !important; page-break-inside: auto !important; }
+    .hoja-impresion-topologia .encabezado-pagina,
+    .hoja-impresion-topologia .metricas-topologia,
+    .hoja-impresion-topologia .capas-topologia,
+    .hoja-impresion-topologia .nota-topologia,
+    .hoja-impresion-topologia > .contenido-hoja-impresion > .vacio-topologia,
+    .hoja-impresion-topologia > .contenido-hoja-impresion > .panel:not(.panel-grafico-topologia) { display: none !important; }
+    .hoja-impresion-topologia .panel-grafico-topologia { margin: 0 !important; padding: 0 !important; border: 0 !important; box-shadow: none !important; }
+    .hoja-impresion-topologia .encabezado-seccion-topologia { margin: 0 0 2mm !important; }
+    .hoja-impresion-topologia .encabezado-seccion-topologia .sobrelinea { font-size: 6pt !important; }
+    .hoja-impresion-topologia .encabezado-seccion-topologia h2 { margin: 0; font-size: 12pt !important; }
+    .hoja-impresion-topologia .encabezado-seccion-topologia p:not(.sobrelinea) { display: none !important; }
+    .hoja-impresion-topologia .leyenda-topologia { gap: 1mm 3mm; margin: 0 0 2mm; font-size: 5.5pt; }
+    .hoja-impresion-topologia .filtros-topologia-grafica,
+    .hoja-impresion-topologia .controles-capa-topologia,
+    .hoja-impresion-topologia .acciones-topologia,
+    .hoja-impresion-topologia .aclaracion-topologia-grafica,
+    .hoja-impresion-topologia .lista-fichas-conexion,
+    .hoja-impresion-topologia .frontal-switch-scroll,
+    .hoja-impresion-topologia .datos-nodo-topologia,
+    .hoja-impresion-topologia .estado-capacidad-topologia,
+    .hoja-impresion-topologia .enlace-detalle-switch { display: none !important; }
+    .hoja-impresion-topologia .mapa-topologia { min-height: 0 !important; overflow: visible !important; padding: 0 !important; }
+    .hoja-impresion-topologia .rejilla-dispositivos-topologia { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 1.5mm !important; }
+    .hoja-impresion-topologia .nodo-dispositivo-topologia { min-width: 0; padding: 1.5mm !important; border-radius: 1.5mm; box-shadow: none !important; break-inside: avoid; }
+    .hoja-impresion-topologia .cabecera-nodo-topologia { gap: 1.5mm; }
+    .hoja-impresion-topologia .cabecera-nodo-topologia img { width: 8mm; height: 6mm; }
+    .hoja-impresion-topologia .cabecera-nodo-topologia .sobrelinea { margin: 0; font-size: 5pt; }
+    .hoja-impresion-topologia .cabecera-nodo-topologia h3 { margin: .5mm 0 0; font-size: 7pt; overflow-wrap: anywhere; }
+}
