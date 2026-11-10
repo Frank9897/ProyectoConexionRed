@@ -24,6 +24,8 @@
             if (!contenidoImpresion) return;
 
             contenidoImpresion.style.setProperty("--escala-impresion", "1");
+            // La topología tiene su propio encaje; no se escala la página completa con secciones que luego se ocultan.
+            if (hoja.classList.contains("hoja-impresion-topologia")) return;
             if (hoja.classList.contains("hoja-impresion-switch")) {
                 // cantidadConexiones determina cuántas columnas permiten usar mejor la hoja sin encoger todo el contenido.
                 const cantidadConexiones = hoja.querySelectorAll(".ficha-conexion").length;
@@ -37,9 +39,8 @@
             const altoContenido = contenidoImpresion.scrollHeight;
             if (anchoContenido <= 0 || altoContenido <= 0) return;
 
-            // escalaImpresion mantiene la vista en su tamaño natural si cabe y la reduce si se excede.
+            // escalaImpresion aprovecha el área A4 disponible y solo reduce cuando el contenido excede la hoja.
             const escalaImpresion = Math.min(
-                1,
                 anchoA4HorizontalPx / anchoContenido,
                 altoA4HorizontalPx / altoContenido
             );
@@ -206,8 +207,8 @@
     const separacionSubcolumnas = 60;
     // alturaMaximaColumna parte una columna en varias cuando suma más alto que este valor (px del lienzo).
     const alturaMaximaColumna = 1500;
-    // altoMapaImpresionPx reserva el alto del mapa dentro de la hoja A4 horizontal al imprimir.
-    const altoMapaImpresionPx = 150 * 96 / 25.4;
+    // altoMapaImpresionPx reserva casi toda la altura imprimible del mapa A4 horizontal.
+    const altoMapaImpresionPx = 180 * 96 / 25.4;
 
     // modoCapaActual inicia el mapa en la vista física completa.
     let modoCapaActual = "fisica";
@@ -390,7 +391,7 @@
      * @param {number} [anchoVentana] Ancho de la ventana; por defecto el real. Cambiarlo ajusta la vista a otro tamaño (impresión).
      * @param {number} [altoVentana] Alto de la ventana; por defecto el real.
      */
-    const ajustarVista = (escalaMinimaPermitida = escalaMinima, anchoVentana = mapaTopologia.clientWidth, altoVentana = mapaTopologia.clientHeight) => {
+    const ajustarVista = (escalaMinimaPermitida = escalaMinima, anchoVentana = mapaTopologia.clientWidth, altoVentana = mapaTopologia.clientHeight, permitirAmpliacion = false) => {
         const visibles = listarNodosVisibles();
         if (visibles.length === 0) {
             vista.x = 0;
@@ -414,9 +415,12 @@
         // anchoCaja y altoCaja son el tamaño total del conjunto de tarjetas.
         const anchoCaja = maximoX - minimoX;
         const altoCaja = maximoY - minimoY;
-        vista.escala = limitar(
-            Math.min((anchoVentana - margen * 2) / anchoCaja, (altoVentana - margen * 2) / altoCaja, 1),
-            escalaMinimaPermitida, escalaMaxima);
+        // escalaDeEncaje aprovecha toda la zona; permitirAmpliacion quita el tope de 100 % solo al imprimir.
+        const escalaDeEncaje = Math.min(
+            (anchoVentana - margen * 2) / anchoCaja,
+            (altoVentana - margen * 2) / altoCaja,
+            permitirAmpliacion ? 4 : 1);
+        vista.escala = limitar(escalaDeEncaje, escalaMinimaPermitida, permitirAmpliacion ? 4 : escalaMaxima);
         // Si el conjunto cabe se centra; si no, se alinea arriba a la izquierda para empezar a leer desde ahí.
         vista.x = anchoCaja * vista.escala + margen * 2 <= anchoVentana
             ? (anchoVentana - anchoCaja * vista.escala) / 2 - minimoX * vista.escala
@@ -1752,7 +1756,7 @@
     window.addEventListener("beforeprint", () => {
         vistaAntesDeImprimir = { ...vista };
         // En papel se permite un zoom muy bajo para que el mapa completo entre en la hoja.
-        ajustarVista(0.02, anchoA4HorizontalPx, altoMapaImpresionPx);
+        ajustarVista(0.02, anchoA4HorizontalPx, altoMapaImpresionPx, true);
     });
     window.addEventListener("afterprint", () => {
         if (vistaAntesDeImprimir) {
