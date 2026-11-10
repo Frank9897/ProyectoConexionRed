@@ -97,10 +97,11 @@
         <div>
             <p class="sobrelinea">VISTA INTERACTIVA</p>
             <h2 id="titulo-mapa-topologia">Mapa de conexiones documentadas</h2>
-            <p>Las líneas representan relaciones documentadas; el puerto remoto aparece cuando está identificado.</p>
+            <p>Las líneas representan relaciones documentadas; el puerto remoto aparece cuando está identificado. Desplázate dentro del mapa o maximízalo para recorrer todas las tarjetas.</p>
         </div>
         <div class="acciones-topologia">
             <span class="contador-enlaces">@Model.Dispositivos.Count equipos · @Model.Enlaces.Count enlaces</span>
+            <button class="boton boton-secundario" type="button" data-maximizar-mapa aria-pressed="false" title="Maximiza el panel para recorrer todas las tarjetas">Maximizar mapa</button>
             <button class="boton boton-secundario" type="button" data-imprimir-topologia>Imprimir vista</button>
         </div>
     </div>
@@ -133,12 +134,11 @@
         <span><i class="muestra-puerto puerto-desconocido" aria-hidden="true"></i> Desconocido</span>
         <span><i class="muestra-enlace enlace-confirmado" aria-hidden="true"></i> Enlace confirmado</span>
         <span><i class="muestra-enlace enlace-parcial-switch" aria-hidden="true"></i> Uplink confirmado sin contraparte única</span>
-        <span><i class="muestra-enlace enlace-parcial-switch" aria-hidden="true"></i> Switch documentado; contraparte sin tabla recíproca</span>
     </div>
 
     <p class="aclaracion-topologia-grafica">Capa 3 muestra PCs y equipos finales conectados al puerto local del switch. Capa 2 muestra enlaces entre switches y coteja ambas tablas para completar los dos puertos cuando se pueden emparejar. Capa 1 representa la infraestructura física. El Visio confirma las relaciones documentadas; esta vista no consulta la red en vivo.</p>
 
-    <div class="mapa-topologia" data-mapa-topologia data-capa-actual="fisica">
+    <div class="mapa-topologia" data-mapa-topologia data-capa-actual="fisica" role="region" aria-label="Mapa navegable de equipos y conexiones" tabindex="0">
         <svg class="capa-svg-enlaces" data-capa-enlaces aria-hidden="true"></svg>
         @if (Model.Dispositivos.Count == 0)
         {
