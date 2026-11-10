@@ -454,6 +454,40 @@ public static class InicializadorInventario
     {
         // filasV3 conserva páginas, libros y filas literales; cambiar el catálogo modifica las posiciones importadas.
         var filasV3 = CatalogoPuertosAreasV3.ObtenerFilas();
+        // nombreServidorR770 conserva la identidad del equipo indicado por el usuario y las hojas V3.
+        const string nombreServidorR770 = "Dell R770";
+        // servidorR770 evita crear dos fichas si el inventario ya contiene este servidor.
+        var servidorR770 = await contextoInventario.Equipos
+            .SingleOrDefaultAsync(equipo => equipo.Nombre == nombreServidorR770, cancelacion);
+        if (servidorR770 is null)
+        {
+            // servidorR770Nuevo registra el modelo conocido sin asignar la IP ambigua de la celda Excel.
+            var servidorR770Nuevo = new EquipoRed
+            {
+                Nombre = nombreServidorR770,
+                Fabricante = "Dell",
+                Modelo = "R770",
+                Area = "Rack",
+                RolEnArea = "Servidor principal previsto",
+                TipoDispositivo = "Servidor",
+                EstadoDatos = "Vigente",
+                Observaciones = "DIAGRAMA RED V3.0 identifica el Dell R770. La dirección 192.168.1.22 aparece en una celda cuyo vínculo con la ficha o interfaz no es inequívoco; no se asigna como IP del servidor."
+            };
+            await contextoInventario.Equipos.AddAsync(servidorR770Nuevo, cancelacion);
+            await contextoInventario.SaveChangesAsync(cancelacion);
+
+            // eventoAltaR770 audita la ficha nueva sin atribuirle una dirección IP no resuelta.
+            cambiosAuditados.Add(new EventoModificacion
+            {
+                IdentificadorEquipo = servidorR770Nuevo.Identificador,
+                NombreEquipo = servidorR770Nuevo.Nombre,
+                NombreUsuario = usuarioImportacion,
+                FechaUtc = DateTime.UtcNow,
+                Campo = "Alta de equipo",
+                ValorNuevo = "Dell R770; servidor principal previsto; IP de administración sin atribuir."
+            });
+        }
+
         // nombreSwitchInmuebles conserva la etiqueta literal usada en las dos hojas de Inmuebles.
         const string nombreSwitchInmuebles = "SWITCH DE 8 PUERTOS";
         // switchInmuebles busca una ficha existente para no duplicarla al iniciar de nuevo.
@@ -512,22 +546,27 @@ public static class InicializadorInventario
                 continue;
 
             // filaLibre y filaDesconocida conservan estados explícitos sin tratarlos como conexión de usuario.
-            var filaLibre = string.Equals(filaPuerto.Destino, "LIBRE", StringComparison.OrdinalIgnoreCase);
-            var filaDesconocida = string.Equals(filaPuerto.Destino, "DESCONOCIDO", StringComparison.OrdinalIgnoreCase);
+            var filaLibre = string.Equals(filaPuerto.Destino.Trim(), "LIBRE", StringComparison.OrdinalIgnoreCase);
+            var filaDesconocida = string.Equals(filaPuerto.Destino.Trim(), "DESCONOCIDO", StringComparison.OrdinalIgnoreCase);
             // destinoEsSwitch reserva las relaciones entre switches para revisión de rack/enlace.
             var destinoEsSwitch = !filaLibre && !filaDesconocida && EsDestinoSwitchV3(filaPuerto.Destino);
-            // estadoFuente documenta si el texto de la fila está vigente o requiere comprobar un uplink.
-            var estadoFuente = destinoEsSwitch ? "A verificar" : "Confirmado";
-            // observacionFuente mantiene referencia también para puertos libres o con destino desconocido.
+            // estadoFuente mantiene rack pendiente, salvo las dos relaciones que el usuario confirmó expresamente.
+            var estadoFuente = filaPuerto.EstadoRelacion
+                ?? (filaPuerto.EsRack ? "A verificar" : destinoEsSwitch ? "A verificar" : "Confirmado");
+            // observacionFuente conserva origen y vigencia del rack sin asignar una fecha inexistente.
             var observacionFuente = $"Fuente V3: {filaPuerto.Pagina} · {filaPuerto.Libro} · fila {filaPuerto.FilaFuente}; valor: {filaPuerto.Destino}.";
-            // interfazNueva registra solo la etiqueta y el estado fuente; no presume RJ45, SFP ni velocidad.
+            if (filaPuerto.EsRack && estadoFuente == "A verificar")
+                observacionFuente += " Tabla de rack: comprobar vigencia física.";
+            if (filaPuerto.TipoInterfaz == "SFP+")
+                observacionFuente += " Tipo de jaula SFP+ según el perfil del modelo; transceptor instalado no confirmado.";
+            // interfazNueva conserva el tipo solo cuando está identificado y no deduce conectividad de un estado SFP.
             var interfazNueva = new InterfazEquipo
             {
                 IdentificadorEquipo = equipoLocal.Identificador,
                 EtiquetaPuerto = etiquetaPuertoNormalizada,
-                TipoInterfaz = "No confirmado",
+                TipoInterfaz = filaPuerto.TipoInterfaz ?? "No confirmado",
                 EstadoDatos = estadoFuente,
-                EstadoUso = filaLibre ? "Libre confirmado" : "Desconocido",
+                EstadoUso = filaLibre && !filaPuerto.EsRack ? "Libre confirmado" : "Desconocido",
                 Observaciones = observacionFuente
             };
             interfacesNuevas.Add(interfazNueva);
@@ -540,7 +579,7 @@ public static class InicializadorInventario
                 NombreEquipo = equipoLocal.Nombre,
                 NombreUsuario = usuarioImportacion,
                 FechaUtc = DateTime.UtcNow,
-                Campo = "Puerto V3 incorporado",
+                Campo = filaPuerto.EsRack ? "Puerto de rack V3 incorporado" : "Puerto V3 incorporado",
                 ValorNuevo = $"{etiquetaPuertoNormalizada} · {estadoFuente} · {filaPuerto.Pagina}/{filaPuerto.Libro}/fila {filaPuerto.FilaFuente}"
             });
         }
@@ -551,6 +590,10 @@ public static class InicializadorInventario
             await contextoInventario.InterfacesEquipo.AddRangeAsync(interfacesNuevas, cancelacion);
             await contextoInventario.SaveChangesAsync(cancelacion);
         }
+
+        // RegistrarPuertosR770YEnlacesConfirmados agrega puertos del servidor y los dos enlaces que el usuario confirmó.
+        await RegistrarPuertosR770YEnlacesConfirmadosAsync(
+            contextoInventario, cambiosAuditados, usuarioImportacion, cancelacion);
 
         // enlacesExistentes carga extremos ya completos para no duplicar ni contradecir una relación guardada.
         var enlacesExistentes = await contextoInventario.EnlacesFisicos.AsNoTracking()
@@ -572,8 +615,14 @@ public static class InicializadorInventario
         foreach (var filaPuerto in filasV3)
         {
             // filaLibre y filaDesconocida no describen un equipo remoto y no generan una relación.
-            if (string.Equals(filaPuerto.Destino, "LIBRE", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(filaPuerto.Destino, "DESCONOCIDO", StringComparison.OrdinalIgnoreCase))
+            // destinoLimpio evita clasificar filas por espacios externos del Excel incrustado.
+            var destinoLimpio = filaPuerto.Destino.Trim();
+            // estadoSinDestinoRemoto reconoce estados de transceptor que no nombran un equipo remoto.
+            var estadoSinDestinoRemoto = destinoLimpio.Equals("SIN SFP", StringComparison.OrdinalIgnoreCase)
+                || destinoLimpio.Equals("SFP LIBRE", StringComparison.OrdinalIgnoreCase);
+            if (destinoLimpio.Equals("LIBRE", StringComparison.OrdinalIgnoreCase)
+                || destinoLimpio.Equals("DESCONOCIDO", StringComparison.OrdinalIgnoreCase)
+                || estadoSinDestinoRemoto)
                 continue;
             // equipoLocal resuelve la interfaz de origen sin buscar equipos por proximidad o nombre remoto.
             if (!equiposPorNombre.TryGetValue(filaPuerto.EquipoLocal.Trim(), out var equipoLocal))
@@ -638,13 +687,146 @@ public static class InicializadorInventario
                 NombreEquipo = equipoLocal.Nombre,
                 NombreUsuario = usuarioImportacion,
                 FechaUtc = DateTime.UtcNow,
-                Campo = "Conexión V3 incorporada",
+                Campo = filaPuerto.EsRack ? "Conexión de rack V3 incorporada" : "Conexión V3 incorporada",
                 ValorNuevo = $"{interfazLocal.EtiquetaPuerto} → {nuevaRelacion.EquipoRemoto} · {nuevaRelacion.IpRemota ?? "IP no indicada"} · {estadoRelacion} · {filaPuerto.Pagina}/{filaPuerto.Libro}/fila {filaPuerto.FilaFuente}"
             });
         }
 
         if (relacionesNuevas.Count > 0)
             await contextoInventario.ConexionesDocumentadas.AddRangeAsync(relacionesNuevas, cancelacion);
+    }
+
+    /// <summary>
+    /// Agrega interfaces del Dell R770 y enlaza sus dos puertos que el usuario confirmó con switches del rack.
+    /// </summary>
+    /// <param name="contextoInventario">Contexto SQLite; cambiarlo selecciona el inventario que recibirá los enlaces.</param>
+    /// <param name="cambiosAuditados">Historial pendiente; cambiarlo modifica los eventos guardados en esta carga.</param>
+    /// <param name="usuarioImportacion">Origen del dato; cambiarlo altera la autoría visible en auditoría.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla detiene la importación y revierte su transacción.</param>
+    private static async Task RegistrarPuertosR770YEnlacesConfirmadosAsync(
+        InventarioDbContext contextoInventario,
+        List<EventoModificacion> cambiosAuditados,
+        string usuarioImportacion,
+        CancellationToken cancelacion)
+    {
+        // servidorR770 identifica la ficha que se creó o encontró al preparar la carga V3.
+        var servidorR770 = await contextoInventario.Equipos
+            .SingleOrDefaultAsync(equipo => equipo.Nombre == "Dell R770", cancelacion);
+        if (servidorR770 is null) return;
+
+        // definicionesPuertosR770 refleja los cuatro rótulos de Excel1 y las aclaraciones del usuario.
+        var definicionesPuertosR770 = new[]
+        {
+            (Etiqueta: "P1", Uso: "Desconocido", Datos: "Confirmado", Nota: "Interfaz identificada por el usuario como iDRAC, IP 192.168.0.247."),
+            (Etiqueta: "P2", Uso: "Desconocido", Datos: "Confirmado", Nota: "Interfaz LAN identificada por el usuario, IP 192.168.0.246."),
+            (Etiqueta: "P3", Uso: "Libre confirmado", Datos: "Confirmado", Nota: "Excel1 marca la interfaz como LIBRE."),
+            (Etiqueta: "P4", Uso: "Desconocido", Datos: "Confirmado", Nota: "El usuario indicó que la interfaz no está configurada.")
+        };
+        // interfacesR770 conserva puertos ya registrados para hacer idempotente la carga.
+        var interfacesR770 = await contextoInventario.InterfacesEquipo
+            .Where(interfaz => interfaz.IdentificadorEquipo == servidorR770.Identificador)
+            .ToListAsync(cancelacion);
+        foreach (var definicionPuerto in definicionesPuertosR770)
+        {
+            // puertoExistente evita reemplazar una interfaz que ya fue capturada manualmente.
+            var puertoExistente = interfacesR770.SingleOrDefault(interfaz => interfaz.EtiquetaPuerto == definicionPuerto.Etiqueta);
+            if (puertoExistente is not null) continue;
+
+            // puertoR770Nuevo guarda la etiqueta y el estado textual sin inferir el conector del servidor.
+            var puertoR770Nuevo = new InterfazEquipo
+            {
+                IdentificadorEquipo = servidorR770.Identificador,
+                EtiquetaPuerto = definicionPuerto.Etiqueta,
+                TipoInterfaz = "No confirmado",
+                EstadoDatos = definicionPuerto.Datos,
+                EstadoUso = definicionPuerto.Uso,
+                Observaciones = $"Fuente DIAGRAMA RED V3.0, Excel1; {definicionPuerto.Nota}"
+            };
+            await contextoInventario.InterfacesEquipo.AddAsync(puertoR770Nuevo, cancelacion);
+            interfacesR770.Add(puertoR770Nuevo);
+
+            // eventoPuertoR770 deja rastro del alta de interfaz y de su estado explícito.
+            cambiosAuditados.Add(new EventoModificacion
+            {
+                IdentificadorEquipo = servidorR770.Identificador,
+                NombreEquipo = servidorR770.Nombre,
+                NombreUsuario = usuarioImportacion,
+                FechaUtc = DateTime.UtcNow,
+                Campo = "Interfaz R770 incorporada",
+                ValorNuevo = $"{definicionPuerto.Etiqueta} · {definicionPuerto.Uso} · {definicionPuerto.Nota}"
+            });
+        }
+        await contextoInventario.SaveChangesAsync(cancelacion);
+
+        // vinculosConfirmados contiene solo las dos conexiones que el usuario corrigió expresamente.
+        var vinculosConfirmados = new[]
+        {
+            (EquipoSwitch: "Switch HP 1920", PuertoSwitch: "16", PuertoServidor: "P1",
+                Pagina: "Switch HP 1920 (E) RACK1", Libro: "Excel5",
+                Nota: "Usuario confirmó HP 1920 puerto 16 → Dell R770 P1/iDRAC 192.168.0.247."),
+            (EquipoSwitch: "Dell S4148U-ON 48G", PuertoSwitch: "21", PuertoServidor: "P2",
+                Pagina: "DELL S4148U (I)", Libro: "Excel8",
+                Nota: "Usuario corrigió S4148U puerto 21 → Dell R770 P2/LAN 192.168.0.246.")
+        };
+        foreach (var vinculoConfirmado in vinculosConfirmados)
+        {
+            // equipoSwitch resuelve el extremo local por su ficha canónica; no se busca por proximidad.
+            var equipoSwitch = await contextoInventario.Equipos
+                .SingleOrDefaultAsync(equipo => equipo.Nombre == vinculoConfirmado.EquipoSwitch, cancelacion);
+            if (equipoSwitch is null) continue;
+
+            // interfazSwitch y puertoServidor ubican los dos extremos documentados del mismo enlace.
+            var interfazSwitch = await contextoInventario.InterfacesEquipo
+                .SingleOrDefaultAsync(interfaz =>
+                    interfaz.IdentificadorEquipo == equipoSwitch.Identificador
+                    && interfaz.EtiquetaPuerto == vinculoConfirmado.PuertoSwitch, cancelacion);
+            var puertoServidor = interfacesR770.SingleOrDefault(interfaz =>
+                interfaz.EtiquetaPuerto == vinculoConfirmado.PuertoServidor);
+            if (interfazSwitch is null || puertoServidor is null) continue;
+
+            // enlaceExistente impide duplicar el par incluso si fue guardado con el orden inverso.
+            var enlaceExistente = await contextoInventario.EnlacesFisicos.AnyAsync(enlace =>
+                (enlace.IdentificadorPuertoOrigen == interfazSwitch.Identificador
+                    && enlace.IdentificadorPuertoDestino == puertoServidor.Identificador)
+                || (enlace.IdentificadorPuertoOrigen == puertoServidor.Identificador
+                    && enlace.IdentificadorPuertoDestino == interfazSwitch.Identificador), cancelacion);
+            if (enlaceExistente) continue;
+
+            // puertoConRegistro protege enlaces o relaciones manuales existentes en cualquiera de los extremos.
+            var puertoConRegistro = await contextoInventario.EnlacesFisicos.AnyAsync(enlace =>
+                enlace.IdentificadorPuertoOrigen == interfazSwitch.Identificador
+                || enlace.IdentificadorPuertoDestino == interfazSwitch.Identificador
+                || enlace.IdentificadorPuertoOrigen == puertoServidor.Identificador
+                || enlace.IdentificadorPuertoDestino == puertoServidor.Identificador, cancelacion)
+                || await contextoInventario.ConexionesDocumentadas.AnyAsync(relacion =>
+                    relacion.IdentificadorPuertoLocal == interfazSwitch.Identificador
+                    || relacion.IdentificadorPuertoLocal == puertoServidor.Identificador, cancelacion);
+            if (puertoConRegistro) continue;
+
+            // nuevoEnlace conserva la relación confirmada y declara el medio como desconocido.
+            var nuevoEnlace = new EnlaceFisico
+            {
+                IdentificadorPuertoOrigen = interfazSwitch.Identificador,
+                IdentificadorPuertoDestino = puertoServidor.Identificador,
+                Medio = "No confirmado",
+                EstadoDatos = "Confirmado",
+                Fuente = $"Aclaración del usuario · {vinculoConfirmado.Pagina} · {vinculoConfirmado.Libro}",
+                Observaciones = $"{vinculoConfirmado.Nota} Medio y transceptores no confirmados."
+            };
+            await contextoInventario.EnlacesFisicos.AddAsync(nuevoEnlace, cancelacion);
+
+            // eventoEnlaceR770 registra la relación física completa respaldada directamente por el usuario.
+            cambiosAuditados.Add(new EventoModificacion
+            {
+                IdentificadorEquipo = equipoSwitch.Identificador,
+                NombreEquipo = equipoSwitch.Nombre,
+                NombreUsuario = usuarioImportacion,
+                FechaUtc = DateTime.UtcNow,
+                Campo = "Enlace R770 confirmado",
+                ValorNuevo = $"{vinculoConfirmado.PuertoSwitch} ↔ Dell R770 {vinculoConfirmado.PuertoServidor} · medio no confirmado"
+            });
+        }
+        await contextoInventario.SaveChangesAsync(cancelacion);
     }
 
     /// <summary>
