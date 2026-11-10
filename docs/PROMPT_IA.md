@@ -194,3 +194,13 @@ La entidad SQLite `ConexionDocumentada` ya admite puerto local obligatorio, dest
 - Correcciones del usuario: ProCurve `10.0.1.1`; 3Com `192.168.1.24`; HP 1920 puerto 16 al R770 P1/iDRAC `192.168.0.247`; S4148U puerto 21 al R770 P2/LAN `192.168.0.246`; R770 P4 sin configurar. El medio se conserva como no confirmado.
 - No inferir puerto remoto ni medio de cable por el tipo de bahía SFP o por el modelo de switch. Los enlaces de rack dudosos siguen «A verificar».
 - Mantener variables, comentarios y documentación en español; cada función nueva explica su objetivo y el efecto de cambiar parámetros. Actualizar README y este prompt con cada avance.
+
+
+## Estado de importación documental V3 (9 de noviembre de 2026)
+
+- El arranque incorpora de forma idempotente 312 posiciones procedentes de 13 hojas de área del archivo `DIAGRAMA RED V3.0.vsdx`: 154 `LIBRE`, 8 `DESCONOCIDO` y 150 destinos nominales.
+- Para cada posición se conserva página, libro Excel incrustado y fila fuente. Los destinos nominales se modelan como relación de un extremo local, sin inventar puerto remoto ni medio; las referencias a otro switch quedan «A verificar», salvo Mesa de Entradas secundaria puerto 24 hacia Aruba principal `192.168.1.1`, confirmada por el usuario.
+- Las filas de puestos se consideran vigentes según la confirmación del usuario. ProCurve se normaliza a `10.0.1.1` solo en la fila discrepante de Puerta Agrimensura y se anota la corrección de la fuente.
+- No inferir conectores, modelo SFP ni fecha de revisión. Las interfaces se guardan como tipo «No confirmado». No sobrescribir una interfaz ya enlazada o marcada «Libre confirmado».
+- No se incluyen todavía las hojas de rack/SFP, la hoja secundaria de 8 puertos de Inmuebles ni tablas con propietario ambiguo. Esas incorporaciones requieren análisis de su alcance antes de alterar el inventario.
+- La ordenación del frontal muestra primero las etiquetas numéricas en orden natural (1, 2, …, 10) y luego etiquetas sin número.
