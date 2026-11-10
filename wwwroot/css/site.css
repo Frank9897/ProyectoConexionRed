@@ -880,3 +880,99 @@ tbody tr:hover { background: #f7fafb; }
     .hoja-impresion-topologia .cabecera-nodo-topologia .sobrelinea { margin: 0; font-size: 5pt; }
     .hoja-impresion-topologia .cabecera-nodo-topologia h3 { margin: .5mm 0 0; font-size: 7pt; overflow-wrap: anywhere; }
 }
+
+
+/* El lienzo mantiene tarjetas legibles y desplaza el contenido dentro de un marco estable. */
+.mapa-topologia {
+    height: min(76vh, 840px);
+    min-height: 520px;
+    max-height: calc(100vh - 240px);
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+.rejilla-dispositivos-topologia {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), min(100%, 650px)));
+    justify-content: start;
+}
+.mapa-topologia[data-capa-actual="switching"] .rejilla-dispositivos-topologia {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), min(100%, 650px)));
+}
+.panel-grafico-topologia:fullscreen,
+.panel-grafico-topologia.mapa-ampliado {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 1000 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    margin: 0 !important;
+    overflow: auto !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    padding: clamp(12px, 2vw, 28px) !important;
+    background: #f6f9fa !important;
+}
+.panel-grafico-topologia:fullscreen::backdrop { background: #f6f9fa; }
+.panel-grafico-topologia:fullscreen .mapa-topologia,
+.panel-grafico-topologia.mapa-ampliado .mapa-topologia {
+    height: max(360px, calc(100vh - 330px));
+    min-height: 360px;
+    max-height: none;
+}
+body.mapa-a-pantalla-completa { overflow: hidden; }
+
+@media (max-height: 760px) {
+    .mapa-topologia { height: calc(100vh - 220px); min-height: 420px; }
+    .panel-grafico-topologia:fullscreen .mapa-topologia,
+    .panel-grafico-topologia.mapa-ampliado .mapa-topologia {
+        height: max(300px, calc(100vh - 280px));
+        min-height: 300px;
+    }
+}
+@media (max-width: 760px) {
+    .mapa-topologia { height: calc(100dvh - 300px); min-height: 420px; }
+    .rejilla-dispositivos-topologia,
+    .mapa-topologia[data-capa-actual="switching"] .rejilla-dispositivos-topologia {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media print {
+    .hoja-impresion-switch .lista-fichas-conexion {
+        grid-template-columns: repeat(var(--columnas-enlaces-impresion, 2), minmax(0, 1fr)) !important;
+        align-content: start;
+        gap: 2mm;
+    }
+    .hoja-impresion-switch .ficha-conexion { padding: 1.5mm !important; border-radius: 1.5mm; }
+    .hoja-impresion-switch .trayecto-enlace {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 1mm;
+    }
+    .hoja-impresion-switch .extremo-enlace:first-child {
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+    .hoja-impresion-switch .extremo-enlace:first-child .identificador-secundario,
+    .hoja-impresion-switch .extremo-enlace:first-child h3,
+    .hoja-impresion-switch .extremo-enlace:first-child .ip-extremo-conexion,
+    .hoja-impresion-switch .flecha-enlace,
+    .hoja-impresion-switch .etiqueta-estado-conexion { display: none !important; }
+    .hoja-impresion-switch .extremo-enlace:first-child .puerto-extremo-conexion {
+        margin: 0;
+        padding: .7mm 1.2mm;
+        font-size: 6pt !important;
+    }
+    .hoja-impresion-switch .extremo-enlace:last-of-type {
+        min-width: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+    .hoja-impresion-switch .extremo-enlace h3 { margin: 0; font-size: 7.5pt; }
+    .hoja-impresion-switch .ip-extremo-conexion { margin: 0; font-size: 6pt !important; }
+    .hoja-impresion-switch .puerto-extremo-conexion { margin: .5mm 0 0; padding: .5mm 1mm; font-size: 5.5pt !important; }
+}
