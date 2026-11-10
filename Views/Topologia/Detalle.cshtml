@@ -125,7 +125,7 @@
                             <small class="ip-extremo-conexion">@(Model.Dispositivo.IpAdministracion ?? "IP no indicada")</small>
                             <span class="puerto-extremo-conexion">Puerto @conexionParcial.PuertoLocal</span>
                         </div>
-                        <span class="flecha-enlace flecha-pendiente" aria-hidden="true">→</span>
+                        <span class="flecha-enlace flecha-confirmada" aria-hidden="true">→</span>
                         <div class="extremo-enlace">
                             <p class="identificador-secundario">@(conexionParcial.CapaRelacional == "switching" ? "SWITCH REMOTO" : "EQUIPO FINAL / SERVICIO")</p>
                             <h3>@(conexionParcial.EquipoRemoto ?? "No identificado")</h3>
