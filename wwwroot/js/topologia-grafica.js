@@ -24,6 +24,13 @@
             if (!contenidoImpresion) return;
 
             contenidoImpresion.style.setProperty("--escala-impresion", "1");
+            if (hoja.classList.contains("hoja-impresion-switch")) {
+                // cantidadConexiones determina cuántas columnas permiten usar mejor la hoja sin encoger todo el contenido.
+                const cantidadConexiones = hoja.querySelectorAll(".ficha-conexion").length;
+                // columnasImpresion aumenta columnas solo cuando la cantidad de tarjetas lo necesita.
+                const columnasImpresion = cantidadConexiones > 24 ? 4 : cantidadConexiones > 12 ? 3 : 2;
+                contenidoImpresion.style.setProperty("--columnas-enlaces-impresion", String(columnasImpresion));
+            }
             // anchoContenido mide el contenido a escala normal para calcular el ancho que requiere.
             const anchoContenido = contenidoImpresion.scrollWidth;
             // altoContenido mide todo el contenido visible en modo impresión.
@@ -50,6 +57,7 @@
             // contenidoImpresion recupera su tamaño de pantalla después del diálogo de impresión.
             const contenidoImpresion = hoja.querySelector("[data-contenido-impresion]");
             contenidoImpresion?.style.removeProperty("--escala-impresion");
+            contenidoImpresion?.style.removeProperty("--columnas-enlaces-impresion");
         });
     };
 
@@ -134,6 +142,68 @@
         return;
     }
 
+    // panelMapa contiene controles y lienzo para maximizar la navegación en cualquier capa.
+    const panelMapa = mapaTopologia.closest(".panel-grafico-topologia");
+    // botonesMaximizarMapa activa la pantalla completa desde el mapa actual.
+    const botonesMaximizarMapa = Array.from(document.querySelectorAll("[data-maximizar-mapa]"));
+
+    /**
+     * Sincroniza texto y estado accesible del control de maximizado.
+     * Cambiar los estados considerados modifica cuándo se ofrece restaurar la ventana.
+     */
+    const actualizarControlMaximizar = () => {
+        // mapaMaximizado mantiene coherente el control con pantalla completa y modo alternativo.
+        const mapaMaximizado = Boolean(panelMapa)
+            && (document.fullscreenElement === panelMapa || panelMapa.classList.contains("mapa-ampliado"));
+        // botonMaximizar actualiza cada control disponible para el mismo mapa.
+        botonesMaximizarMapa.forEach(botonMaximizar => {
+            // etiquetaControl conserva el nombre accesible sincronizado con la acción disponible.
+            const etiquetaControl = mapaMaximizado ? "Restaurar mapa" : "Maximizar mapa";
+            botonMaximizar.textContent = etiquetaControl;
+            botonMaximizar.setAttribute("aria-label", etiquetaControl);
+            botonMaximizar.setAttribute("aria-pressed", mapaMaximizado ? "true" : "false");
+        });
+    };
+
+    /**
+     * Maximiza el panel para recorrer el mapa y permite volver a la página con el mismo botón.
+     * Cambiar el panel objetivo modifica el área que ocupa la pantalla completa.
+     */
+    const alternarMaximizacionMapa = async () => {
+        if (!panelMapa) return;
+        const mapaYaAmpliado = document.fullscreenElement === panelMapa
+            || panelMapa.classList.contains("mapa-ampliado");
+        if (mapaYaAmpliado) {
+            if (document.fullscreenElement === panelMapa) {
+                await document.exitFullscreen?.();
+            } else {
+                panelMapa.classList.remove("mapa-ampliado");
+                document.body.classList.remove("mapa-a-pantalla-completa");
+            }
+        } else if (typeof panelMapa.requestFullscreen === "function") {
+            try {
+                await panelMapa.requestFullscreen();
+            } catch {
+                panelMapa.classList.add("mapa-ampliado");
+                document.body.classList.add("mapa-a-pantalla-completa");
+            }
+        } else {
+            panelMapa.classList.add("mapa-ampliado");
+            document.body.classList.add("mapa-a-pantalla-completa");
+        }
+        actualizarControlMaximizar();
+        window.requestAnimationFrame(() => dibujarEnlaces());
+    };
+
+    botonesMaximizarMapa.forEach(botonMaximizar => {
+        // botonMaximizar inicia y restaura el panel completo sin perder la capa seleccionada.
+        botonMaximizar.addEventListener("click", () => alternarMaximizacionMapa());
+    });
+    document.addEventListener("fullscreenchange", () => {
+        actualizarControlMaximizar();
+        window.requestAnimationFrame(() => dibujarEnlaces());
+    });
+
     // capaEnlaces aloja las líneas que se recalculan cuando cambia la distribución visual.
     const capaEnlaces = mapaTopologia.querySelector("[data-capa-enlaces]");
     // nodosTopologia son las fichas físicas visibles y filtrables.
@@ -208,6 +278,8 @@
         capaEnlaces.setAttribute("viewBox", `0 0 ${anchoMapa} ${altoMapa}`);
         capaEnlaces.setAttribute("width", anchoMapa);
         capaEnlaces.setAttribute("height", altoMapa);
+        capaEnlaces.style.width = `${anchoMapa}px`;
+        capaEnlaces.style.height = `${altoMapa}px`;
         capaEnlaces.replaceChildren();
 
         // nodosPorId resuelve IDs relacionales sin construir selectores con valores externos.
@@ -229,12 +301,12 @@
             const rectanguloOrigen = nodoOrigen.getBoundingClientRect();
             const rectanguloDestino = nodoDestino.getBoundingClientRect();
             const centroOrigen = {
-                x: rectanguloOrigen.left + rectanguloOrigen.width / 2 - rectanguloMapa.left,
-                y: rectanguloOrigen.top + rectanguloOrigen.height / 2 - rectanguloMapa.top
+                x: rectanguloOrigen.left + rectanguloOrigen.width / 2 - rectanguloMapa.left + mapaTopologia.scrollLeft,
+                y: rectanguloOrigen.top + rectanguloOrigen.height / 2 - rectanguloMapa.top + mapaTopologia.scrollTop
             };
             const centroDestino = {
-                x: rectanguloDestino.left + rectanguloDestino.width / 2 - rectanguloMapa.left,
-                y: rectanguloDestino.top + rectanguloDestino.height / 2 - rectanguloMapa.top
+                x: rectanguloDestino.left + rectanguloDestino.width / 2 - rectanguloMapa.left + mapaTopologia.scrollLeft,
+                y: rectanguloDestino.top + rectanguloDestino.height / 2 - rectanguloMapa.top + mapaTopologia.scrollTop
             };
             const clavePar = [enlace.dataset.equipoOrigen, enlace.dataset.equipoDestino].sort().join("-");
             const repeticion = repeticionesPorPar.get(clavePar) || 0;
@@ -399,6 +471,7 @@
     // observadorMapa redibuja las conexiones cuando cambia el tamaño de la cuadrícula.
     const observadorMapa = new ResizeObserver(dibujarEnlaces);
     observadorMapa.observe(mapaTopologia);
+    if (panelMapa) observadorMapa.observe(panelMapa);
     window.addEventListener("resize", dibujarEnlaces);
     actualizarFiltros();
 })();
