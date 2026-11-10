@@ -68,7 +68,7 @@
                 var ipRemota = esOrigen ? enlace.IpEquipoDestino : enlace.IpEquipoOrigen;
                 var puertoLocal = esOrigen ? enlace.PuertoOrigen : enlace.PuertoDestino;
                 var puertoRemoto = esOrigen ? enlace.PuertoDestino : enlace.PuertoOrigen;
-                <article class="ficha-conexion ficha-enlace">
+                <article class="ficha-conexion ficha-enlace" data-puerto-local="@puertoLocal">
                     <div class="trayecto-enlace">
                         <div class="extremo-enlace">
                             <p class="identificador-secundario">ESTE SWITCH</p>
@@ -117,7 +117,7 @@
                 // puertoLocal busca la etiqueta real correspondiente a la relación almacenada.
                 var puertoLocal = Model.Dispositivo.Puertos.FirstOrDefault(puerto =>
                     puerto.IdentificadorInterfaz == conexionParcial.IdentificadorPuertoLocal);
-                <article class="ficha-conexion ficha-enlace">
+                <article class="ficha-conexion ficha-enlace" data-puerto-local="@(puertoLocal?.Etiqueta ?? "Puerto local")">
                     <div class="trayecto-enlace">
                         <div class="extremo-enlace">
                             <p class="identificador-secundario">PUERTO LOCAL</p>
