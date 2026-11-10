@@ -108,13 +108,33 @@ public static class CatalogoVisualesDispositivos
             }
         }
 
-        foreach (var interfazSinPosicion in interfacesEquipo.Where(interfaz => !interfacesUsadas.Contains(interfaz.Identificador)))
+        // interfacesSinPosicion ordena números como 2 antes de 10 y conserva después las etiquetas no numéricas.
+        var interfacesSinPosicion = interfacesEquipo
+            .Where(interfaz => !interfacesUsadas.Contains(interfaz.Identificador))
+            .OrderBy(interfaz => ObtenerOrdenEtiquetaPuerto(interfaz.EtiquetaPuerto))
+            .ThenBy(interfaz => interfaz.EtiquetaPuerto, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var interfazSinPosicion in interfacesSinPosicion)
         {
             resultadoPuertos.Add(CrearPuertoVisual(interfazSinPosicion, interfazSinPosicion.EtiquetaPuerto,
                 interfazSinPosicion.TipoInterfaz, identificadoresEnlazados, destinosPorInterfaz));
         }
 
         return resultadoPuertos;
+    }
+
+    /// <summary>
+    /// Obtiene el primer número de una etiqueta para ordenar puertos de manera natural.
+    /// </summary>
+    /// <param name="etiquetaPuerto">Texto del puerto; cambiarlo puede modificar su posición en el listado.</param>
+    /// <returns>Número encontrado o máximo valor para etiquetas sin número.</returns>
+    private static int ObtenerOrdenEtiquetaPuerto(string etiquetaPuerto)
+    {
+        // digitosPuerto conserva el primer grupo numérico encontrado sin depender de un formato único.
+        var digitosPuerto = new string(etiquetaPuerto.SkipWhile(caracter => !char.IsDigit(caracter))
+            .TakeWhile(char.IsDigit).ToArray());
+        // numeroPuerto coloca al final las etiquetas que no incluyen dígitos.
+        return int.TryParse(digitosPuerto, out var numeroPuerto) ? numeroPuerto : int.MaxValue;
     }
 
     /// <summary>
