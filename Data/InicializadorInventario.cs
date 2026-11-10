@@ -306,6 +306,9 @@ public static class InicializadorInventario
         // AplicarRolesYTiposV3 corrige la función y el tipo de los switches según el Visio y evita la ficha duplicada de Mesa.
         await AplicarRolesYTiposV3Async(contextoInventario, cambiosAuditados, usuarioImportacion, cancelacion);
 
+        // ImportarPuertosAreasV3 agrega solo posiciones ausentes de las trece tablas de área y conserva cada fuente.
+        await ImportarPuertosAreasV3Async(contextoInventario, cambiosAuditados, usuarioImportacion, cancelacion);
+
         // datoMac recorre los pares documentados; cambiar el catálogo cambia qué MAC pueden completarse.
         foreach (var datoMac in datosMacConfirmados)
         {
@@ -434,6 +437,206 @@ public static class InicializadorInventario
         }
 
         await transaccionImportacion.CommitAsync(cancelacion);
+    }
+
+    /// <summary>
+    /// Importa puertos de área y destinos escritos en el V3 sin inferir tipos físicos ni extremos remotos.
+    /// </summary>
+    /// <param name="contextoInventario">Base documental; cambiarla determina dónde se agregan las posiciones.</param>
+    /// <param name="cambiosAuditados">Eventos de auditoría; cambiar la lista modifica qué altas quedan registradas.</param>
+    /// <param name="usuarioImportacion">Origen del alta; cambiarlo modifica el autor visible del historial.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla detiene las consultas y escrituras.</param>
+    private static async Task ImportarPuertosAreasV3Async(
+        InventarioDbContext contextoInventario,
+        List<EventoModificacion> cambiosAuditados,
+        string usuarioImportacion,
+        CancellationToken cancelacion)
+    {
+        // filasV3 contiene filas literales de las trece hojas de área seleccionadas; cambiar el catálogo altera la carga.
+        var filasV3 = CatalogoPuertosAreasV3.ObtenerFilas();
+        // equiposRegistrados permite mapear las etiquetas del catálogo a fichas existentes sin crear equipos remotos.
+        var equiposRegistrados = await contextoInventario.Equipos.AsNoTracking().ToListAsync(cancelacion);
+        // equiposPorNombre resuelve nombres canónicos ignorando mayúsculas; cambiarlo modifica la asignación de hojas.
+        var equiposPorNombre = equiposRegistrados.ToDictionary(
+            equipo => equipo.Nombre.Trim(), StringComparer.OrdinalIgnoreCase);
+        // interfacesRegistradas permite conservar puertos que ya existen y evitar duplicados al reiniciar.
+        var interfacesRegistradas = await contextoInventario.InterfacesEquipo.ToListAsync(cancelacion);
+        // interfacesPorClave identifica una interfaz por switch y etiqueta local.
+        var interfacesPorClave = interfacesRegistradas.ToDictionary(
+            interfaz => (interfaz.IdentificadorEquipo, NormalizarEtiquetaPuertoV3(interfaz.EtiquetaPuerto)));
+        // interfacesNuevas agrupa únicamente posiciones que aún no existen en SQLite.
+        var interfacesNuevas = new List<InterfazEquipo>();
+
+        foreach (var filaPuerto in filasV3)
+        {
+            // equipoLocal resuelve la ficha de switch declarada por la página y no crea un propietario supuesto.
+            if (!equiposPorNombre.TryGetValue(filaPuerto.EquipoLocal.Trim(), out var equipoLocal))
+                continue;
+            // etiquetaPuertoNormalizada hace coincidir el número del puerto tras quitar espacios externos.
+            var etiquetaPuertoNormalizada = NormalizarEtiquetaPuertoV3(filaPuerto.EtiquetaPuerto);
+            // claveInterfaz mantiene juntas la ficha local y su etiqueta exacta.
+            var claveInterfaz = (equipoLocal.Identificador, etiquetaPuertoNormalizada);
+            if (interfacesPorClave.ContainsKey(claveInterfaz))
+                continue;
+
+            // filaLibre y filaDesconocida conservan estados explícitos sin tratarlos como conexión de usuario.
+            var filaLibre = string.Equals(filaPuerto.Destino, "LIBRE", StringComparison.OrdinalIgnoreCase);
+            var filaDesconocida = string.Equals(filaPuerto.Destino, "DESCONOCIDO", StringComparison.OrdinalIgnoreCase);
+            // destinoEsSwitch reserva las relaciones entre switches para revisión de rack/enlace.
+            var destinoEsSwitch = !filaLibre && !filaDesconocida && EsDestinoSwitchV3(filaPuerto.Destino);
+            // estadoFuente documenta si el texto de la fila está vigente o requiere comprobar un uplink.
+            var estadoFuente = destinoEsSwitch ? "A verificar" : "Confirmado";
+            // observacionFuente mantiene referencia también para puertos libres o con destino desconocido.
+            var observacionFuente = $"Fuente V3: {filaPuerto.Pagina} · {filaPuerto.Libro} · fila {filaPuerto.FilaFuente}; valor: {filaPuerto.Destino}.";
+            // interfazNueva registra solo la etiqueta y el estado fuente; no presume RJ45, SFP ni velocidad.
+            var interfazNueva = new InterfazEquipo
+            {
+                IdentificadorEquipo = equipoLocal.Identificador,
+                EtiquetaPuerto = etiquetaPuertoNormalizada,
+                TipoInterfaz = "No confirmado",
+                EstadoDatos = estadoFuente,
+                EstadoUso = filaLibre ? "Libre confirmado" : "Desconocido",
+                Observaciones = observacionFuente
+            };
+            interfacesNuevas.Add(interfazNueva);
+            interfacesPorClave.Add(claveInterfaz, interfazNueva);
+
+            // eventoInterfaz deja rastro del puerto y su fila fuente sin asignar fecha de revisión no documentada.
+            cambiosAuditados.Add(new EventoModificacion
+            {
+                IdentificadorEquipo = equipoLocal.Identificador,
+                NombreEquipo = equipoLocal.Nombre,
+                NombreUsuario = usuarioImportacion,
+                FechaUtc = DateTime.UtcNow,
+                Campo = "Puerto V3 incorporado",
+                ValorNuevo = $"{etiquetaPuertoNormalizada} · {estadoFuente} · {filaPuerto.Pagina}/{filaPuerto.Libro}/fila {filaPuerto.FilaFuente}"
+            });
+        }
+
+        if (interfacesNuevas.Count > 0)
+        {
+            // SaveChanges asigna IDs locales antes de crear las relaciones opcionales.
+            await contextoInventario.InterfacesEquipo.AddRangeAsync(interfacesNuevas, cancelacion);
+            await contextoInventario.SaveChangesAsync(cancelacion);
+        }
+
+        // enlacesExistentes carga extremos ya completos para no duplicar ni contradecir una relación guardada.
+        var enlacesExistentes = await contextoInventario.EnlacesFisicos.AsNoTracking()
+            .Select(enlace => new { enlace.IdentificadorPuertoOrigen, enlace.IdentificadorPuertoDestino })
+            .ToListAsync(cancelacion);
+        // puertosConEnlaceCompleto impide crear un segundo registro parcial en un extremo ya vinculado.
+        var puertosConEnlaceCompleto = enlacesExistentes
+            .SelectMany(enlace => new[] { enlace.IdentificadorPuertoOrigen, enlace.IdentificadorPuertoDestino })
+            .ToHashSet();
+        // relacionesExistentes evita repetir vínculos parciales cuando se reinicia la aplicación.
+        var relacionesExistentes = await contextoInventario.ConexionesDocumentadas.AsNoTracking()
+            .Select(relacion => relacion.IdentificadorPuertoLocal)
+            .ToListAsync(cancelacion);
+        // puertosConRelacionParcial reserva los extremos documentales que ya tienen fila remota opcional.
+        var puertosConRelacionParcial = relacionesExistentes.ToHashSet();
+        // relacionesNuevas agrupa solo datos de destino escritos en las tablas del Visio.
+        var relacionesNuevas = new List<ConexionDocumentada>();
+
+        foreach (var filaPuerto in filasV3)
+        {
+            // filaLibre y filaDesconocida no describen un equipo remoto y no generan una relación.
+            if (string.Equals(filaPuerto.Destino, "LIBRE", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(filaPuerto.Destino, "DESCONOCIDO", StringComparison.OrdinalIgnoreCase))
+                continue;
+            // equipoLocal resuelve la interfaz de origen sin buscar equipos por proximidad o nombre remoto.
+            if (!equiposPorNombre.TryGetValue(filaPuerto.EquipoLocal.Trim(), out var equipoLocal))
+                continue;
+            // claveInterfaz encuentra la etiqueta concreta guardada para esta fila.
+            var claveInterfaz = (equipoLocal.Identificador, NormalizarEtiquetaPuertoV3(filaPuerto.EtiquetaPuerto));
+            if (!interfacesPorClave.TryGetValue(claveInterfaz, out var interfazLocal))
+                continue;
+            // interfazLocal.EstadoUso protege una corrección manual de puerto libre frente a una fuente antigua en conflicto.
+            if (puertosConEnlaceCompleto.Contains(interfazLocal.Identificador)
+                || puertosConRelacionParcial.Contains(interfazLocal.Identificador)
+                || interfazLocal.EstadoUso == "Libre confirmado")
+                continue;
+
+            // ipRemota conserva el texto original salvo la corrección expresa del ProCurve confirmada por el usuario.
+            var ipRemota = filaPuerto.IpRemota?.Trim();
+            // observacionesRelacion registra la discrepancia de fuente cuando se aplica la IP canónica confirmada.
+            string? observacionesRelacion = null;
+            var esFilaProCurveCorregida = filaPuerto.EquipoLocal == "Puerta Agrimensura"
+                && filaPuerto.EtiquetaPuerto == "1"
+                && filaPuerto.Destino.Contains("ProCurve", StringComparison.OrdinalIgnoreCase)
+                && ipRemota == "10.0.1.0";
+            if (esFilaProCurveCorregida)
+            {
+                ipRemota = "10.0.1.1";
+                observacionesRelacion = "La fila del Visio muestra 10.0.1.0; el usuario confirmó 10.0.1.1. El enlace queda a verificar.";
+            }
+
+            // destinoEsSwitch evita tratar uplinks pendientes como conexiones confirmadas a puestos.
+            var destinoEsSwitch = EsDestinoSwitchV3(filaPuerto.Destino);
+            // enlaceMesaConfirmado aplica la aclaración directa del usuario sobre el principal de Mesa de Entradas.
+            var enlaceMesaConfirmado = filaPuerto.EquipoLocal == "Mesa de Entrada (No principal)"
+                && filaPuerto.EtiquetaPuerto == "24"
+                && filaPuerto.Destino.Contains("Mentrada", StringComparison.OrdinalIgnoreCase)
+                && ipRemota == "192.168.1.1";
+            // estadoRelacion confirma las relaciones de usuario y deja uplinks como pendientes, salvo la aclaración de Mesa.
+            var estadoRelacion = destinoEsSwitch && !enlaceMesaConfirmado ? "A verificar" : "Confirmado";
+            if (destinoEsSwitch && !enlaceMesaConfirmado && observacionesRelacion is null)
+                observacionesRelacion = "La tabla identifica otro switch; verificar la vigencia física del enlace y su extremo remoto.";
+
+            // nuevaRelacion conserva el extremo local exacto y deja sin completar el puerto remoto no documentado.
+            var nuevaRelacion = new ConexionDocumentada
+            {
+                IdentificadorPuertoLocal = interfazLocal.Identificador,
+                EquipoRemoto = filaPuerto.Destino.Trim(),
+                IpRemota = ipRemota,
+                PuertoRemoto = null,
+                Medio = "No confirmado",
+                EstadoDatos = estadoRelacion,
+                FuentePagina = filaPuerto.Pagina,
+                FuenteLibro = filaPuerto.Libro,
+                FuenteFila = filaPuerto.FilaFuente,
+                Observaciones = observacionesRelacion
+            };
+            relacionesNuevas.Add(nuevaRelacion);
+            puertosConRelacionParcial.Add(interfazLocal.Identificador);
+
+            // eventoRelacion registra el destino literal y su nivel de revisión desde la hoja origen.
+            cambiosAuditados.Add(new EventoModificacion
+            {
+                IdentificadorEquipo = equipoLocal.Identificador,
+                NombreEquipo = equipoLocal.Nombre,
+                NombreUsuario = usuarioImportacion,
+                FechaUtc = DateTime.UtcNow,
+                Campo = "Conexión V3 incorporada",
+                ValorNuevo = $"{interfazLocal.EtiquetaPuerto} → {nuevaRelacion.EquipoRemoto} · {nuevaRelacion.IpRemota ?? "IP no indicada"} · {estadoRelacion} · {filaPuerto.Pagina}/{filaPuerto.Libro}/fila {filaPuerto.FilaFuente}"
+            });
+        }
+
+        if (relacionesNuevas.Count > 0)
+            await contextoInventario.ConexionesDocumentadas.AddRangeAsync(relacionesNuevas, cancelacion);
+    }
+
+    /// <summary>
+    /// Normaliza etiquetas de puerto numéricas conservando su representación y evitando diferencias por espacios.
+    /// </summary>
+    /// <param name="etiqueta">Etiqueta V3; cambiarla altera la clave con la que se busca la interfaz.</param>
+    /// <returns>Etiqueta sin espacios externos.</returns>
+    private static string NormalizarEtiquetaPuertoV3(string etiqueta)
+    {
+        // etiquetaNormalizada conserva los ceros y separadores del Visio y recorta solo espacios externos.
+        var etiquetaNormalizada = etiqueta.Trim();
+        return etiquetaNormalizada;
+    }
+
+    /// <summary>
+    /// Identifica rótulos que nombran un switch para dejarlos pendientes de revisión física.
+    /// </summary>
+    /// <param name="destino">Rótulo remoto; cambiarlo puede clasificar una relación como uplink.</param>
+    /// <returns>Verdadero cuando el texto hace referencia explícita a una familia o modelo de switch.</returns>
+    private static bool EsDestinoSwitchV3(string destino)
+    {
+        // terminosSwitch reúne rótulos del Visio que identifican equipos de switching sin nombre uniforme.
+        var terminosSwitch = new[] { "switch", "swtich", "procurve", "s4148", "1920", "3com", "aruba" };
+        return terminosSwitch.Any(termino => destino.Contains(termino, StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>
