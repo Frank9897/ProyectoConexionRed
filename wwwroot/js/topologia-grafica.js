@@ -116,6 +116,37 @@
     };
 
     /**
+     * Decide si una relación pertenece a la perspectiva activa del mapa.
+     * @param {HTMLElement} enlace Relación documental; su capa asignada decide si se dibuja.
+     * @returns {boolean} Verdadero para todas las relaciones físicas o para la capa seleccionada.
+     */
+    const perteneceALaCapaActual = enlace =>
+        modoCapaActual === "fisica" || enlace.dataset.capaRelacional === modoCapaActual;
+
+    /**
+     * Omite una relación parcial cuando ya existe un enlace completo con el mismo puerto local y equipos.
+     * @param {HTMLElement} relacion Relación parcial candidata a dibujar.
+     * @returns {boolean} Verdadero si un registro completo ya representa ese mismo enlace.
+     */
+    const esParcialDuplicada = relacion => {
+        if (relacion.dataset.relacionParcial !== "true") {
+            return false;
+        }
+        return datosEnlaces.some(enlaceCompleto => {
+            if (enlaceCompleto.dataset.relacionParcial === "true") {
+                return false;
+            }
+            const mismosEquipos = enlaceCompleto.dataset.equipoOrigen === relacion.dataset.equipoOrigen
+                && enlaceCompleto.dataset.equipoDestino === relacion.dataset.equipoDestino
+                || enlaceCompleto.dataset.equipoOrigen === relacion.dataset.equipoDestino
+                && enlaceCompleto.dataset.equipoDestino === relacion.dataset.equipoOrigen;
+            const mismoPuertoLocal = enlaceCompleto.dataset.puertoOrigen === relacion.dataset.puertoOrigen
+                || enlaceCompleto.dataset.puertoDestino === relacion.dataset.puertoOrigen;
+            return mismosEquipos && mismoPuertoLocal;
+        });
+    };
+
+    /**
      * Recalcula las líneas entre centros de nodos, sin crear relaciones nuevas.
      */
     const dibujarEnlaces = () => {
@@ -134,6 +165,9 @@
         const repeticionesPorPar = new Map();
 
         datosEnlaces.forEach(enlace => {
+            if (!perteneceALaCapaActual(enlace) || esParcialDuplicada(enlace)) {
+                return;
+            }
             const nodoOrigen = nodosPorId.get(enlace.dataset.equipoOrigen);
             const nodoDestino = nodosPorId.get(enlace.dataset.equipoDestino);
             if (!nodoOrigen || !nodoDestino || nodoOrigen.hidden || nodoDestino.hidden) {
@@ -158,9 +192,15 @@
             // rutaEnlace es una curva entre los bordes de las tarjetas, sin marcar una dirección de tráfico.
             const rutaEnlace = document.createElementNS(espacioSvg, "path");
             rutaEnlace.setAttribute("d", crearRuta(centroOrigen, centroDestino, rectanguloOrigen, rectanguloDestino, rectanguloMapa, repeticion));
-            rutaEnlace.setAttribute("class", enlace.dataset.confirmado === "true"
-                ? "enlace-topologia enlace-confirmado"
-                : "enlace-topologia enlace-pendiente");
+            // switchSinCotejoReciproco señala un uplink confirmado cuya tabla opuesta no permite elegir un puerto único.
+            const switchSinCotejoReciproco = enlace.dataset.relacionParcial === "true"
+                && enlace.dataset.capaRelacional === "switching"
+                && enlace.dataset.cotejoReciproco !== "true";
+            rutaEnlace.setAttribute("class", switchSinCotejoReciproco
+                ? "enlace-topologia enlace-parcial-switch"
+                : enlace.dataset.confirmado === "true"
+                    ? "enlace-topologia enlace-confirmado"
+                    : "enlace-topologia enlace-pendiente");
             rutaEnlace.setAttribute("tabindex", "0");
             rutaEnlace.setAttribute("role", "img");
             rutaEnlace.setAttribute("aria-label", enlace.dataset.etiqueta);
@@ -230,24 +270,12 @@
             .map(nodo => nodo.dataset.identificadorDispositivo));
 
         if (modoCapaActual === "acceso") {
-            // enlace representa solo una relación guardada que puede agregar un switch a Acceso.
-            datosEnlaces.forEach(enlace => {
-                // equipoOrigen y equipoDestino solo agregan el switch vecino si el enlace ya está registrado.
-                const equipoOrigen = nodosPorId.get(enlace.dataset.equipoOrigen);
-                const equipoDestino = nodosPorId.get(enlace.dataset.equipoDestino);
-                const origenEsPuesto = normalizarTexto(equipoOrigen?.dataset.dispositivoTipo || "").includes("puesto");
-                const destinoEsPuesto = normalizarTexto(equipoDestino?.dataset.dispositivoTipo || "").includes("puesto");
-                // origenEsSwitch decide si el primer extremo puede entrar como switch vecino.
-                const origenEsSwitch = normalizarTexto(equipoOrigen?.dataset.dispositivoTipo || "").includes("switch");
-                // destinoEsSwitch decide si el segundo extremo puede entrar como switch vecino.
-                const destinoEsSwitch = normalizarTexto(equipoDestino?.dataset.dispositivoTipo || "").includes("switch");
-
-                if (origenEsPuesto && destinoEsSwitch) {
-                    identificadoresAcceso.add(enlace.dataset.equipoDestino);
-                } else if (destinoEsPuesto && origenEsSwitch) {
+            // enlace recorre vínculos de switch a equipo final para incluir ambos nodos en Acceso.
+            datosEnlaces.filter(enlace => enlace.dataset.capaRelacional === "acceso")
+                .forEach(enlace => {
                     identificadoresAcceso.add(enlace.dataset.equipoOrigen);
-                }
-            });
+                    identificadoresAcceso.add(enlace.dataset.equipoDestino);
+                });
         }
 
         nodosTopologia.forEach(nodo => {
@@ -288,7 +316,8 @@
             // origen y destino permiten contar solo aristas con ambos nodos visibles.
             const origen = nodosPorIdentificador(enlace.dataset.equipoOrigen);
             const destino = nodosPorIdentificador(enlace.dataset.equipoDestino);
-            return origen && destino && !origen.hidden && !destino.hidden;
+            return perteneceALaCapaActual(enlace) && !esParcialDuplicada(enlace)
+                && origen && destino && !origen.hidden && !destino.hidden;
         }).length;
         if (resumenMapa) {
             resumenMapa.textContent = `${equiposVisibles} equipos · ${enlacesVisibles} enlaces`;
