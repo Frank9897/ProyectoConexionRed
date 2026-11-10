@@ -9,6 +9,8 @@
     var cantidadDesconocidos = Model.Dispositivo.Puertos.Count(puerto => puerto.ClaseVisual == "puerto-desconocido");
 }
 
+<div class="hoja-impresion hoja-impresion-switch" data-hoja-impresion>
+<div class="contenido-hoja-impresion" data-contenido-impresion>
 <section class="encabezado-pagina encabezado-topologia">
     <div>
         <p class="sobrelinea">DETALLE DE SWITCH · @Model.Dispositivo.Area</p>
@@ -17,7 +19,7 @@
     </div>
     <div class="acciones-topologia">
         <a class="boton boton-secundario" asp-controller="Conexiones" asp-action="CrearInterfaz" asp-route-identificadorEquipo="@Model.Dispositivo.Identificador">Agregar puerto</a>
-        <button class="boton boton-secundario" type="button" data-imprimir-topologia>Imprimir switch</button>
+        <button class="boton boton-secundario" type="button" data-imprimir-topologia title="Imprime el detalle en una hoja A4 horizontal">Imprimir A4</button>
         <a class="boton boton-secundario" asp-action="Index">← Topología</a>
     </div>
 </section>
@@ -53,13 +55,7 @@
         <div><p class="sobrelinea">CONEXIONES REGISTRADAS</p><h2>Enlaces de @Model.Dispositivo.Nombre</h2></div>
         <span class="contador-enlaces">@Model.Enlaces.Count completos</span>
     </div>
-    @if (Model.Enlaces.Count == 0)
-    {
-        <p class="aclaracion-topologia-grafica">No hay enlaces guardados con ambos extremos identificados. No se inventan puertos remotos ni medios.</p>
-    }
-    else
-    {
-        <div class="lista-fichas-conexion">
+    <div class="lista-fichas-conexion">
             @* enlace recorre cada conexión de dos extremos documentada para el switch actual. *@
             @foreach (var enlace in Model.Enlaces)
             {
@@ -100,8 +96,7 @@
                     </details>
                 </article>
             }
-        </div>
-    }
+    </div>
 </section>
 }
 
@@ -157,5 +152,8 @@
         </div>
     </section>
 }
+
+</div>
+</div>
 
 <script src="~/js/topologia-grafica.js" asp-append-version="true"></script>
