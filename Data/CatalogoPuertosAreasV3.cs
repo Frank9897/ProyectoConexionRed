@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace ProyectoConexionRed.Web.Data;
 
 /// <summary>
-/// Mantiene las posiciones documentadas en trece hojas de switches de área del V3.
+/// Mantiene las posiciones documentadas en hojas de switches de área del V3.
 /// </summary>
 internal static class CatalogoPuertosAreasV3
 {
@@ -2817,6 +2817,78 @@ internal static class CatalogoPuertosAreasV3
     "EtiquetaPuerto": "24",
     "Destino": "SWITCH HP1920 (E)",
     "IpRemota": "192.168.1.115"
+  },
+  {
+    "EquipoLocal": "SWITCH DE 8 PUERTOS",
+    "Pagina": "INMUEBLES",
+    "Libro": "Excel16",
+    "FilaFuente": "2",
+    "EtiquetaPuerto": "1",
+    "Destino": "Inmuebles08",
+    "IpRemota": "192.168.0.138"
+  },
+  {
+    "EquipoLocal": "SWITCH DE 8 PUERTOS",
+    "Pagina": "INMUEBLES",
+    "Libro": "Excel16",
+    "FilaFuente": "3",
+    "EtiquetaPuerto": "2",
+    "Destino": "Inmuebles01",
+    "IpRemota": "192.168.0.51"
+  },
+  {
+    "EquipoLocal": "SWITCH DE 8 PUERTOS",
+    "Pagina": "INMUEBLES",
+    "Libro": "Excel16",
+    "FilaFuente": "4",
+    "EtiquetaPuerto": "3",
+    "Destino": "Inmuebles20",
+    "IpRemota": "192.168.0.145"
+  },
+  {
+    "EquipoLocal": "SWITCH DE 8 PUERTOS",
+    "Pagina": "INMUEBLES",
+    "Libro": "Excel16",
+    "FilaFuente": "5",
+    "EtiquetaPuerto": "4",
+    "Destino": "Inmuebles21",
+    "IpRemota": "192.168.0.129"
+  },
+  {
+    "EquipoLocal": "SWITCH DE 8 PUERTOS",
+    "Pagina": "INMUEBLES",
+    "Libro": "Excel16",
+    "FilaFuente": "6",
+    "EtiquetaPuerto": "5",
+    "Destino": "Inmuebles11",
+    "IpRemota": "192.168.0.173"
+  },
+  {
+    "EquipoLocal": "SWITCH DE 8 PUERTOS",
+    "Pagina": "INMUEBLES",
+    "Libro": "Excel16",
+    "FilaFuente": "7",
+    "EtiquetaPuerto": "6",
+    "Destino": "Inmuebles03",
+    "IpRemota": "192.168.0.64"
+  },
+  {
+    "EquipoLocal": "SWITCH DE 8 PUERTOS",
+    "Pagina": "INMUEBLES",
+    "Libro": "Excel16",
+    "FilaFuente": "8",
+    "EtiquetaPuerto": "7",
+    "Destino": "LIBRE",
+    "IpRemota": null
+  },
+  {
+    "EquipoLocal": "SWITCH DE 8 PUERTOS",
+    "Pagina": "INMUEBLES",
+    "Libro": "Excel16",
+    "FilaFuente": "9",
+    "EtiquetaPuerto": "8",
+    "Destino": "LIBRE",
+    "IpRemota": null
   }
 ]
 """;
