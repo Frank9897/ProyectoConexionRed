@@ -3,9 +3,20 @@
 @{
     // gruposPuertos separa conectores de distinto formato; cambiar el agrupamiento altera las filas del frontal.
     var gruposPuertos = Model.Puertos.GroupBy(puerto => puerto.Tipo).ToList();
+    // puertosOcupados cuenta enlaces completos y relaciones locales guardadas.
+    var puertosOcupados = Model.Puertos.Count(puerto => puerto.ClaseVisual == "puerto-ocupado");
+    // puertosLibres cuenta únicamente posiciones con estado libre confirmado.
+    var puertosLibres = Model.Puertos.Count(puerto => puerto.ClaseVisual == "puerto-libre");
+    // puertosDesconocidos evita interpretar ausencia de registro como puerto libre.
+    var puertosDesconocidos = Model.Puertos.Count(puerto => puerto.ClaseVisual == "puerto-desconocido");
 }
 
 <div class="panel-frontal-switch">
+    <div class="resumen-puertos-frontal" aria-label="Resumen del estado de puertos">
+        <span class="resumen-puerto"><i class="indicador-estado-puerto ocupado" aria-hidden="true"></i><b>@puertosOcupados</b> ocupados</span>
+        <span class="resumen-puerto"><i class="indicador-estado-puerto libre" aria-hidden="true"></i><b>@puertosLibres</b> libres confirmados</span>
+        <span class="resumen-puerto"><i class="indicador-estado-puerto desconocido" aria-hidden="true"></i><b>@puertosDesconocidos</b> desconocidos</span>
+    </div>
     <div class="frontal-switch-scroll">
         <div class="frontal-switch-panel" role="group" aria-label="Frontal de puertos de @Model.Nombre">
             <div class="frontal-switch-cabecera">
