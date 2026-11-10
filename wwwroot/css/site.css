@@ -723,3 +723,32 @@ tbody tr:hover { background: #f7fafb; }
 }
 
 .sin-resultados-conexion { margin: 12px 0 0; padding: 12px 14px; border: 1px dashed #cbd8df; border-radius: 9px; color: #607583; font-size: .84rem; }
+
+
+/* Interacción entre el frontal y sus fichas: el foco y la selección son visibles sin depender del color. */
+.puerto-topologia[data-puerto-topologia] { cursor: pointer; }
+.puerto-topologia[data-puerto-topologia]:focus-visible {
+    outline: 3px solid #f2b544;
+    outline-offset: 3px;
+    z-index: 2;
+}
+.puerto-topologia.puerto-seleccionado {
+    outline: 3px solid #ffca55;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 5px #ffca5538;
+    transform: translateY(-2px);
+}
+.estado-seleccion-puerto {
+    min-height: 1.5em;
+    margin: 9px 0;
+    color: #536c78;
+    font-size: .82rem;
+}
+.ficha-conexion.conexion-relacionada-activa {
+    border-color: #e1a82d;
+    box-shadow: 0 0 0 3px #e1a82d32, 0 8px 22px #172b3a12;
+}
+@media (prefers-reduced-motion: reduce) {
+    .puerto-topologia.puerto-seleccionado { transform: none; }
+    html:focus-within { scroll-behavior: auto; }
+}
