@@ -5,6 +5,68 @@
     const botonesImprimir = Array.from(document.querySelectorAll("[data-imprimir-topologia]"));
     botonesImprimir.forEach(boton => boton.addEventListener("click", () => window.print()));
 
+    // puertosInteractivos reúne las bocas seleccionables del frontal para teclado y ratón.
+    const puertosInteractivos = Array.from(document.querySelectorAll("[data-puerto-topologia]"));
+    // tarjetasConexion reúne fichas con una etiqueta local para enlazarlas con el frontal.
+    const tarjetasConexion = Array.from(document.querySelectorAll("[data-puerto-local]"));
+    // mensajesPuerto muestra el estado y destino del puerto seleccionado sin alterar los datos.
+    const mensajesPuerto = Array.from(document.querySelectorAll("[data-mensaje-puerto]"));
+
+    /**
+     * Activa una boca y, si se solicita, desplaza la vista hasta su ficha de conexión.
+     * @param {HTMLElement} puerto Boca seleccionada; su etiqueta determina las fichas relacionadas.
+     * @param {boolean} desplazarAConexion Si es true, la página baja hasta la primera ficha coincidente.
+     */
+    function seleccionarPuertoTopologia(puerto, desplazarAConexion) {
+        // etiquetaSeleccionada conserva la identificación visible que relaciona la boca y la ficha.
+        const etiquetaSeleccionada = puerto.dataset.etiquetaPuerto;
+        puertosInteractivos.forEach(puertoActual => {
+            const estaSeleccionado = puertoActual === puerto;
+            puertoActual.classList.toggle("puerto-seleccionado", estaSeleccionado);
+            puertoActual.setAttribute("aria-pressed", estaSeleccionado ? "true" : "false");
+        });
+        tarjetasConexion.forEach(tarjeta => {
+            tarjeta.classList.toggle("conexion-relacionada-activa",
+                tarjeta.dataset.puertoLocal === etiquetaSeleccionada);
+        });
+        mensajesPuerto.forEach(mensaje => {
+            mensaje.textContent = etiquetaSeleccionada
+                ? `Puerto ${etiquetaSeleccionada}: ${puerto.dataset.estadoPuerto}. Destino: ${puerto.dataset.destinoPuerto}.`
+                : "Puerto sin etiqueta documentada.";
+        });
+        if (desplazarAConexion) {
+            const tarjetaCoincidente = tarjetasConexion.find(tarjeta =>
+                tarjeta.dataset.puertoLocal === etiquetaSeleccionada);
+            tarjetaCoincidente?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }
+
+    puertosInteractivos.forEach(puerto => {
+        // activarPuerto selecciona el puerto cuando se usa el ratón.
+        puerto.addEventListener("click", () => seleccionarPuertoTopologia(puerto, true));
+        // activarConTeclado habilita Enter y Espacio para quienes navegan sin ratón.
+        puerto.addEventListener("keydown", evento => {
+            if (evento.key === "Enter" || evento.key === " ") {
+                evento.preventDefault();
+                seleccionarPuertoTopologia(puerto, true);
+            }
+        });
+    });
+
+    tarjetasConexion.forEach(tarjeta => {
+        // seleccionarDesdeFicha sincroniza el frontal al pulsar el cuerpo de una conexión.
+        tarjeta.addEventListener("click", evento => {
+            if (evento.target.closest("a, button, summary, input, select, textarea")) {
+                return;
+            }
+            const puertoRelacionado = puertosInteractivos.find(puerto =>
+                puerto.dataset.etiquetaPuerto === tarjeta.dataset.puertoLocal);
+            if (puertoRelacionado) {
+                seleccionarPuertoTopologia(puertoRelacionado, false);
+            }
+        });
+    });
+
     // mapaTopologia contiene los nodos y el SVG superpuesto para las aristas documentales.
     const mapaTopologia = document.querySelector("[data-mapa-topologia]");
     if (!mapaTopologia) {
