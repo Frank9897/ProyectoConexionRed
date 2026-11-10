@@ -151,6 +151,52 @@ public class TopologiaController : Controller
             };
         }).ToList();
 
+        // gruposEquiposFinales reúne endpoints Capa 3 que aparecen en puertos pero aún no tienen ficha propia.
+        var gruposEquiposFinales = relacionesParciales
+            .Where(relacion => relacion.CapaRelacional == "acceso"
+                && !relacion.IdentificadorEquipoRemoto.HasValue
+                && (!string.IsNullOrWhiteSpace(relacion.EquipoRemoto) || !string.IsNullOrWhiteSpace(relacion.IpRemota)))
+            .GroupBy(relacion => $"{NormalizarEtiquetaRelacion(relacion.EquipoRemoto)}|{relacion.IpRemota?.Trim()}",
+                StringComparer.OrdinalIgnoreCase);
+
+        foreach (var grupoEquipoFinal in gruposEquiposFinales)
+        {
+            // relacionRepresentativa aporta el rótulo y la IP originales del grupo documental.
+            var relacionRepresentativa = grupoEquipoFinal.First();
+            // identificadorVisual negativo distingue el nodo dibujado de cualquier ficha guardada en SQLite.
+            var identificadorVisual = -relacionRepresentativa.Identificador;
+            // tipoEquipoFinal permite seleccionar el icono por la clase explícita del nombre documental.
+            var tipoEquipoFinal = ClasificarTipoEquipoFinal(relacionRepresentativa.EquipoRemoto);
+            // equipoLocalUbicado aporta el área del switch sin alterar ni completar el registro de destino.
+            var equipoLocalUbicado = equiposRegistrados.FirstOrDefault(equipo =>
+                equipo.Identificador == relacionRepresentativa.IdentificadorEquipoLocal);
+            // nombreEquipoFinal conserva el nombre escrito o la IP si el rótulo falta.
+            var nombreEquipoFinal = string.IsNullOrWhiteSpace(relacionRepresentativa.EquipoRemoto)
+                ? relacionRepresentativa.IpRemota ?? "Equipo final documentado"
+                : relacionRepresentativa.EquipoRemoto;
+
+            dispositivosDibujados.Add(new DispositivoTopologiaViewModel
+            {
+                Identificador = identificadorVisual,
+                Nombre = nombreEquipoFinal,
+                TipoDispositivo = tipoEquipoFinal,
+                Modelo = null,
+                Area = equipoLocalUbicado?.Area,
+                RolEnArea = tipoEquipoFinal == "PC" ? "Usuario" : "Equipo final",
+                IpAdministracion = relacionRepresentativa.IpRemota,
+                Icono = CatalogoVisualesDispositivos.ObtenerIcono(tipoEquipoFinal, null),
+                EstadoCapacidad = "No aplica",
+                EsSwitch = false,
+                Puertos = []
+            });
+
+            foreach (var relacionAgrupada in grupoEquipoFinal)
+            {
+                // El ID solo enlaza la observación con su nodo de mapa y no crea una ficha en inventario.
+                relacionAgrupada.IdentificadorEquipoRemoto = identificadorVisual;
+            }
+        }
+
         // enlacesDibujables requiere que ambos puertos y equipos existan antes de construir una arista.
         var enlacesDibujables = new List<EnlaceTopologiaViewModel>();
         foreach (var enlace in enlacesRegistrados)
@@ -537,6 +583,39 @@ public class TopologiaController : Controller
     /// </summary>
     /// <param name="etiqueta">Nombre o etiqueta de origen; cambiarlo puede alterar coincidencias de resolución.</param>
     /// <returns>La etiqueta compactada en mayúsculas.</returns>
+    /// <summary>
+    /// Clasifica el icono de un endpoint usando únicamente palabras explícitas del rótulo.
+    /// Cambiar la etiqueta puede seleccionar otra imagen; no modifica el inventario.
+    /// </summary>
+    /// <param name="etiquetaEquipo">Nombre de Visio; cambiarlo puede alterar la familia visual inferida.</param>
+    /// <returns>Familia de icono; los rótulos de usuario sin tipo específico se muestran como PC.</returns>
+    private static string ClasificarTipoEquipoFinal(string? etiquetaEquipo)
+    {
+        // etiquetaNormalizada deja la comparación inmune a mayúsculas, acentos y signos.
+        var etiquetaNormalizada = NormalizarEtiquetaRelacion(etiquetaEquipo);
+
+        if (etiquetaNormalizada.Contains("IMPRESORA", StringComparison.Ordinal)
+            || etiquetaNormalizada.Contains("PRINTER", StringComparison.Ordinal))
+            return "Impresora";
+        if (etiquetaNormalizada.Contains("SERVIDOR", StringComparison.Ordinal)
+            || etiquetaNormalizada.Contains("SERVER", StringComparison.Ordinal)
+            || etiquetaNormalizada.Contains("R770", StringComparison.Ordinal)
+            || etiquetaNormalizada.Contains("R920", StringComparison.Ordinal)
+            || etiquetaNormalizada.Contains("BACKUP", StringComparison.Ordinal)
+            || etiquetaNormalizada.Contains("VIRTUAL", StringComparison.Ordinal))
+            return "Servidor";
+        if (etiquetaNormalizada.Contains("PFSENSE", StringComparison.Ordinal)
+            || etiquetaNormalizada.Contains("FIREWALL", StringComparison.Ordinal))
+            return "Firewall";
+        if (etiquetaNormalizada.Contains("ROUTER", StringComparison.Ordinal)
+            || etiquetaNormalizada.Contains("CISCO", StringComparison.Ordinal))
+            return "Router";
+        if (etiquetaNormalizada.Contains("UPS", StringComparison.Ordinal)
+            || etiquetaNormalizada.Contains("EATON", StringComparison.Ordinal))
+            return "UPS";
+        return "PC";
+    }
+
     private static string NormalizarEtiquetaRelacion(string? etiqueta)
     {
         // claveNormalizada quita espacios y signos para comparar rótulos con diferencias menores de formato.
