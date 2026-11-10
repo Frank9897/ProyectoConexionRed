@@ -61,7 +61,7 @@ public class TopologiaController : Controller
                 IpRemota = relacion.IpRemota,
                 PuertoRemoto = relacion.PuertoRemoto,
                 Medio = relacion.Medio,
-                EstadoDatos = relacion.EstadoDatos,
+                EstadoDatos = string.IsNullOrWhiteSpace(relacion.FuentePagina) ? relacion.EstadoDatos : "Confirmado",
                 FuentePagina = relacion.FuentePagina,
                 FuenteLibro = relacion.FuenteLibro,
                 FuenteFila = relacion.FuenteFila,
@@ -173,9 +173,10 @@ public class TopologiaController : Controller
                 IpEquipoDestino = equipoDestino.IpAdministracion,
                 PuertoDestino = puertoDestino.EtiquetaPuerto,
                 Medio = enlace.Medio,
-                EstadoDatos = enlace.EstadoDatos,
-                Confirmado = string.Equals(enlace.EstadoDatos, "Confirmado", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(enlace.EstadoDatos, "Vigente", StringComparison.OrdinalIgnoreCase),
+                EstadoDatos = string.IsNullOrWhiteSpace(enlace.Fuente) ? enlace.EstadoDatos : "Confirmado",
+                Confirmado = string.IsNullOrWhiteSpace(enlace.Fuente)
+                    ? enlace.EstadoDatos is "Confirmado" or "Vigente"
+                    : true,
                 Fuente = enlace.Fuente,
                 FechaUltimaRevision = enlace.FechaUltimaRevision
             });
@@ -239,6 +240,12 @@ public class TopologiaController : Controller
             .Where(relacion => identificadoresInterfacesSwitch.Contains(relacion.IdentificadorPuertoLocal))
             .OrderBy(relacion => relacion.IdentificadorPuertoLocal)
             .ToListAsync(cancelacion);
+        // conexionParcial recorre registros con origen para respetar la confirmación documental del usuario.
+        foreach (var conexionParcial in conexionesParciales)
+        {
+            if (!string.IsNullOrWhiteSpace(conexionParcial.FuentePagina))
+                conexionParcial.EstadoDatos = "Confirmado";
+        }
         // interfacesPorId resuelve cada extremo guardado sin buscar por nombre o IP.
         var interfacesPorId = await contextoInventario.InterfacesEquipo.AsNoTracking()
             .ToDictionaryAsync(interfaz => interfaz.Identificador, cancelacion);
@@ -269,8 +276,10 @@ public class TopologiaController : Controller
                 EquipoDestino = equipoDestino.Nombre,
                 PuertoDestino = puertoDestino.EtiquetaPuerto,
                 Medio = enlace.Medio,
-                EstadoDatos = enlace.EstadoDatos,
-                Confirmado = enlace.EstadoDatos is "Confirmado" or "Vigente",
+                EstadoDatos = string.IsNullOrWhiteSpace(enlace.Fuente) ? enlace.EstadoDatos : "Confirmado",
+                Confirmado = string.IsNullOrWhiteSpace(enlace.Fuente)
+                    ? enlace.EstadoDatos is "Confirmado" or "Vigente"
+                    : true,
                 Fuente = enlace.Fuente,
                 FechaUltimaRevision = enlace.FechaUltimaRevision
             });
@@ -282,6 +291,8 @@ public class TopologiaController : Controller
         var puertosEnlazados = enlacesRegistrados
             .SelectMany(enlace => new[] { enlace.IdentificadorPuertoOrigen, enlace.IdentificadorPuertoDestino })
             .ToHashSet();
+        // conexionesParciales también marca ocupado el puerto local, igual que en el mapa general.
+        puertosEnlazados.UnionWith(conexionesParciales.Select(conexion => conexion.IdentificadorPuertoLocal));
         // destinosPorInterfaz expone el extremo opuesto sin completar medio o puertos faltantes.
         var destinosPorInterfaz = new Dictionary<int, string>();
         foreach (var enlace in enlacesDelSwitch)
@@ -291,6 +302,18 @@ public class TopologiaController : Controller
                 continue;
             destinosPorInterfaz[puertoOrigen.Identificador] = $"{enlace.EquipoDestino} · {enlace.PuertoDestino}";
             destinosPorInterfaz[puertoDestino.Identificador] = $"{enlace.EquipoOrigen} · {enlace.PuertoOrigen}";
+        }
+        // conexionParcial agrega solo los datos remotos que existan en su registro original.
+        foreach (var conexionParcial in conexionesParciales)
+        {
+            // destinoDocumentado concatena únicamente nombre, IP y puerto que ya están registrados.
+            var destinoDocumentado = string.Join(" · ", new[]
+            {
+                conexionParcial.EquipoRemoto, conexionParcial.IpRemota, conexionParcial.PuertoRemoto
+            }.Where(valor => !string.IsNullOrWhiteSpace(valor)));
+            if (string.IsNullOrWhiteSpace(destinoDocumentado))
+                destinoDocumentado = "Extremo remoto no indicado";
+            destinosPorInterfaz[conexionParcial.IdentificadorPuertoLocal] = destinoDocumentado;
         }
         // capacidadesConocidas permite informar la fuente del conteo sin inventar puertos.
         var capacidadesConocidas = new[]
@@ -302,6 +325,15 @@ public class TopologiaController : Controller
             equipoConsultado.CantidadPuertosQsfpPlus ?? perfilVisual?.CantidadQsfpPlus,
             equipoConsultado.CantidadPuertosQsfp28 ?? perfilVisual?.CantidadQsfp28
         };
+        // hayCapacidadManual detecta cantidades aportadas por técnicos y evita confundirlas con perfil verificado.
+        var hayCapacidadManual = new[]
+        {
+            equipoConsultado.CantidadPuertosRj45, equipoConsultado.CantidadPuertosSfp,
+            equipoConsultado.CantidadPuertosSfpPlus, equipoConsultado.CantidadPuertosQsfp,
+            equipoConsultado.CantidadPuertosQsfpPlus, equipoConsultado.CantidadPuertosQsfp28
+        }.Any(cantidad => cantidad.HasValue);
+        // capacidadCompleta señala si todas las familias de conectores tienen cantidad definida.
+        var capacidadCompleta = capacidadesConocidas.All(cantidad => cantidad.HasValue);
         // puertosDelSwitch usa capacidad y datos guardados para los mismos estados del mapa general.
         var puertosDelSwitch = CatalogoVisualesDispositivos.CrearPuertos(equipoConsultado, interfacesDelSwitch,
             puertosEnlazados, destinosPorInterfaz);
@@ -317,8 +349,9 @@ public class TopologiaController : Controller
             EsSwitch = true,
             Icono = CatalogoVisualesDispositivos.ObtenerIcono("Switch", perfilVisual),
             FuentePerfil = perfilVisual?.Fuente,
-            EstadoCapacidad = capacidadesConocidas.Any(cantidad => cantidad.HasValue)
-                ? perfilVisual is null ? "Capacidad manual documentada" : "Perfil de modelo verificado"
+            EstadoCapacidad = perfilVisual is not null && hayCapacidadManual ? "Perfil verificado con ajustes manuales"
+                : perfilVisual is not null ? "Perfil de modelo verificado"
+                : hayCapacidadManual ? capacidadCompleta ? "Capacidad manual completa" : "Capacidad manual parcial"
                 : "Capacidad sin documentar",
             Puertos = puertosDelSwitch
         };
