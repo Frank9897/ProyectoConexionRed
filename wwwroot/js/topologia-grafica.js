@@ -146,6 +146,19 @@
     const panelMapa = mapaTopologia.closest(".panel-grafico-topologia");
     // botonesMaximizarMapa activa la pantalla completa desde el mapa actual.
     const botonesMaximizarMapa = Array.from(document.querySelectorAll("[data-maximizar-mapa]"));
+    // botonesRestablecerMapa centra el contenido en su origen navegable.
+    const botonesRestablecerMapa = Array.from(document.querySelectorAll("[data-restablecer-mapa]"));
+    // arrastreMapaActivo indica si el puntero está desplazando el espacio vacío del lienzo.
+    let arrastreMapaActivo = false;
+    // posicionPunteroInicialX guarda la coordenada horizontal al iniciar el desplazamiento.
+    let posicionPunteroInicialX = 0;
+    // posicionPunteroInicialY guarda la coordenada vertical al iniciar el desplazamiento.
+    let posicionPunteroInicialY = 0;
+    // desplazamientoMapaInicialX conserva el scroll horizontal previo al arrastre.
+    let desplazamientoMapaInicialX = 0;
+    // desplazamientoMapaInicialY conserva el scroll vertical previo al arrastre.
+    let desplazamientoMapaInicialY = 0;
+
 
     /**
      * Sincroniza texto y estado accesible del control de maximizado.
@@ -199,6 +212,54 @@
         // botonMaximizar inicia y restaura el panel completo sin perder la capa seleccionada.
         botonMaximizar.addEventListener("click", () => alternarMaximizacionMapa());
     });
+    botonesRestablecerMapa.forEach(botonRestablecer => {
+        // botonRestablecer devuelve el viewport al inicio del mapa que siga seleccionado.
+        botonRestablecer.addEventListener("click", () => mapaTopologia.scrollTo({ left: 0, top: 0, behavior: "smooth" }));
+    });
+
+    /**
+     * Inicia el desplazamiento del lienzo al arrastrar su espacio vacío.
+     * Cambiar el conjunto de controles excluidos modifica qué objetos se pueden arrastrar.
+     * @param {PointerEvent} eventoPuntero Evento de puntero; sus coordenadas establecen el origen del movimiento.
+     */
+    const iniciarArrastreMapa = eventoPuntero => {
+        if (eventoPuntero.button !== 0
+            || eventoPuntero.target.closest("[data-dispositivo], button, a, input, select, textarea, summary, path")) return;
+        arrastreMapaActivo = true;
+        posicionPunteroInicialX = eventoPuntero.clientX;
+        posicionPunteroInicialY = eventoPuntero.clientY;
+        desplazamientoMapaInicialX = mapaTopologia.scrollLeft;
+        desplazamientoMapaInicialY = mapaTopologia.scrollTop;
+        mapaTopologia.classList.add("arrastrando-mapa");
+        mapaTopologia.setPointerCapture(eventoPuntero.pointerId);
+    };
+
+    /**
+     * Mueve el viewport con el puntero manteniendo juntas las tarjetas y sus líneas.
+     * Cambiar las coordenadas recibidas desplaza el lienzo en el sentido opuesto.
+     * @param {PointerEvent} eventoPuntero Posición actual del puntero mientras se arrastra el fondo.
+     */
+    const moverMapaArrastrado = eventoPuntero => {
+        if (!arrastreMapaActivo) return;
+        eventoPuntero.preventDefault();
+        mapaTopologia.scrollLeft = desplazamientoMapaInicialX - (eventoPuntero.clientX - posicionPunteroInicialX);
+        mapaTopologia.scrollTop = desplazamientoMapaInicialY - (eventoPuntero.clientY - posicionPunteroInicialY);
+    };
+
+    /**
+     * Finaliza el desplazamiento y devuelve el cursor a su estado normal.
+     * Cambiar el estado activo determina si las siguientes coordenadas siguen moviendo el mapa.
+     */
+    const finalizarArrastreMapa = () => {
+        arrastreMapaActivo = false;
+        mapaTopologia.classList.remove("arrastrando-mapa");
+    };
+
+    mapaTopologia.addEventListener("pointerdown", iniciarArrastreMapa);
+    mapaTopologia.addEventListener("pointermove", moverMapaArrastrado);
+    mapaTopologia.addEventListener("pointerup", finalizarArrastreMapa);
+    mapaTopologia.addEventListener("pointercancel", finalizarArrastreMapa);
+
     document.addEventListener("fullscreenchange", () => {
         actualizarControlMaximizar();
         window.requestAnimationFrame(() => dibujarEnlaces());
@@ -319,11 +380,12 @@
             const switchSinCotejoReciproco = enlace.dataset.relacionParcial === "true"
                 && enlace.dataset.capaRelacional === "switching"
                 && enlace.dataset.cotejoReciproco !== "true";
-            rutaEnlace.setAttribute("class", switchSinCotejoReciproco
-                ? "enlace-topologia enlace-parcial-switch"
-                : enlace.dataset.confirmado === "true"
-                    ? "enlace-topologia enlace-confirmado"
-                    : "enlace-topologia enlace-pendiente");
+            // claseCapaEnlace distingue visualmente acceso, switching y recorrido físico.
+            const claseCapaEnlace = enlace.dataset.capaRelacional === "switching" ? "enlace-capa-2"
+                : enlace.dataset.capaRelacional === "acceso" ? "enlace-capa-3" : "enlace-capa-1";
+            rutaEnlace.setAttribute("class", `enlace-topologia ${claseCapaEnlace} ${switchSinCotejoReciproco
+                ? "enlace-parcial-switch"
+                : enlace.dataset.confirmado === "true" ? "enlace-confirmado" : "enlace-pendiente"}`);
             rutaEnlace.setAttribute("tabindex", "0");
             rutaEnlace.setAttribute("role", "img");
             rutaEnlace.setAttribute("aria-label", enlace.dataset.etiqueta);
