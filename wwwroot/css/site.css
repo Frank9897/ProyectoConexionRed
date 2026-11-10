@@ -818,3 +818,7 @@ tbody tr:hover { background: #f7fafb; }
     opacity: .88;
 }
 .muestra-enlace.enlace-parcial-switch { border-top: 2px dashed #527f98; }
+
+
+/* flecha-confirmada usa el tono normal de un vínculo documentado, aunque falte el puerto opuesto. */
+.flecha-confirmada { color: #548278; }
