@@ -142,131 +142,77 @@
         return;
     }
 
-    // panelMapa contiene controles y lienzo para maximizar la navegación en cualquier capa.
-    const panelMapa = mapaTopologia.closest(".panel-grafico-topologia");
-    // botonesMaximizarMapa activa la pantalla completa desde el mapa actual.
+    // marcoMapa contiene la caja del mapa y es el único elemento que se expande dentro de la página.
+    const marcoMapa = mapaTopologia.closest("[data-marco-mapa]");
+    // lienzoTopologia agrupa tarjetas y SVG para que el recorrido se mantenga alineado al desplazarse.
+    const lienzoTopologia = mapaTopologia.querySelector("[data-lienzo-topologia]");
+    // botonesMaximizarMapa expande o restaura la caja sin activar pantalla completa del navegador.
     const botonesMaximizarMapa = Array.from(document.querySelectorAll("[data-maximizar-mapa]"));
-    // botonesRestablecerMapa centra el contenido en su origen navegable.
+    // botonesRestablecerMapa centra el viewport al inicio del lienzo desplazable.
     const botonesRestablecerMapa = Array.from(document.querySelectorAll("[data-restablecer-mapa]"));
-    // arrastreMapaActivo indica si el puntero está desplazando el espacio vacío del lienzo.
-    let arrastreMapaActivo = false;
-    // posicionPunteroInicialX guarda la coordenada horizontal al iniciar el desplazamiento.
-    let posicionPunteroInicialX = 0;
-    // posicionPunteroInicialY guarda la coordenada vertical al iniciar el desplazamiento.
-    let posicionPunteroInicialY = 0;
-    // desplazamientoMapaInicialX conserva el scroll horizontal previo al arrastre.
-    let desplazamientoMapaInicialX = 0;
-    // desplazamientoMapaInicialY conserva el scroll vertical previo al arrastre.
-    let desplazamientoMapaInicialY = 0;
-
 
     /**
-     * Sincroniza texto y estado accesible del control de maximizado.
-     * Cambiar los estados considerados modifica cuándo se ofrece restaurar la ventana.
+     * Sincroniza el texto del botón con el estado de la caja expandida.
+     * Cambiar la clase del marco modifica si se ofrece maximizar o restaurar.
      */
     const actualizarControlMaximizar = () => {
-        // mapaMaximizado mantiene coherente el control con pantalla completa y modo alternativo.
-        const mapaMaximizado = Boolean(panelMapa)
-            && (document.fullscreenElement === panelMapa || panelMapa.classList.contains("mapa-ampliado"));
-        // botonMaximizar actualiza cada control disponible para el mismo mapa.
+        // mapaExpandido indica que la caja ocupa temporalmente el área visible de la página.
+        const mapaExpandido = Boolean(marcoMapa?.classList.contains("mapa-ampliado"));
+        // botonMaximizar actualiza el control accesible de la caja.
         botonesMaximizarMapa.forEach(botonMaximizar => {
-            // etiquetaControl conserva el nombre accesible sincronizado con la acción disponible.
-            const etiquetaControl = mapaMaximizado ? "Restaurar mapa" : "Maximizar mapa";
+            // etiquetaControl nombra la acción siguiente sin confundirla con F11 del navegador.
+            const etiquetaControl = mapaExpandido ? "Restaurar mapa" : "Maximizar mapa";
             botonMaximizar.textContent = etiquetaControl;
             botonMaximizar.setAttribute("aria-label", etiquetaControl);
-            botonMaximizar.setAttribute("aria-pressed", mapaMaximizado ? "true" : "false");
+            botonMaximizar.setAttribute("aria-pressed", mapaExpandido ? "true" : "false");
         });
     };
 
     /**
-     * Maximiza el panel para recorrer el mapa y permite volver a la página con el mismo botón.
-     * Cambiar el panel objetivo modifica el área que ocupa la pantalla completa.
+     * Restaura la caja en la página y devuelve el desplazamiento al mapa.
+     * Cambiar el marco afecta únicamente la vista, nunca los datos de conexiones.
      */
-    const alternarMaximizacionMapa = async () => {
-        if (!panelMapa) return;
-        const mapaYaAmpliado = document.fullscreenElement === panelMapa
-            || panelMapa.classList.contains("mapa-ampliado");
-        if (mapaYaAmpliado) {
-            if (document.fullscreenElement === panelMapa) {
-                await document.exitFullscreen?.();
-            } else {
-                panelMapa.classList.remove("mapa-ampliado");
-                document.body.classList.remove("mapa-a-pantalla-completa");
-            }
-        } else if (typeof panelMapa.requestFullscreen === "function") {
-            try {
-                await panelMapa.requestFullscreen();
-            } catch {
-                panelMapa.classList.add("mapa-ampliado");
-                document.body.classList.add("mapa-a-pantalla-completa");
-            }
-        } else {
-            panelMapa.classList.add("mapa-ampliado");
-            document.body.classList.add("mapa-a-pantalla-completa");
-        }
+    const restaurarMapaEnPagina = () => {
+        marcoMapa?.classList.remove("mapa-ampliado");
+        document.body.classList.remove("mapa-ampliado-en-pagina");
         actualizarControlMaximizar();
         window.requestAnimationFrame(() => dibujarEnlaces());
+    };
+
+    /**
+     * Expande la caja sobre la página manteniendo sus capas y filtros.
+     * Cambiar el estado de la clase modifica el tamaño del área de navegación sin usar F11.
+     */
+    const alternarMaximizacionMapa = () => {
+        if (!marcoMapa) return;
+        const mapaYaExpandido = marcoMapa.classList.contains("mapa-ampliado");
+        if (mapaYaExpandido) {
+            restaurarMapaEnPagina();
+        } else {
+            marcoMapa.classList.add("mapa-ampliado");
+            document.body.classList.add("mapa-ampliado-en-pagina");
+            actualizarControlMaximizar();
+            window.requestAnimationFrame(() => dibujarEnlaces());
+        }
     };
 
     botonesMaximizarMapa.forEach(botonMaximizar => {
-        // botonMaximizar inicia y restaura el panel completo sin perder la capa seleccionada.
-        botonMaximizar.addEventListener("click", () => alternarMaximizacionMapa());
+        // botonMaximizar expande solo la caja del mapa dentro de la página.
+        botonMaximizar.addEventListener("click", alternarMaximizacionMapa);
     });
     botonesRestablecerMapa.forEach(botonRestablecer => {
-        // botonRestablecer devuelve el viewport al inicio del mapa que siga seleccionado.
+        // botonRestablecer desplaza el viewport al origen del lienzo actual.
         botonRestablecer.addEventListener("click", () => mapaTopologia.scrollTo({ left: 0, top: 0, behavior: "smooth" }));
     });
-
-    /**
-     * Inicia el desplazamiento del lienzo al arrastrar su espacio vacío.
-     * Cambiar el conjunto de controles excluidos modifica qué objetos se pueden arrastrar.
-     * @param {PointerEvent} eventoPuntero Evento de puntero; sus coordenadas establecen el origen del movimiento.
-     */
-    const iniciarArrastreMapa = eventoPuntero => {
-        if (eventoPuntero.button !== 0
-            || eventoPuntero.target.closest("[data-dispositivo], button, a, input, select, textarea, summary, path")) return;
-        arrastreMapaActivo = true;
-        posicionPunteroInicialX = eventoPuntero.clientX;
-        posicionPunteroInicialY = eventoPuntero.clientY;
-        desplazamientoMapaInicialX = mapaTopologia.scrollLeft;
-        desplazamientoMapaInicialY = mapaTopologia.scrollTop;
-        mapaTopologia.classList.add("arrastrando-mapa");
-        mapaTopologia.setPointerCapture(eventoPuntero.pointerId);
-    };
-
-    /**
-     * Mueve el viewport con el puntero manteniendo juntas las tarjetas y sus líneas.
-     * Cambiar las coordenadas recibidas desplaza el lienzo en el sentido opuesto.
-     * @param {PointerEvent} eventoPuntero Posición actual del puntero mientras se arrastra el fondo.
-     */
-    const moverMapaArrastrado = eventoPuntero => {
-        if (!arrastreMapaActivo) return;
-        eventoPuntero.preventDefault();
-        mapaTopologia.scrollLeft = desplazamientoMapaInicialX - (eventoPuntero.clientX - posicionPunteroInicialX);
-        mapaTopologia.scrollTop = desplazamientoMapaInicialY - (eventoPuntero.clientY - posicionPunteroInicialY);
-    };
-
-    /**
-     * Finaliza el desplazamiento y devuelve el cursor a su estado normal.
-     * Cambiar el estado activo determina si las siguientes coordenadas siguen moviendo el mapa.
-     */
-    const finalizarArrastreMapa = () => {
-        arrastreMapaActivo = false;
-        mapaTopologia.classList.remove("arrastrando-mapa");
-    };
-
-    mapaTopologia.addEventListener("pointerdown", iniciarArrastreMapa);
-    mapaTopologia.addEventListener("pointermove", moverMapaArrastrado);
-    mapaTopologia.addEventListener("pointerup", finalizarArrastreMapa);
-    mapaTopologia.addEventListener("pointercancel", finalizarArrastreMapa);
-
-    document.addEventListener("fullscreenchange", () => {
-        actualizarControlMaximizar();
-        window.requestAnimationFrame(() => dibujarEnlaces());
+    document.addEventListener("keydown", eventoTecla => {
+        // eventoTecla permite cerrar la caja expandida con Escape sin depender de controles del navegador.
+        if (eventoTecla.key === "Escape" && marcoMapa?.classList.contains("mapa-ampliado")) {
+            restaurarMapaEnPagina();
+        }
     });
 
-    // capaEnlaces aloja las líneas que se recalculan cuando cambia la distribución visual.
-    const capaEnlaces = mapaTopologia.querySelector("[data-capa-enlaces]");
+    // capaEnlaces dibuja las conexiones sobre el mismo lienzo que las tarjetas.
+    const capaEnlaces = lienzoTopologia?.querySelector("[data-capa-enlaces]");
     // nodosTopologia son las fichas físicas visibles y filtrables.
     const nodosTopologia = Array.from(mapaTopologia.querySelectorAll("[data-dispositivo]"));
     // datosEnlaces conserva extremos y etiquetas producidos por el servidor.
@@ -332,15 +278,16 @@
      * Recalcula las líneas entre centros de nodos, sin crear relaciones nuevas.
      */
     const dibujarEnlaces = () => {
-        // rectanguloMapa determina el sistema de coordenadas relativo de cada ruta SVG.
-        const rectanguloMapa = mapaTopologia.getBoundingClientRect();
-        const anchoMapa = Math.max(mapaTopologia.scrollWidth, mapaTopologia.clientWidth);
-        const altoMapa = Math.max(mapaTopologia.scrollHeight, mapaTopologia.clientHeight);
-        capaEnlaces.setAttribute("viewBox", `0 0 ${anchoMapa} ${altoMapa}`);
-        capaEnlaces.setAttribute("width", anchoMapa);
-        capaEnlaces.setAttribute("height", altoMapa);
-        capaEnlaces.style.width = `${anchoMapa}px`;
-        capaEnlaces.style.height = `${altoMapa}px`;
+        // rectanguloLienzo define el origen común de tarjetas y líneas dentro del viewport.
+        const rectanguloLienzo = lienzoTopologia.getBoundingClientRect();
+        // anchoLienzo y altoLienzo incluyen la extensión completa que se puede recorrer.
+        const anchoLienzo = Math.max(lienzoTopologia.scrollWidth, lienzoTopologia.clientWidth);
+        const altoLienzo = Math.max(lienzoTopologia.scrollHeight, lienzoTopologia.clientHeight);
+        capaEnlaces.setAttribute("viewBox", `0 0 ${anchoLienzo} ${altoLienzo}`);
+        capaEnlaces.setAttribute("width", anchoLienzo);
+        capaEnlaces.setAttribute("height", altoLienzo);
+        capaEnlaces.style.width = `${anchoLienzo}px`;
+        capaEnlaces.style.height = `${altoLienzo}px`;
         capaEnlaces.replaceChildren();
 
         // nodosPorId resuelve IDs relacionales sin construir selectores con valores externos.
@@ -362,12 +309,12 @@
             const rectanguloOrigen = nodoOrigen.getBoundingClientRect();
             const rectanguloDestino = nodoDestino.getBoundingClientRect();
             const centroOrigen = {
-                x: rectanguloOrigen.left + rectanguloOrigen.width / 2 - rectanguloMapa.left + mapaTopologia.scrollLeft,
-                y: rectanguloOrigen.top + rectanguloOrigen.height / 2 - rectanguloMapa.top + mapaTopologia.scrollTop
+                x: rectanguloOrigen.left + rectanguloOrigen.width / 2 - rectanguloLienzo.left + mapaTopologia.scrollLeft,
+                y: rectanguloOrigen.top + rectanguloOrigen.height / 2 - rectanguloLienzo.top + mapaTopologia.scrollTop
             };
             const centroDestino = {
-                x: rectanguloDestino.left + rectanguloDestino.width / 2 - rectanguloMapa.left + mapaTopologia.scrollLeft,
-                y: rectanguloDestino.top + rectanguloDestino.height / 2 - rectanguloMapa.top + mapaTopologia.scrollTop
+                x: rectanguloDestino.left + rectanguloDestino.width / 2 - rectanguloLienzo.left + mapaTopologia.scrollLeft,
+                y: rectanguloDestino.top + rectanguloDestino.height / 2 - rectanguloLienzo.top + mapaTopologia.scrollTop
             };
             const clavePar = [enlace.dataset.equipoOrigen, enlace.dataset.equipoDestino].sort().join("-");
             const repeticion = repeticionesPorPar.get(clavePar) || 0;
@@ -380,12 +327,11 @@
             const switchSinCotejoReciproco = enlace.dataset.relacionParcial === "true"
                 && enlace.dataset.capaRelacional === "switching"
                 && enlace.dataset.cotejoReciproco !== "true";
-            // claseCapaEnlace distingue visualmente acceso, switching y recorrido físico.
-            const claseCapaEnlace = enlace.dataset.capaRelacional === "switching" ? "enlace-capa-2"
-                : enlace.dataset.capaRelacional === "acceso" ? "enlace-capa-3" : "enlace-capa-1";
-            rutaEnlace.setAttribute("class", `enlace-topologia ${claseCapaEnlace} ${switchSinCotejoReciproco
-                ? "enlace-parcial-switch"
-                : enlace.dataset.confirmado === "true" ? "enlace-confirmado" : "enlace-pendiente"}`);
+            rutaEnlace.setAttribute("class", switchSinCotejoReciproco
+                ? "enlace-topologia enlace-parcial-switch"
+                : enlace.dataset.confirmado === "true"
+                    ? "enlace-topologia enlace-confirmado"
+                    : "enlace-topologia enlace-pendiente");
             rutaEnlace.setAttribute("tabindex", "0");
             rutaEnlace.setAttribute("role", "img");
             rutaEnlace.setAttribute("aria-label", enlace.dataset.etiqueta);
@@ -533,7 +479,8 @@
     // observadorMapa redibuja las conexiones cuando cambia el tamaño de la cuadrícula.
     const observadorMapa = new ResizeObserver(dibujarEnlaces);
     observadorMapa.observe(mapaTopologia);
-    if (panelMapa) observadorMapa.observe(panelMapa);
+    if (marcoMapa) observadorMapa.observe(marcoMapa);
+    if (lienzoTopologia) observadorMapa.observe(lienzoTopologia);
     window.addEventListener("resize", dibujarEnlaces);
     actualizarFiltros();
 })();
