@@ -198,9 +198,10 @@ La entidad SQLite `ConexionDocumentada` ya admite puerto local obligatorio, dest
 
 ## Estado de importación documental V3 (9 de noviembre de 2026)
 
-- El arranque incorpora de forma idempotente 312 posiciones procedentes de 13 hojas de área del archivo `DIAGRAMA RED V3.0.vsdx`: 154 `LIBRE`, 8 `DESCONOCIDO` y 150 destinos nominales.
+- El arranque incorpora de forma idempotente 320 posiciones procedentes de 14 tablas distribuidas en 13 páginas del archivo `DIAGRAMA RED V3.0.vsdx`: 156 `LIBRE`, 8 `DESCONOCIDO` y 156 destinos nominales.
 - Para cada posición se conserva página, libro Excel incrustado y fila fuente. Los destinos nominales se modelan como relación de un extremo local, sin inventar puerto remoto ni medio; las referencias a otro switch quedan «A verificar», salvo Mesa de Entradas secundaria puerto 24 hacia Aruba principal `192.168.1.1`, confirmada por el usuario.
 - Las filas de puestos se consideran vigentes según la confirmación del usuario. ProCurve se normaliza a `10.0.1.1` solo en la fila discrepante de Puerta Agrimensura y se anota la corrección de la fuente.
 - No inferir conectores, modelo SFP ni fecha de revisión. Las interfaces se guardan como tipo «No confirmado». No sobrescribir una interfaz ya enlazada o marcada «Libre confirmado».
-- No se incluyen todavía las hojas de rack/SFP, la hoja secundaria de 8 puertos de Inmuebles ni tablas con propietario ambiguo. Esas incorporaciones requieren análisis de su alcance antes de alterar el inventario.
+- El switch secundario de Inmuebles se incorpora como `SWITCH DE 8 PUERTOS`, sin fabricante, modelo, IP ni tipo de conector inventados. Se incluyen únicamente las posiciones 1–8 de Excel16. Las filas 17, 18 y 22 contradicen la capacidad declarada y quedan excluidas. La relación desde el puerto 24 del switch principal de Inmuebles permanece «A verificar» por ser conexión de rack.
+- Siguen pendientes las hojas de rack/SFP y las tablas con propietario ambiguo.
 - La ordenación del frontal muestra primero las etiquetas numéricas en orden natural (1, 2, …, 10) y luego etiquetas sin número.
