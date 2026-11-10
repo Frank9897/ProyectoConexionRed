@@ -9,42 +9,27 @@
     const hojasImpresion = Array.from(document.querySelectorAll("[data-hoja-impresion]"));
     // anchoA4HorizontalPx conserva el ancho imprimible aproximado tras márgenes de 5 mm.
     const anchoA4HorizontalPx = 287 * 96 / 25.4;
-    // altoA4HorizontalPx conserva el alto imprimible aproximado tras márgenes de 5 mm.
-    const altoA4HorizontalPx = 200 * 96 / 25.4;
 
     /**
-     * Calcula la escala mínima que permite incluir la vista imprimible en una página.
-     * Cambiar los límites A4 modifica cuánto se reduce el contenido antes de imprimir.
+     * Prepara las páginas imprimibles sin reducir la hoja completa según el alto de la página web.
+     * Cambiar el número de columnas altera la densidad de las conexiones en el detalle del switch.
      */
     const ajustarEscalaImpresion = () => {
-        // hoja recorre una plantilla imprimible; cambiar el conjunto cambia qué vistas se escalan.
+        // hoja recorre las plantillas A4; cambiar el conjunto altera qué páginas se preparan.
         hojasImpresion.forEach(hoja => {
-            // contenidoImpresion es el único bloque cuyo tamaño se reduce para ajustarse a la página.
+            // contenidoImpresion conserva el ancho imprimible real; cambiarlo cambia la escala de toda la página.
             const contenidoImpresion = hoja.querySelector("[data-contenido-impresion]");
             if (!contenidoImpresion) return;
 
+            // La vista se imprime a escala 1; la topología aplica su propio zoom al lienzo.
             contenidoImpresion.style.setProperty("--escala-impresion", "1");
-            // La topología tiene su propio encaje; no se escala la página completa con secciones que luego se ocultan.
-            if (hoja.classList.contains("hoja-impresion-topologia")) return;
             if (hoja.classList.contains("hoja-impresion-switch")) {
-                // cantidadConexiones determina cuántas columnas permiten usar mejor la hoja sin encoger todo el contenido.
+                // cantidadConexiones define cuántas columnas compactan la lista sin encoger el frontal.
                 const cantidadConexiones = hoja.querySelectorAll(".ficha-conexion").length;
-                // columnasImpresion aumenta columnas solo cuando la cantidad de tarjetas lo necesita.
+                // columnasImpresion reparte mejor las fichas al crecer su número.
                 const columnasImpresion = cantidadConexiones > 24 ? 4 : cantidadConexiones > 12 ? 3 : 2;
                 contenidoImpresion.style.setProperty("--columnas-enlaces-impresion", String(columnasImpresion));
             }
-            // anchoContenido mide el contenido a escala normal para calcular el ancho que requiere.
-            const anchoContenido = contenidoImpresion.scrollWidth;
-            // altoContenido mide todo el contenido visible en modo impresión.
-            const altoContenido = contenidoImpresion.scrollHeight;
-            if (anchoContenido <= 0 || altoContenido <= 0) return;
-
-            // escalaImpresion aprovecha el área A4 disponible y solo reduce cuando el contenido excede la hoja.
-            const escalaImpresion = Math.min(
-                anchoA4HorizontalPx / anchoContenido,
-                altoA4HorizontalPx / altoContenido
-            );
-            contenidoImpresion.style.setProperty("--escala-impresion", escalaImpresion.toFixed(4));
         });
     };
 
