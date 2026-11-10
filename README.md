@@ -150,3 +150,6 @@ La vista organiza las conexiones según la función documentada: **Capa 1** repr
 Se cotejaron los 31 libros Excel incrustados en `DIAGRAMA RED V3.0.vsdx`. El análisis por libro, los pares recíprocos, las correcciones confirmadas y las filas ambiguas están documentados en [docs/ANALISIS_V3_CONEXIONES.md](docs/ANALISIS_V3_CONEXIONES.md). Se incorporan al catálogo los SFP/SFP+ descritos en las tablas correspondientes; las interfaces se rotulan `SFP n` para distinguirlas de RJ45 con el mismo número. Esto no supone que las jaulas compartidas sean independientes ni que haya un transceptor instalado.
 
 Las correcciones confirmadas aplicadas incluyen ProCurve `10.0.1.1`, 3Com `192.168.1.24`, Aruba 1930 principal de Mesa de Entradas `192.168.1.1` y R770 P2/LAN `192.168.0.246` (P1/iDRAC `192.168.0.247`). La inaccesibilidad por credenciales de Régimen y Mesa de Entradas principal se conserva como estado administrativo y no como falta de confirmación de su existencia o de sus enlaces documentados.
+
+
+Cuando una tabla de puerto documenta un endpoint Capa 3 que todavía no tiene una ficha independiente, el mapa dibuja un nodo visual temporal con su nombre/IP y el icono correspondiente. Ese nodo solo existe en la topología generada y no crea un registro nuevo en SQLite; si luego se incorpora al inventario, el mapa usa la ficha persistida.
