@@ -17,6 +17,7 @@
         <span class="resumen-puerto"><i class="indicador-estado-puerto libre" aria-hidden="true"></i><b>@puertosLibres</b> libres confirmados</span>
         <span class="resumen-puerto"><i class="indicador-estado-puerto desconocido" aria-hidden="true"></i><b>@puertosDesconocidos</b> desconocidos</span>
     </div>
+    <p class="estado-seleccion-puerto" data-mensaje-puerto role="status" aria-live="polite">Selecciona un puerto para consultar su destino documentado.</p>
     <div class="frontal-switch-scroll">
         <div class="frontal-switch-panel" role="group" aria-label="Frontal de puertos de @Model.Nombre">
             <div class="frontal-switch-cabecera">
@@ -41,6 +42,14 @@
                                 var puertoSuperior = puertosDelGrupo[indiceGrupo];
                                 <span class="puerto-topologia puerto-frontal @puertoSuperior.ClaseVisual @(puertoSuperior.Tipo.Contains("SFP", StringComparison.OrdinalIgnoreCase) ? "puerto-sfp" : "")"
                                       data-identificador-interfaz="@puertoSuperior.IdentificadorInterfaz"
+                                      data-etiqueta-puerto="@puertoSuperior.Etiqueta"
+                                      data-puerto-topologia
+                                      data-estado-puerto="@puertoSuperior.EstadoVisual"
+                                      data-destino-puerto="@(puertoSuperior.DestinoConexion ?? "Sin destino documentado")"
+                                      tabindex="0"
+                                      role="button"
+                                      aria-pressed="false"
+                                      aria-label="@puertoSuperior.Etiqueta · @puertoSuperior.EstadoVisual · @(puertoSuperior.DestinoConexion ?? "Sin destino documentado")"
                                       title="@puertoSuperior.Etiqueta · @puertoSuperior.EstadoVisual · @puertoSuperior.Tipo@(puertoSuperior.DestinoConexion is null ? "" : " · " + puertoSuperior.DestinoConexion)">
                                     <span class="numero-puerto-frontal">@puertoSuperior.Etiqueta</span>
                                     <span class="solo-lectores-pantalla">@puertoSuperior.EstadoVisual@(puertoSuperior.DestinoConexion is null ? "" : " · " + puertoSuperior.DestinoConexion)</span>
@@ -54,6 +63,14 @@
                                 var puertoInferior = puertosDelGrupo[indiceGrupo];
                                 <span class="puerto-topologia puerto-frontal @puertoInferior.ClaseVisual @(puertoInferior.Tipo.Contains("SFP", StringComparison.OrdinalIgnoreCase) ? "puerto-sfp" : "")"
                                       data-identificador-interfaz="@puertoInferior.IdentificadorInterfaz"
+                                      data-etiqueta-puerto="@puertoInferior.Etiqueta"
+                                      data-puerto-topologia
+                                      data-estado-puerto="@puertoInferior.EstadoVisual"
+                                      data-destino-puerto="@(puertoInferior.DestinoConexion ?? "Sin destino documentado")"
+                                      tabindex="0"
+                                      role="button"
+                                      aria-pressed="false"
+                                      aria-label="@puertoInferior.Etiqueta · @puertoInferior.EstadoVisual · @(puertoInferior.DestinoConexion ?? "Sin destino documentado")"
                                       title="@puertoInferior.Etiqueta · @puertoInferior.EstadoVisual · @puertoInferior.Tipo@(puertoInferior.DestinoConexion is null ? "" : " · " + puertoInferior.DestinoConexion)">
                                     <span class="numero-puerto-frontal">@puertoInferior.Etiqueta</span>
                                     <span class="solo-lectores-pantalla">@puertoInferior.EstadoVisual@(puertoInferior.DestinoConexion is null ? "" : " · " + puertoInferior.DestinoConexion)</span>
