@@ -113,11 +113,11 @@ Se cotejó `UBICACION-EQUIPOS-OCTUBRE 2026.pdf` con los destinos e IP de las tab
 
 | Resultado | Cantidad | Tratamiento |
 |---|---:|---|
-| IP V3 única o resuelta por coincidencia con PDF | 123 | Guardar la IP V3 |
-| Discordancia PDF/V3 | 15 | Guardar la IP V3 y anotar ambas |
+| IP V3 única o resuelta por coincidencia con PDF | 125 | Guardar la IP V3 |
+| Discordancia PDF/V3 | 16 | Guardar la IP V3 y anotar ambas |
 | Solo IP en PDF | 44 | Guardar la IP PDF como `A verificar` |
 | IP V3 múltiple sin resolución | 1 | IP principal vacía; mantener candidatas en observación |
-| **Total de fichas importadas** | **168** | Sin usuario asignado |
+| **Total de fichas importadas** | **170** | Rol Usuario en puestos computacionales; usuario real sin asignar |
 
 ### Discrepancias donde prevalece V3
 
@@ -138,13 +138,18 @@ Se cotejó `UBICACION-EQUIPOS-OCTUBRE 2026.pdf` con los destinos e IP de las tab
 | Secretaria03 | 192.168.0.221 | 192.168.0.123 |
 | Sumarios04 | 192.168.0.101 | 192.168.0.44 |
 | Valuacion08 | 192.168.0.131 | 192.168.0.112 |
+| PLOTTER EPSON T7200 (PDF: T7200) | 192.168.0.189 | 192.168.0.202 |
 
-### Casos a confirmar
+### Casos resueltos o pendientes
 
 - `Sistemas23`: el PDF indica `192.168.0.64`; V3 contiene `192.168.0.127` y `192.168.1.105`. Se guardan ambas direcciones V3 en observaciones y se deja vacía la IP principal.
-- `T7200`: aparece como `192.168.0.189` en ubicación; V3 lo identifica como plotter Epson T7200 con `192.168.0.202`. Se excluye hasta confirmar que la etiqueta corta corresponde al mismo equipo.
-- `TrimbleNET-R9`: el PDF asigna `192.168.0.17`; V3 usa la etiqueta `TRIMBLE TUC1` con esa dirección. Se excluye hasta confirmar si es el mismo dispositivo.
+- El usuario confirma `T7200` = `PLOTTER EPSON T7200`: se importa con la IP V3 `192.168.0.202` y se anota el PDF `192.168.0.189`.
+- El usuario confirma `TrimbleNET-R9` = `TRIMBLE TUC1`: se importa con la IP común `192.168.0.17`, usando el nombre canónico del V3 y preservando la etiqueta PDF en observaciones.
 - `Sistemas06` (PDF `.127` y `.189`) se resuelve a `192.168.0.189`, que coincide con una de las IP V3 (`.189`, `.197`); ambas diferencias quedan en observaciones.
 - `Valuacion51` usa `192.168.0.158`, coincidente con una de sus IP V3 (`.158`, `.196`). `Agrimensura60` usa `192.168.0.141`; se mantiene `192.168.1.250` como dirección adicional consignada en V3.
 
-Las áreas y pisos se toman de la página del PDF. El usuario asignado queda vacío hasta integrar los Visios de PCs y usuarios. Las estaciones nuevas se crean de forma idempotente en SQLite y cada alta genera su evento de historial; si una ficha con ese nombre ya existe, el importador la conserva sin sobrescribir datos de técnicos. El catálogo tipado C# es una carga fuente reproducible, no una base paralela ni reemplazo de SQLite; la base `.db` no se agrega al repositorio.
+Las áreas y pisos se toman de la página del PDF. El usuario asignado queda vacío hasta integrar los Visios de PCs y usuarios. Los puestos computacionales reciben el rol predeterminado `Usuario`; el técnico puede cambiarlo manualmente a `Jefe` u otro rol, y el inicializador no reemplaza valores personalizados. Las fichas se crean de forma idempotente en SQLite y cada alta genera historial; si una ficha con ese nombre ya existe, se conserva sin sobrescribir los datos de técnicos. El catálogo tipado C# es una carga fuente reproducible, no una base paralela ni reemplazo de SQLite; la base `.db` no se agrega al repositorio.
+
+## Ajustes UX/UI de switching (10 de noviembre de 2026)
+
+El mapa acomoda switches en dos columnas en escritorio y una en móvil. El frontal diferencia ocupado, libre confirmado y desconocido con color y borde contrastantes e incluye contadores por estado. El detalle del switch reúne frontal, resumen, IP, rol, enlaces completos y conexiones parciales. Cada extremo muestra nombre, IP atenuada y puerto. Las listas permiten búsqueda, filtro de estado, paginación y acceso directo al frontal. El medio solo aparece cuando está confirmado y página/libro/fila no se muestran por defecto; el respaldo queda bajo demanda. La vista admite impresión.
