@@ -309,6 +309,9 @@ public static class InicializadorInventario
         // ImportarPuertosAreasV3 incorpora tablas de área y el switch secundario documentado en Inmuebles.
         await ImportarPuertosAreasV3Async(contextoInventario, cambiosAuditados, usuarioImportacion, cancelacion);
 
+        // ImportarPuestosUbicacionAsync incorpora ubicaciones del PDF con prioridad IP de V3 y registra discrepancias.
+        await ImportarPuestosUbicacionAsync(contextoInventario, cambiosAuditados, "Carga documental UBICACION-EQUIPOS-OCTUBRE 2026", cancelacion);
+
         // datoMac recorre los pares documentados; cambiar el catálogo cambia qué MAC pueden completarse.
         foreach (var datoMac in datosMacConfirmados)
         {
@@ -860,6 +863,155 @@ public static class InicializadorInventario
     /// <param name="cambiosAuditados">Historial de cambios; cambiar la lista altera qué correcciones se registran.</param>
     /// <param name="usuarioImportacion">Origen de la corrección; cambiarlo modifica el autor del historial.</param>
     /// <param name="cancelacion">Señal de cancelación; activarla interrumpe las consultas y escrituras.</param>
+    /// <summary>
+    /// Incorpora puestos y ubicaciones del PDF. Prioriza las IP de V3, anota discrepancias y deja vacía una IP cuando V3 contiene varias opciones sin resolver.
+    /// </summary>
+    /// <param name="contextoInventario">Contexto SQLite; cambiarlo selecciona el inventario que recibe los puestos.</param>
+    /// <param name="cambiosAuditados">Eventos de alta; cambiar la lista modifica el historial persistido en la misma transacción.</param>
+    /// <param name="usuarioImportacion">Origen de la carga; cambiarlo altera la atribución visible en auditoría.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla detiene la consulta o escritura pendientes.</param>
+    private static async Task ImportarPuestosUbicacionAsync(
+        InventarioDbContext contextoInventario,
+        List<EventoModificacion> cambiosAuditados,
+        string usuarioImportacion,
+        CancellationToken cancelacion)
+    {
+        // filasPdf contiene etiquetas, octetos y ubicación; cambiar el catálogo modifica los puestos candidatos.
+        var filasPdf = CatalogoUbicacionesEquiposPdf.ObtenerFilas();
+        // filasV3 permite resolver IP actuales por nombre; cambiar el catálogo V3 altera las coincidencias disponibles.
+        var filasV3 = CatalogoPuertosAreasV3.ObtenerFilas();
+        // direccionesPorNombre agrupa las IP documentadas en V3; cambiar su contenido modifica la prioridad aplicada.
+        var direccionesPorNombre = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var filaV3 in filasV3)
+        {
+            // direccionesDetectadas extrae solo IPv4 literales, sin convertir nombres o estados en direcciones.
+            var direccionesDetectadas = System.Text.RegularExpressions.Regex
+                .Matches(filaV3.IpRemota ?? string.Empty, @"(?:\d{1,3}\.){3}\d{1,3}")
+                .Select(coincidencia => coincidencia.Value)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            if (!direccionesPorNombre.TryGetValue(filaV3.Destino, out var conjuntoDirecciones))
+            {
+                // conjuntoDirecciones acumula IP del mismo destino; cambiar la clave agrupa otro nombre documental.
+                conjuntoDirecciones = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                direccionesPorNombre[filaV3.Destino] = conjuntoDirecciones;
+            }
+
+            conjuntoDirecciones.UnionWith(direccionesDetectadas);
+        }
+
+        // nombresExistentes evita duplicar equipos y conserva cualquier ficha que un técnico ya haya editado.
+        var nombresExistentes = new HashSet<string>(
+            await contextoInventario.Equipos.Select(equipo => equipo.Nombre).ToListAsync(cancelacion),
+            StringComparer.OrdinalIgnoreCase);
+        // equiposNuevos reúne altas sin persistir hasta completar la lectura de fuentes.
+        var equiposNuevos = new List<EquipoRed>();
+        // filasEquiposNuevos enlaza los registros importados con la fuente usada para su auditoría.
+        var filasEquiposNuevos = new List<(EquipoRed Equipo, FilaUbicacionEquipo Fila, string? IpPdf, string? IpV3, string? Observaciones)>();
+
+        foreach (var filaPdf in filasPdf)
+        {
+            // nombreNormalizado es la identidad corregida para errores de OCR conocidos; cambiarla ajusta la correspondencia con V3.
+            var nombreNormalizado = filaPdf.Nombre.Trim();
+
+            if (!nombresExistentes.Add(nombreNormalizado))
+            {
+                continue;
+            }
+
+            // ipsPdf convierte cada octeto entre paréntesis en la red 192.168.0.x indicada por el usuario.
+            var ipsPdf = filaPdf.OctetosPdf
+                .Where(octeto => octeto is >= 1 and <= 254)
+                .Select(octeto => $"192.168.0.{octeto}")
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            // ipPdf representa una dirección inequívoca del PDF; cambiar octetos múltiples impide usarla como dato único.
+            var ipPdf = ipsPdf.Count == 1 ? ipsPdf[0] : null;
+            // ipsV3 recoge las IP del mismo nombre en el diagrama que el usuario prioriza.
+            var ipsV3 = direccionesPorNombre.TryGetValue(nombreNormalizado, out var direccionesEncontradas)
+                ? direccionesEncontradas
+                : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            // coincidenciasPdfV3 busca si un octeto del PDF identifica una de las IP actuales V3.
+            var coincidenciasPdfV3 = ipsV3.Where(direccion => ipsPdf.Contains(direccion, StringComparer.OrdinalIgnoreCase)).ToList();
+            // ipV3 se asigna si V3 tiene una única IP o si el PDF permite escoger una entre varias.
+            var ipV3 = ipsV3.Count == 1 ? ipsV3.Single()
+                : coincidenciasPdfV3.Count == 1 ? coincidenciasPdfV3[0]
+                : null;
+            // ipAsignada da prioridad al V3 resuelto; si no hay IP V3, conserva el octeto único del PDF.
+            var ipAsignada = ipV3 ?? (ipsV3.Count == 0 ? ipPdf : null);
+            // observaciones explican si hay diferencias o si queda una ambigüedad pendiente.
+            var observaciones = new List<string>
+            {
+                $"PDF: {string.Join(", ", ipsPdf.DefaultIfEmpty("sin IP legible"))} (págs. {string.Join(", ", filaPdf.Paginas)})."
+            };
+
+            if (ipsV3.Count > 0)
+            {
+                // listaV3 hace visible toda dirección de V3 sin descartar candidatos alternativos.
+                var listaV3 = string.Join(", ", ipsV3.OrderBy(direccion => direccion, StringComparer.OrdinalIgnoreCase));
+                observaciones.Add($"V3: {listaV3}.");
+                if (ipV3 is null)
+                {
+                    observaciones.Add("IP principal sin asignar: V3 contiene varias direcciones y el PDF no resuelve cuál corresponde.");
+                }
+                else if (ipsPdf.Any(direccion => !string.Equals(direccion, ipV3, StringComparison.OrdinalIgnoreCase)))
+                {
+                    observaciones.Add($"Discrepancia: se prioriza {ipV3} según V3; se conserva el dato del PDF para revisión.");
+                }
+            }
+            else
+            {
+                observaciones.Add("No se encontró una IP del equipo en V3; se conserva el octeto del PDF pendiente de cotejo.");
+            }
+
+            // tipoDispositivo separa los relojes de asistencia de los puestos de usuario en el inventario.
+            var tipoDispositivo = nombreNormalizado.StartsWith("Reloj", StringComparison.OrdinalIgnoreCase)
+                ? "Reloj"
+                : "Puesto de usuario";
+            // equipoNuevo conserva usuario sin asignar y procedencia sin crear datos personales.
+            var equipoNuevo = new EquipoRed
+            {
+                Nombre = nombreNormalizado,
+                IpAdministracion = ipAsignada,
+                Area = filaPdf.Area,
+                Piso = filaPdf.Piso,
+                TipoDispositivo = tipoDispositivo,
+                EstadoDatos = ipV3 is not null ? "Vigente" : "A verificar",
+                EstadoAdministrativo = "Sin información",
+                FuenteDatos = $"UBICACION-EQUIPOS-OCTUBRE 2026.pdf, págs. {string.Join(", ", filaPdf.Paginas)}",
+                Observaciones = string.Join(" ", observaciones)
+            };
+
+            equiposNuevos.Add(equipoNuevo);
+            filasEquiposNuevos.Add((equipoNuevo, filaPdf, ipPdf, ipV3, equipoNuevo.Observaciones));
+        }
+
+        if (equiposNuevos.Count == 0)
+        {
+            return;
+        }
+
+        // Guardar primero asigna identificadores SQLite para que cada evento de alta apunte al equipo correcto.
+        await contextoInventario.Equipos.AddRangeAsync(equiposNuevos, cancelacion);
+        await contextoInventario.SaveChangesAsync(cancelacion);
+
+        foreach (var alta in filasEquiposNuevos)
+        {
+            // eventoAlta conserva el antes/después y el documento fuente del equipo incorporado.
+            cambiosAuditados.Add(new EventoModificacion
+            {
+                IdentificadorEquipo = alta.Equipo.Identificador,
+                NombreEquipo = alta.Equipo.Nombre,
+                NombreUsuario = usuarioImportacion,
+                FechaUtc = DateTime.UtcNow,
+                Campo = "Alta de puesto desde PDF",
+                ValorAnterior = null,
+                ValorNuevo = $"IP {alta.Equipo.IpAdministracion ?? "sin asignar"}; área {alta.Fila.Area}; piso {alta.Fila.Piso}; {alta.Fila.Paginas.Count} página(s). {alta.Observaciones}"
+            });
+        }
+    }
+
     private static async Task AplicarRolesYTiposV3Async(
         InventarioDbContext contextoInventario,
         List<EventoModificacion> cambiosAuditados,
