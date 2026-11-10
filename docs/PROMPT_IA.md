@@ -206,3 +206,13 @@ La entidad SQLite `ConexionDocumentada` ya admite puerto local obligatorio, dest
 - Las cuatro tablas claras de rack (HP 5500, HP 1920, HP 1920S y S4148U) se incorporan. Las 33 filas LIBRE de rack quedan a verificar; 15 SIN SFP y 3 SFP LIBRE se guardan como observaciones, y 3 OCUPADO se registran sin inventar su destino. Siguen pendientes las hojas SFP independientes de propietario ambiguo y otras tablas sin propietario resuelto.
 - Se agrega Dell R770 como nodo sin IP administrativa atribuida. Se documentan P1/iDRAC .247, P2/LAN .246, P3 LIBRE y P4 NO CONFIGURADO; solo los enlaces P1 y P2 confirmados por el usuario se trazan.
 - La ordenación del frontal muestra primero las etiquetas numéricas en orden natural (1, 2, …, 10) y luego etiquetas sin número.
+
+
+## Importación de ubicaciones del PDF (9 de noviembre de 2026)
+
+- Incorporar las 168 fichas únicas extraídas de `UBICACION-EQUIPOS-OCTUBRE 2026.pdf`, con nombre, área, piso, páginas fuente y el octeto interpretado como `192.168.0.x`.
+- `DIAGRAMA RED V3.0` prevalece para la IP. Anotar en observaciones las discrepancias del PDF; no reemplazar por el valor del PDF. En la importación actual: 123 direcciones V3 resueltas, 15 discrepancias, 44 IP provenientes solo del PDF con estado `A verificar` y `Sistemas23` sin IP principal por dos candidatas V3 no resueltas.
+- No asignar personas a puestos; esperar los dos Visios que contienen PC, usuarioPC y usuario real.
+- Mantener excluidos temporalmente `T7200` y `TrimbleNET-R9` hasta confirmar identidad entre documentos. Normalizar errores de OCR evidentes preservando el nombre validado por las tablas V3.
+- El origen tipado C# es una carga de respaldo idempotente hacia SQLite, no una segunda base operativa. No subir el archivo `.db`. Si ya existe una ficha, conservarla y no sobrescribir sus cambios.
+- Registrar el alta de cada puesto en el historial de modificaciones. No ejecutar pings, consultas ni cambios en la red real.
