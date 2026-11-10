@@ -108,6 +108,8 @@ public class EnlaceTopologiaViewModel
     public string? Fuente { get; set; }
     /// <summary>Fecha real de revisión; cambiarla modifica la fecha mostrada.</summary>
     public DateOnly? FechaUltimaRevision { get; set; }
+    /// <summary>Perspectiva del enlace; cambiarla asigna la relación a switching, acceso o física.</summary>
+    public string CapaRelacional { get; set; } = "fisica";
 }
 
 /// <summary>Reúne un switch, su frontal y las conexiones guardadas para la página de detalle.</summary>
@@ -117,8 +119,8 @@ public class DetalleTopologiaViewModel
     public DispositivoTopologiaViewModel Dispositivo { get; set; } = new();
     /// <summary>Enlaces documentados del switch; cambiar la lista altera la tabla de conexiones.</summary>
     public IReadOnlyList<EnlaceTopologiaViewModel> Enlaces { get; set; } = [];
-    /// <summary>Relaciones parciales del switch; cambiar la lista altera las conexiones pendientes del detalle.</summary>
-    public IReadOnlyList<ConexionDocumentada> ConexionesParciales { get; set; } = [];
+    /// <summary>Relaciones locales clasificadas; cambiar la lista altera las conexiones visibles del detalle.</summary>
+    public IReadOnlyList<ConexionParcialTopologiaViewModel> ConexionesParciales { get; set; } = [];
 }
 
 /// <summary>Resume una relación cuyo extremo local existe y el remoto puede faltar.</summary>
@@ -126,8 +128,18 @@ public class ConexionParcialTopologiaViewModel
 {
     /// <summary>ID del registro; cambiarlo selecciona otra observación documental.</summary>
     public int Identificador { get; set; }
+    /// <summary>ID del equipo local; cambiarlo vincula la relación con otra ficha de switch.</summary>
+    public int IdentificadorEquipoLocal { get; set; }
     /// <summary>ID del puerto local; cambiarlo selecciona la interfaz enlazada con la observación.</summary>
     public int IdentificadorPuertoLocal { get; set; }
+    /// <summary>ID del equipo remoto resuelto por IP o nombre único; nulo conserva la ambigüedad.</summary>
+    public int? IdentificadorEquipoRemoto { get; set; }
+    /// <summary>ID del puerto remoto hallado en la tabla recíproca; nulo indica que no se encontró contraparte.</summary>
+    public int? IdentificadorPuertoRemoto { get; set; }
+    /// <summary>ID del registro recíproco; se usa para evitar dibujar dos veces el mismo enlace.</summary>
+    public int? IdentificadorRelacionReciproca { get; set; }
+    /// <summary>Capa lógica que clasifica el extremo resuelto sin alterar los datos originales.</summary>
+    public string CapaRelacional { get; set; } = "fisica";
     /// <summary>Equipo local; cambiarlo modifica el extremo inventariado.</summary>
     public string EquipoLocal { get; set; } = string.Empty;
     /// <summary>IP del equipo local; cambiarla modifica la dirección secundaria mostrada.</summary>
