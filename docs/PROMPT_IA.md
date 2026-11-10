@@ -240,3 +240,17 @@ La entidad SQLite `ConexionDocumentada` ya admite puerto local obligatorio, dest
 - El usuario confirma como documentalmente válidos los registros extraídos de los Visios. Mostrar esa confianza de fuente en estado “Confirmado”; esto no afirma conectividad en vivo ni autoriza completar extremos, IP, puerto remoto o medio ausentes.
 - Si el tipo de puerto no aparece especificado, rotular “Tipo de puerto no indicado” en lugar de mostrar “NO CONFIRMADO” como si describiera el switch o sus conexiones.
 - El detalle de switch se prepara para imprimir en una hoja A4 horizontal: conexiones en dos columnas, frontal y datos técnicos compactos, sin panel vacío de enlaces completos. Mantener visibles nombres, IP, puertos y estados; no ocultar ambigüedades del extremo remoto que sí tengan efecto.
+
+
+## Revisión tabla por tabla del Visio V3 y capas de conexión (10 de noviembre de 2026)
+
+La clasificación vigente que prevalece sobre reglas anteriores de “relación parcial pendiente” es:
+- Capa 1 = patcheras y recorrido físico.
+- Capa 2 = una relación switch a switch. Su existencia está confirmada si aparece en una tabla. Emparejar puertos locales y remotos solo si la tabla opuesta conduce a un único par recíproco; si no, conservar la relación confirmada y dejar el número del puerto remoto vacío.
+- Capa 3 = PC, impresora, servidor, iDRAC u otro equipo final conectado al puerto de un switch. Mostrar el puerto local del switch. No mostrar ni solicitar un puerto remoto de NIC del equipo final.
+- Los datos del V3 están confirmados por el usuario. Diferenciar falta de datos sobre un extremo o un número de puerto de incertidumbre sobre la conexión en sí.
+- Respetar las correcciones del usuario: ProCurve 10.0.1.1; 3Com 192.168.1.24; Aruba 1930 principal de Mesa de Entradas 192.168.1.1 e inaccesible por falta de credenciales; R770 P1/iDRAC .247 y P2/LAN .246. “Principal/no principal” expresa la función de interconexión del switch y no su modelo.
+- AGRIMENSURA15 es una PC/equipo de usuario conectado al switch de Agrimensura: representarlo como endpoint de Capa 3, sin puerto remoto inventado.
+- Comparar los libros Excel incrustados por nombre de equipo, IP y etiqueta del puerto antes de emparejar. Normalizar diferencias menores del nombre, pero no resolver conflictos de IP o candidatos múltiples por intuición. Documentar libro/fila fuente y explicar cada emparejamiento recíproco en `docs/ANALISIS_V3_CONEXIONES.md`.
+- Las tablas SFP mantienen sus etiquetas separadas de RJ45 (por ejemplo `SFP 28`) cuando comparten números. No deducir instalación de módulo, velocidad o independencia de jaulas combo si el documento no lo dice.
+- Actualizar README y este prompt con todo cambio de modelo/capa. Mantener variables, comentarios y commits en español conforme a las reglas del proyecto.
