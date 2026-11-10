@@ -33,7 +33,7 @@
                 // puertosDelGrupo conserva el orden de etiquetas al ubicar números impares y pares.
                 var puertosDelGrupo = grupoPuertos.ToList();
                 <section class="grupo-frontal-puertos">
-                    <span class="etiqueta-grupo-frontal">@grupoPuertos.Key</span>
+                    <span class="etiqueta-grupo-frontal">@(grupoPuertos.Key.Equals("No confirmado", StringComparison.OrdinalIgnoreCase) ? "Tipo de puerto no indicado" : grupoPuertos.Key)</span>
                     <div class="filas-frontal-puertos">
                         <div class="fila-frontal-puertos">
                             @for (var indiceGrupo = 0; indiceGrupo < puertosDelGrupo.Count; indiceGrupo += 2)
