@@ -254,3 +254,5 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 - Comparar los libros Excel incrustados por nombre de equipo, IP y etiqueta del puerto antes de emparejar. Normalizar diferencias menores del nombre, pero no resolver conflictos de IP o candidatos múltiples por intuición. Documentar libro/fila fuente y explicar cada emparejamiento recíproco en `docs/ANALISIS_V3_CONEXIONES.md`.
 - Las tablas SFP mantienen sus etiquetas separadas de RJ45 (por ejemplo `SFP 28`) cuando comparten números. No deducir instalación de módulo, velocidad o independencia de jaulas combo si el documento no lo dice.
 - Actualizar README y este prompt con todo cambio de modelo/capa. Mantener variables, comentarios y commits en español conforme a las reglas del proyecto.
+
+- Si una tabla de switch documenta una PC/equipo final sin ficha de inventario, la topología puede crear un nodo visual temporal con nombre/IP documentados para dibujar la conexión de Capa 3. No persiste ni inventa una ficha de SQLite. Si existe equipo inventariado que coincide, reutilizarlo.
