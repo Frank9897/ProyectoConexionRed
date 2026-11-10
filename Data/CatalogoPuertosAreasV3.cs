@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace ProyectoConexionRed.Web.Data;
 
 /// <summary>
-/// Mantiene las posiciones documentadas en hojas de switches de área del V3.
+/// Mantiene posiciones de switches de área y rack documentadas en el V3.
 /// </summary>
 internal static class CatalogoPuertosAreasV3
 {
@@ -2889,6 +2889,994 @@ internal static class CatalogoPuertosAreasV3
     "EtiquetaPuerto": "8",
     "Destino": "LIBRE",
     "IpRemota": null
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "2",
+    "EtiquetaPuerto": "1",
+    "Destino": "DS_300B",
+    "IpRemota": "192.168.1.38",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "3",
+    "EtiquetaPuerto": "2",
+    "Destino": "DELL SCV3000",
+    "IpRemota": "192.168.1.35-36",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "4",
+    "EtiquetaPuerto": "3",
+    "Destino": "IDRAC DELL 740",
+    "IpRemota": "192.168.0.251",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "5",
+    "EtiquetaPuerto": "4",
+    "Destino": "IDRAC DELL 740",
+    "IpRemota": "192.168.0.249",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "6",
+    "EtiquetaPuerto": "5",
+    "Destino": "MULTISERVER",
+    "IpRemota": "192.168.0.27",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "7",
+    "EtiquetaPuerto": "6",
+    "Destino": "DELL SCV3000",
+    "IpRemota": "192.168.1.37",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "8",
+    "EtiquetaPuerto": "7",
+    "Destino": "Desconocido",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "9",
+    "EtiquetaPuerto": "8",
+    "Destino": "VMWARE",
+    "IpRemota": "192.168.0.248",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "10",
+    "EtiquetaPuerto": "9",
+    "Destino": "PRODUCON",
+    "IpRemota": "192.168.0.25",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "11",
+    "EtiquetaPuerto": "10",
+    "Destino": "Desconocido",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "12",
+    "EtiquetaPuerto": "11",
+    "Destino": "WORDPRESS",
+    "IpRemota": "192.168.0.28",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "13",
+    "EtiquetaPuerto": "12",
+    "Destino": "Desconocido",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "14",
+    "EtiquetaPuerto": "13",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "15",
+    "EtiquetaPuerto": "14",
+    "Destino": "Desconocido",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "16",
+    "EtiquetaPuerto": "15",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "17",
+    "EtiquetaPuerto": "16",
+    "Destino": "Desconocido",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "18",
+    "EtiquetaPuerto": "17",
+    "Destino": "Desconocido",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "19",
+    "EtiquetaPuerto": "18",
+    "Destino": "Desconocido",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "20",
+    "EtiquetaPuerto": "19",
+    "Destino": "DS_6610B",
+    "IpRemota": "192.168.1.45",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "21",
+    "EtiquetaPuerto": "20",
+    "Destino": "Desconocido",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "22",
+    "EtiquetaPuerto": "21",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "23",
+    "EtiquetaPuerto": "22",
+    "Destino": "ProCurve 2910al-24G",
+    "IpRemota": "10.0.1.1",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "24",
+    "EtiquetaPuerto": "23",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 5500",
+    "Pagina": "Switch HP 5500 (D) RACK1",
+    "Libro": "Excel3",
+    "FilaFuente": "25",
+    "EtiquetaPuerto": "24",
+    "Destino": "Switch HP1920s (H)",
+    "IpRemota": "192.168.1.217",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "2",
+    "EtiquetaPuerto": "1",
+    "Destino": "Switch DELL S4148U-ON 48G",
+    "IpRemota": "192.168.1.44 (SSH)",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "3",
+    "EtiquetaPuerto": "2",
+    "Destino": "INROW",
+    "IpRemota": "192.168.1.41",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "4",
+    "EtiquetaPuerto": "3",
+    "Destino": "Switch Aruba 1930 24G 4sfp",
+    "IpRemota": "192.168.1.1",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "5",
+    "EtiquetaPuerto": "4",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "6",
+    "EtiquetaPuerto": "5",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "7",
+    "EtiquetaPuerto": "6",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "8",
+    "EtiquetaPuerto": "7",
+    "Destino": "PF-SENSE Subdominio",
+    "IpRemota": "192.168.0.9",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "9",
+    "EtiquetaPuerto": "8",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "10",
+    "EtiquetaPuerto": "9",
+    "Destino": "BACKUP-SERVER",
+    "IpRemota": "192.168.0.221",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "11",
+    "EtiquetaPuerto": "10",
+    "Destino": "PF-SENSE INTERNET",
+    "IpRemota": "192.168.0.182",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "12",
+    "EtiquetaPuerto": "11",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "13",
+    "EtiquetaPuerto": "12",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "14",
+    "EtiquetaPuerto": "13",
+    "Destino": "Switch-Cartografia",
+    "IpRemota": "192.168.1.51",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "15",
+    "EtiquetaPuerto": "14",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "16",
+    "EtiquetaPuerto": "15",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "17",
+    "EtiquetaPuerto": "16",
+    "Destino": "Dell R770 P1/iDRAC",
+    "IpRemota": "192.168.0.247",
+    "EsRack": true,
+    "EstadoRelacion": "Confirmado",
+    "PuertoRemoto": "P1/iDRAC"
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "18",
+    "EtiquetaPuerto": "17",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "19",
+    "EtiquetaPuerto": "18",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "20",
+    "EtiquetaPuerto": "19",
+    "Destino": "Switch VALUACIONR1",
+    "IpRemota": "192.168.1.29",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "21",
+    "EtiquetaPuerto": "20",
+    "Destino": "Switch VALUACIONR2",
+    "IpRemota": "192.168.1.20",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "22",
+    "EtiquetaPuerto": "21",
+    "Destino": "Switch Sistemas",
+    "IpRemota": "192.168.1.216",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "23",
+    "EtiquetaPuerto": "22",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "24",
+    "EtiquetaPuerto": "23",
+    "Destino": "Switch DELL S4148U-ON 48G",
+    "IpRemota": "LAN",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920",
+    "Pagina": "Switch HP 1920 (E) RACK1",
+    "Libro": "Excel5",
+    "FilaFuente": "25",
+    "EtiquetaPuerto": "24",
+    "Destino": "Switch HP 1920S (H)",
+    "IpRemota": "192.168.1.217",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "2",
+    "EtiquetaPuerto": "1",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "3",
+    "EtiquetaPuerto": "2",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "4",
+    "EtiquetaPuerto": "3",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "5",
+    "EtiquetaPuerto": "4",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "6",
+    "EtiquetaPuerto": "5",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "7",
+    "EtiquetaPuerto": "6",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "8",
+    "EtiquetaPuerto": "7",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "9",
+    "EtiquetaPuerto": "8",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "10",
+    "EtiquetaPuerto": "9",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "11",
+    "EtiquetaPuerto": "10",
+    "Destino": "UPS EATON",
+    "IpRemota": "192.168.1.42",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "12",
+    "EtiquetaPuerto": "11",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "13",
+    "EtiquetaPuerto": "12",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "14",
+    "EtiquetaPuerto": "13",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "15",
+    "EtiquetaPuerto": "14",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "16",
+    "EtiquetaPuerto": "15",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "17",
+    "EtiquetaPuerto": "16",
+    "Destino": "CISCO SYSTEM",
+    "IpRemota": "192.168.0.183",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "18",
+    "EtiquetaPuerto": "17",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "19",
+    "EtiquetaPuerto": "18",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "20",
+    "EtiquetaPuerto": "19",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "21",
+    "EtiquetaPuerto": "20",
+    "Destino": "VIRTUALXP44",
+    "IpRemota": "192.168.0.7",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "22",
+    "EtiquetaPuerto": "21",
+    "Destino": "LIBRE",
+    "IpRemota": null,
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "23",
+    "EtiquetaPuerto": "22",
+    "Destino": "Switch HP 1920 (E) RACK1",
+    "IpRemota": "192.168.1.115",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "24",
+    "EtiquetaPuerto": "23",
+    "Destino": "IDRAC PowerEdge R920",
+    "IpRemota": "192.168.0.252",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Switch HP 1920S",
+    "Pagina": "Switch HP 1920S (H) RACK1",
+    "Libro": "Excel7",
+    "FilaFuente": "25",
+    "EtiquetaPuerto": "24",
+    "Destino": "Switch HP 5500 (D) RACK1",
+    "IpRemota": "192.168.1.218",
+    "EsRack": true
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "2",
+    "EtiquetaPuerto": "1",
+    "Destino": "SIN SFP",
+    "IpRemota": null,
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "3",
+    "EtiquetaPuerto": "2",
+    "Destino": "SUMARIOS",
+    "IpRemota": null,
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "4",
+    "EtiquetaPuerto": "3",
+    "Destino": "OCUPADO",
+    "IpRemota": null,
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "5",
+    "EtiquetaPuerto": "4",
+    "Destino": "SFP LIBRE",
+    "IpRemota": null,
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "6",
+    "EtiquetaPuerto": "5",
+    "Destino": "OCUPADO",
+    "IpRemota": null,
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "7",
+    "EtiquetaPuerto": "6",
+    "Destino": "SIN SFP",
+    "IpRemota": null,
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "8",
+    "EtiquetaPuerto": "7",
+    "Destino": "SFP LIBRE",
+    "IpRemota": null,
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "9",
+    "EtiquetaPuerto": "8",
+    "Destino": "SFP LIBRE",
+    "IpRemota": null,
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "10",
+    "EtiquetaPuerto": "9",
+    "Destino": "SIN SFP",
+    "IpRemota": null,
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "11",
+    "EtiquetaPuerto": "10",
+    "Destino": "SIN SFP",
+    "IpRemota": null,
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "12",
+    "EtiquetaPuerto": "11",
+    "Destino": "SIN SFP",
+    "IpRemota": null,
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "13",
+    "EtiquetaPuerto": "12",
+    "Destino": "OCUPADO",
+    "IpRemota": null,
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "14",
+    "EtiquetaPuerto": "13",
+    "Destino": "SIN SFP",
+    "IpRemota": null,
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "15",
+    "EtiquetaPuerto": "14",
+    "Destino": "SIN SFP",
+    "IpRemota": null,
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "16",
+    "EtiquetaPuerto": "15",
+    "Destino": "SIN SFP",
+    "IpRemota": null,
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "17",
+    "EtiquetaPuerto": "16",
+    "Destino": "SIN SFP",
+    "IpRemota": null,
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "18",
+    "EtiquetaPuerto": "17",
+    "Destino": "SIN SFP",
+    "IpRemota": null,
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "19",
+    "EtiquetaPuerto": "18",
+    "Destino": "SIN SFP",
+    "IpRemota": null,
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "20",
+    "EtiquetaPuerto": "19",
+    "Destino": "SIN SFP",
+    "IpRemota": null,
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "21",
+    "EtiquetaPuerto": "20",
+    "Destino": "SIN SFP",
+    "IpRemota": null,
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "22",
+    "EtiquetaPuerto": "21",
+    "Destino": "Dell R770 LAN P2",
+    "IpRemota": "192.168.0.246",
+    "EsRack": true,
+    "TipoInterfaz": "SFP+",
+    "EstadoRelacion": "Confirmado",
+    "PuertoRemoto": "P2/LAN"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "23",
+    "EtiquetaPuerto": "22",
+    "Destino": "SIN SFP",
+    "IpRemota": null,
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "24",
+    "EtiquetaPuerto": "23",
+    "Destino": "SIN SFP",
+    "IpRemota": null,
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
+  },
+  {
+    "EquipoLocal": "Dell S4148U-ON 48G",
+    "Pagina": "DELL S4148U (I)",
+    "Libro": "Excel8",
+    "FilaFuente": "25",
+    "EtiquetaPuerto": "24",
+    "Destino": "Switch HP 1920 (E)",
+    "IpRemota": "192.168.1.115",
+    "EsRack": true,
+    "TipoInterfaz": "SFP+"
   }
 ]
 """;
@@ -2922,4 +3910,12 @@ internal sealed class FilaPuertoAreaV3
     public string Destino { get; set; } = string.Empty;
     /// <summary>IP remota literal; cambiarla reemplaza el dato escrito en la hoja.</summary>
     public string? IpRemota { get; set; }
+    /// <summary>Indica una tabla de rack; cambiarlo ajusta la vigencia predeterminada de sus conexiones.</summary>
+    public bool EsRack { get; set; }
+    /// <summary>Tipo del puerto confirmado por perfil; cambiarlo modifica su agrupación visual.</summary>
+    public string? TipoInterfaz { get; set; }
+    /// <summary>Estado confirmado por el usuario; cambiarlo altera la vigencia de la relación local.</summary>
+    public string? EstadoRelacion { get; set; }
+    /// <summary>Puerto remoto explícito; cambiarlo reemplaza la referencia a la boca contraparte.</summary>
+    public string? PuertoRemoto { get; set; }
 }
