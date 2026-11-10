@@ -976,3 +976,54 @@ body.mapa-a-pantalla-completa { overflow: hidden; }
     .hoja-impresion-switch .ip-extremo-conexion { margin: 0; font-size: 6pt !important; }
     .hoja-impresion-switch .puerto-extremo-conexion { margin: .5mm 0 0; padding: .5mm 1mm; font-size: 5.5pt !important; }
 }
+
+
+/* La topología mantiene exactamente dos columnas para que cada tarjeta conserve su tamaño. */
+.rejilla-dispositivos-topologia {
+    width: max-content;
+    min-width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 540px)) !important;
+    justify-content: center;
+    column-gap: 76px !important;
+    row-gap: 88px !important;
+}
+.mapa-topologia {
+    cursor: grab;
+    touch-action: pan-x pan-y;
+    scroll-behavior: smooth;
+}
+.mapa-topologia:focus-visible { outline: 3px solid #24758b; outline-offset: 2px; }
+.mapa-topologia.arrastrando-mapa {
+    cursor: grabbing;
+    scroll-behavior: auto;
+    user-select: none;
+}
+.enlace-topologia {
+    stroke-width: 4;
+    stroke-linecap: round;
+    opacity: 1;
+    filter: drop-shadow(0 0 2px #ffffff);
+}
+.enlace-topologia.enlace-capa-1.enlace-confirmado { stroke: #7857c5; }
+.enlace-topologia.enlace-capa-2.enlace-confirmado { stroke: #087c9b; }
+.enlace-topologia.enlace-capa-3.enlace-confirmado { stroke: #16834a; }
+.enlace-topologia.enlace-capa-2.enlace-parcial-switch {
+    stroke: #477b9c;
+    stroke-width: 4.5;
+    stroke-dasharray: 10 7;
+    opacity: 1;
+}
+.muestra-enlace.enlace-capa-1 { border-color: #7857c5; }
+.muestra-enlace.enlace-capa-2 { border-color: #087c9b; }
+.muestra-enlace.enlace-capa-3 { border-color: #16834a; }
+@media (max-width: 760px) {
+    .rejilla-dispositivos-topologia,
+    .mapa-topologia[data-capa-actual="switching"] .rejilla-dispositivos-topologia {
+        width: max-content;
+        min-width: 1132px;
+        grid-template-columns: repeat(2, 540px) !important;
+        justify-content: start;
+        column-gap: 52px !important;
+        row-gap: 72px !important;
+    }
+}
