@@ -264,3 +264,8 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 - El mapa general imprime un resumen gráfico compacto en una hoja. No incluir fichas largas de enlaces en esa hoja panorámica; conservarlas en la vista interactiva y en el detalle del switch.
 - No marcar conexiones documentadas como pendientes cuando solo falte el puerto remoto. Mantener textos, métricas y leyendas coherentes con la capa y la fuente.
 - Actualizar README y este prompt al cambiar impresión o interacción.
+
+- El mapa de topología usa un área de desplazamiento interna con ancho legible de tarjetas; permitir maximizar el panel completo para navegarlo en cualquiera de las capas y conservar sus controles.
+- Al maximizar, redimensionar también el SVG y calcular las coordenadas de los extremos con el desplazamiento interno del lienzo.
+- Para la impresión A4 horizontal, distribuir tarjetas de conexión en más columnas según su cantidad antes de aplicar la escala final. Mantener margen y evitar reducir excesivamente la página por el diseño vertical de pantalla.
+- Actualizar README y este prompt junto con las mejoras de mapa o impresión.
