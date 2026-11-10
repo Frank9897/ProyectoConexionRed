@@ -847,7 +847,7 @@ tbody tr:hover { background: #f7fafb; }
         width: 287mm !important;
         max-width: none !important;
         transform: scale(var(--escala-impresion, 1));
-        transform-origin: top left;
+        transform-origin: top center;
     }
     .hoja-impresion-switch .panel-enlaces,
     .hoja-impresion-switch .ficha-conexion { break-inside: auto !important; page-break-inside: auto !important; }
