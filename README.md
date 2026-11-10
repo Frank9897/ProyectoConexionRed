@@ -163,3 +163,8 @@ Se corrigió un separador faltante entre filas del JSON incrustado de `CatalogoP
 ### Impresión de switch y mapa en una hoja
 
 El detalle individual de switch se imprime en A4 horizontal, ajustando automáticamente su escala para mantener el frontal, los datos y las conexiones en una sola página. El mapa general imprime una vista compacta con equipos y enlaces documentados; los filtros y las fichas extensas se omiten de esa hoja. En pantalla, los controles conservan sus funciones y no cambian el tamaño de lectura.
+
+
+### Mapa navegable e impresión en una hoja
+
+La topología mantiene el lienzo en un área visible estable, con desplazamiento interno para recorrer las tarjetas. El botón **Maximizar mapa** expande el panel y conserva filtros y controles de capa. La impresión del detalle del switch ajusta las conexiones en columnas según su cantidad, conserva un margen A4 y reduce el contenido solo cuando hace falta. La impresión panorámica muestra el mapa en formato compacto en una página.
