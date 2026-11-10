@@ -46,6 +46,8 @@
     </dl>
 </section>
 
+@if (Model.Enlaces.Count > 0)
+{
 <section class="panel panel-enlaces">
     <div class="encabezado-seccion-topologia">
         <div><p class="sobrelinea">CONEXIONES REGISTRADAS</p><h2>Enlaces de @Model.Dispositivo.Nombre</h2></div>
@@ -101,6 +103,7 @@
         </div>
     }
 </section>
+}
 
 @if (Model.ConexionesParciales.Count > 0)
 {
@@ -109,7 +112,7 @@
             <div><p class="sobrelinea">EXTREMO REMOTO INCOMPLETO</p><h2>Conexiones pendientes de completar</h2></div>
             <span class="contador-enlaces">@Model.ConexionesParciales.Count registros</span>
         </div>
-        <p class="aclaracion-topologia-grafica">El puerto local está registrado como ocupado; el extremo remoto solo se muestra con los datos que tiene el inventario.</p>
+        <p class="aclaracion-topologia-grafica">El registro del Visio está confirmado. Si el documento no indica equipo, puerto remoto o medio, ese dato permanece sin completar.</p>
         <div class="lista-fichas-conexion">
             @* conexionParcial recorre las notas cuyo puerto local pertenece al switch. *@
             @foreach (var conexionParcial in Model.ConexionesParciales)
