@@ -70,3 +70,5 @@ Relaciones confirmadas entre equipos pero sin emparejamiento único de puertos i
 - Las filas parciales del inventario se cotejan por IP/nombre y se emparejan solo cuando existe una única relación recíproca en cada sentido.
 - Los enlaces de un solo extremo permanecen visibles como relación confirmada entre equipos; un estilo distinto señala únicamente que no hay contraparte única.
 - El importador incorpora las filas SFP documentadas y los puertos de rack aparecen confirmados según la instrucción del usuario.
+
+- Para que Capa 3 dibuje la línea aunque la PC no tenga ficha propia en SQLite, el mapa genera un nodo visual temporal con los campos literales de nombre/IP de la relación. Este nodo no se guarda como dispositivo ni inventa atributos; cuando ya existe una ficha que coincide, se usa la ficha del inventario.
