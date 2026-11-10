@@ -20,31 +20,37 @@
     function seleccionarPuertoTopologia(puerto, desplazarAConexion) {
         // etiquetaSeleccionada conserva la identificación visible que relaciona la boca y la ficha.
         const etiquetaSeleccionada = puerto.dataset.etiquetaPuerto;
+        // puertoActual recorre las bocas para retirar la selección previa del frontal.
         puertosInteractivos.forEach(puertoActual => {
+            // estaSeleccionado indica si la boca recorrida es la que recibió la acción.
             const estaSeleccionado = puertoActual === puerto;
             puertoActual.classList.toggle("puerto-seleccionado", estaSeleccionado);
             puertoActual.setAttribute("aria-pressed", estaSeleccionado ? "true" : "false");
         });
+        // tarjeta recorre las conexiones y conserva el resaltado solo para la etiqueta elegida.
         tarjetasConexion.forEach(tarjeta => {
             tarjeta.classList.toggle("conexion-relacionada-activa",
                 tarjeta.dataset.puertoLocal === etiquetaSeleccionada);
         });
+        // mensaje recorre las regiones accesibles que anuncian la selección.
         mensajesPuerto.forEach(mensaje => {
             mensaje.textContent = etiquetaSeleccionada
                 ? `Puerto ${etiquetaSeleccionada}: ${puerto.dataset.estadoPuerto}. Destino: ${puerto.dataset.destinoPuerto}.`
                 : "Puerto sin etiqueta documentada.";
         });
         if (desplazarAConexion) {
+            // tarjetaCoincidente busca la primera ficha cuyo puerto local coincide literalmente.
             const tarjetaCoincidente = tarjetasConexion.find(tarjeta =>
                 tarjeta.dataset.puertoLocal === etiquetaSeleccionada);
             tarjetaCoincidente?.scrollIntoView({ behavior: "smooth", block: "center" });
         }
     }
 
+    // puerto recorre las bocas y vincula sus eventos de ratón y teclado.
     puertosInteractivos.forEach(puerto => {
-        // activarPuerto selecciona el puerto cuando se usa el ratón.
+        // activarPuerto selecciona la boca indicada al recibir un clic.
         puerto.addEventListener("click", () => seleccionarPuertoTopologia(puerto, true));
-        // activarConTeclado habilita Enter y Espacio para quienes navegan sin ratón.
+        // activarConTeclado procesa el evento recibido; si es Enter o Espacio, selecciona la boca.
         puerto.addEventListener("keydown", evento => {
             if (evento.key === "Enter" || evento.key === " ") {
                 evento.preventDefault();
@@ -53,12 +59,14 @@
         });
     });
 
+    // tarjeta recorre las fichas y vincula su selección con el frontal.
     tarjetasConexion.forEach(tarjeta => {
-        // seleccionarDesdeFicha sincroniza el frontal al pulsar el cuerpo de una conexión.
+        // seleccionarDesdeFicha usa el evento de clic para sincronizar una ficha con el frontal.
         tarjeta.addEventListener("click", evento => {
             if (evento.target.closest("a, button, summary, input, select, textarea")) {
                 return;
             }
+            // puertoRelacionado localiza la boca con la misma etiqueta local de la ficha.
             const puertoRelacionado = puertosInteractivos.find(puerto =>
                 puerto.dataset.etiquetaPuerto === tarjeta.dataset.puertoLocal);
             if (puertoRelacionado) {
