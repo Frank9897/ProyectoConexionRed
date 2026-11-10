@@ -141,3 +141,12 @@ En el detalle de un switch, cada puerto del frontal se puede seleccionar con rat
 - Por confirmación del usuario, los registros con procedencia de Visio se presentan como confirmados documentalmente. Esto confirma lo que la fuente registra; no implica conectividad en vivo ni completa los nombres, IP, puerto remoto o medio que falten.
 - Los tipos de puerto no especificados se rotulan como “Tipo de puerto no indicado”, para evitar confundir esa falta puntual con el estado de confirmación de todo el switch.
 - La impresión del detalle se compacta para A4 horizontal: tarjetas de conexión en dos columnas, frontal y datos técnicos en paralelo, controles y paneles vacíos omitidos. Se conservan extremos, IP, puertos y estados visibles.
+
+
+### Capas de topología cotejadas con el Visio V3
+
+La vista organiza las conexiones según la función documentada: **Capa 1** representa el cableado/patcheras, **Capa 2** los enlaces entre switches y **Capa 3** los equipos finales conectados a puertos de switches. Una PC como AGRIMENSURA15 se presenta en Capa 3 con el puerto local del switch; no se le atribuye un puerto remoto de NIC. En Capa 2, se muestran ambos puertos solo cuando las tablas opuestas del V3 permiten cotejar un par único. Si el puerto opuesto falta, la conexión entre switches sigue marcada como confirmada documentalmente y el número remoto queda sin asignar.
+
+Se cotejaron los 31 libros Excel incrustados en `DIAGRAMA RED V3.0.vsdx`. El análisis por libro, los pares recíprocos, las correcciones confirmadas y las filas ambiguas están documentados en [docs/ANALISIS_V3_CONEXIONES.md](docs/ANALISIS_V3_CONEXIONES.md). Se incorporan al catálogo los SFP/SFP+ descritos en las tablas correspondientes; las interfaces se rotulan `SFP n` para distinguirlas de RJ45 con el mismo número. Esto no supone que las jaulas compartidas sean independientes ni que haya un transceptor instalado.
+
+Las correcciones confirmadas aplicadas incluyen ProCurve `10.0.1.1`, 3Com `192.168.1.24`, Aruba 1930 principal de Mesa de Entradas `192.168.1.1` y R770 P2/LAN `192.168.0.246` (P1/iDRAC `192.168.0.247`). La inaccesibilidad por credenciales de Régimen y Mesa de Entradas principal se conserva como estado administrativo y no como falta de confirmación de su existencia o de sus enlaces documentados.
