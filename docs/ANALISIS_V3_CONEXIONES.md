@@ -153,3 +153,8 @@ Las áreas y pisos se toman de la página del PDF. El usuario asignado queda vac
 ## Ajustes UX/UI de switching (10 de noviembre de 2026)
 
 El mapa acomoda switches en dos columnas en escritorio y una en móvil. El frontal diferencia ocupado, libre confirmado y desconocido con color y borde contrastantes e incluye contadores por estado. El detalle del switch reúne frontal, resumen, IP, rol, enlaces completos y conexiones parciales. Cada extremo muestra nombre, IP atenuada y puerto. Las listas permiten búsqueda, filtro de estado, paginación y acceso directo al frontal. El medio solo aparece cuando está confirmado y página/libro/fila no se muestran por defecto; el respaldo queda bajo demanda. La vista admite impresión.
+
+
+## Interacción puerto–conexión (10 de noviembre de 2026)
+
+En el detalle de switch, los puertos tienen controles accesibles por ratón, Enter y Espacio. La selección anuncia el estado y destino guardados, resalta la ficha local que corresponde a la etiqueta del puerto y desplaza la página a esa ficha. Seleccionar el cuerpo de una ficha resalta el puerto; controles internos como enlaces y resúmenes de detalles mantienen su comportamiento. El vínculo usa la etiqueta de puerto local que ya consta en ambos registros. No se usa para deducir puerto remoto, medio ni conectividad actual. Los puertos sin destino presentan «Sin destino documentado». El foco se distingue visualmente y se respeta la preferencia de movimiento reducido.
