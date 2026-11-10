@@ -132,3 +132,12 @@ Las conexiones muestran nombre del equipo, IP en gris, etiqueta de puerto y esta
 ### Recorrido sincronizado entre puertos y conexiones
 
 En el detalle de un switch, cada puerto del frontal se puede seleccionar con ratón, Enter o Espacio. La selección anuncia estado y destino documentados, destaca la ficha que comparte la etiqueta del puerto y desplaza la página hacia ella. Al pulsar una ficha se resalta el puerto correspondiente. Si el remoto no está documentado, se muestra esa falta explícitamente y no se crea un enlace ficticio. El foco de teclado y el movimiento respetan la preferencia de movimiento reducido del navegador.
+
+
+### Ajustes de switching, estado documental e impresión
+
+- Las tarjetas de topología usan dos columnas en escritorio y una en pantallas angostas; cada tarjeta gana ancho para mostrar el frontal y sus datos con menos recorte horizontal.
+- El mapa y el detalle del switch cuentan igual los enlaces completos y las relaciones documentadas con extremo remoto parcial. Un puerto ocupado por una relación parcial ya no aparece como desconocido al abrir el switch.
+- Por confirmación del usuario, los registros con procedencia de Visio se presentan como confirmados documentalmente. Esto confirma lo que la fuente registra; no implica conectividad en vivo ni completa los nombres, IP, puerto remoto o medio que falten.
+- Los tipos de puerto no especificados se rotulan como “Tipo de puerto no indicado”, para evitar confundir esa falta puntual con el estado de confirmación de todo el switch.
+- La impresión del detalle se compacta para A4 horizontal: tarjetas de conexión en dos columnas, frontal y datos técnicos en paralelo, controles y paneles vacíos omitidos. Se conservan extremos, IP, puertos y estados visibles.
