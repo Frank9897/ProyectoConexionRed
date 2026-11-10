@@ -3,6 +3,8 @@
     ViewData["Title"] = "Topología";
 }
 
+<div class="hoja-impresion hoja-impresion-topologia" data-hoja-impresion>
+<div class="contenido-hoja-impresion" data-contenido-impresion>
 <section class="encabezado-pagina encabezado-topologia">
     <div>
         <p class="sobrelinea">MAPA DOCUMENTAL DE RED</p>
@@ -34,7 +36,7 @@
     <article class="metrica-topologia">
         <span class="etiqueta-metrica">Enlaces completos</span>
         <strong>@Model.TotalEnlaces</strong>
-        <small>@Model.RelacionesParciales.Count relaciones con extremo remoto pendiente</small>
+        <small>@Model.RelacionesParciales.Count relaciones registradas desde puertos</small>
     </article>
 </section>
 
@@ -73,7 +75,7 @@
             <span class="etiqueta-capa">CAPA 3 · ACCESO E IP</span>
         </div>
         <h2>Puestos y direcciones</h2>
-        <p>Puestos inventariados y switches conectados mediante un enlace registrado.</p>
+        <p>PCs, impresoras y otros equipos finales asociados a puertos de switch.</p>
         <div class="dato-capa">
             <strong>@Model.PuestosConIp<span class="total-secundario"> / @Model.TotalPuestos</span></strong>
             <span>puestos con IP documentada</span>
@@ -86,7 +88,7 @@
     <span class="icono-nota" aria-hidden="true">i</span>
     <div>
         <strong>La topología es documental</strong>
-        <p>No se realizan pings, consultas ni cambios sobre la red real. Las conexiones solo aparecen cuando están registradas con sus extremos y puertos.</p>
+        <p>No se realizan pings, consultas ni cambios sobre la red real. Cada línea representa una relación documentada; la vista distingue los extremos que la fuente no identifica.</p>
     </div>
 </aside>
 
@@ -95,7 +97,7 @@
         <div>
             <p class="sobrelinea">VISTA INTERACTIVA</p>
             <h2 id="titulo-mapa-topologia">Mapa de conexiones documentadas</h2>
-            <p>Selecciona una perspectiva para filtrar los equipos; las líneas aparecen solo entre extremos guardados.</p>
+            <p>Las líneas representan relaciones documentadas; el puerto remoto aparece cuando está identificado.</p>
         </div>
         <div class="acciones-topologia">
             <span class="contador-enlaces">@Model.Dispositivos.Count equipos · @Model.Enlaces.Count enlaces</span>
@@ -371,6 +373,9 @@ else
         </div>
     </section>
 }
+
+</div>
+</div>
 
 <script src="~/js/paginacion-conexiones.js" asp-append-version="true"></script>
 <script src="~/js/topologia-grafica.js" asp-append-version="true"></script>
