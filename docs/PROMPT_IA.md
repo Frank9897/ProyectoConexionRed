@@ -232,3 +232,11 @@ La entidad SQLite `ConexionDocumentada` ya admite puerto local obligatorio, dest
 - Al seleccionar el cuerpo de una ficha, se resalta el puerto asociado por su etiqueta local. Los enlaces y controles internos conservan su acción normal.
 - La asociación usa solo etiquetas del puerto local documentadas; no deducir destino remoto, medio ni conectividad actual. Si la conexión no tiene puerto remoto confirmado, mantenerlo explícitamente sin documentar.
 - El foco debe ser visible, accesible y compatible con movimiento reducido. Documentar el comportamiento en README.md y en este archivo con cada cambio posterior.
+
+
+## Ajustes visuales y de confianza documental (10 de noviembre de 2026)
+- Topología debe mostrar dos tarjetas por fila en escritorio y una en pantallas estrechas, con espacio suficiente para apreciar el frontal de puertos.
+- El mapa general y el detalle del switch cuentan igual conexiones completas y conexiones documentadas parcialmente para el uso del puerto. No mostrar ocupado como desconocido por omitir relaciones parciales en el detalle.
+- El usuario confirma como documentalmente válidos los registros extraídos de los Visios. Mostrar esa confianza de fuente en estado “Confirmado”; esto no afirma conectividad en vivo ni autoriza completar extremos, IP, puerto remoto o medio ausentes.
+- Si el tipo de puerto no aparece especificado, rotular “Tipo de puerto no indicado” en lugar de mostrar “NO CONFIRMADO” como si describiera el switch o sus conexiones.
+- El detalle de switch se prepara para imprimir en una hoja A4 horizontal: conexiones en dos columnas, frontal y datos técnicos compactos, sin panel vacío de enlaces completos. Mantener visibles nombres, IP, puertos y estados; no ocultar ambigüedades del extremo remoto que sí tengan efecto.
