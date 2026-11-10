@@ -53,6 +53,7 @@ public class TopologiaController : Controller
             select new ConexionParcialTopologiaViewModel
             {
                 Identificador = relacion.Identificador,
+                IdentificadorEquipoLocal = equipoLocal.Identificador,
                 IdentificadorPuertoLocal = relacion.IdentificadorPuertoLocal,
                 EquipoLocal = equipoLocal.Nombre,
                 IpLocal = equipoLocal.IpAdministracion,
@@ -67,6 +68,8 @@ public class TopologiaController : Controller
                 FuenteFila = relacion.FuenteFila,
                 Observaciones = relacion.Observaciones
             }).ToListAsync(cancelacion);
+        // ResolverRelacionesParciales compara las filas recíprocas y enlaza solo destinos únicos.
+        ResolverRelacionesParciales(relacionesParciales, equiposRegistrados);
 
         // equiposPorId resuelve cada extremo de enlace a su ficha propietaria.
         var equiposPorId = equiposRegistrados.ToDictionary(equipo => equipo.Identificador);
@@ -178,7 +181,8 @@ public class TopologiaController : Controller
                     ? enlace.EstadoDatos is "Confirmado" or "Vigente"
                     : true,
                 Fuente = enlace.Fuente,
-                FechaUltimaRevision = enlace.FechaUltimaRevision
+                FechaUltimaRevision = enlace.FechaUltimaRevision,
+                CapaRelacional = ClasificarCapaRelacion(equipoOrigen, equipoDestino)
             });
         }
 
@@ -234,24 +238,51 @@ public class TopologiaController : Controller
             .ToListAsync(cancelacion);
         // enlacesRegistrados permite resolver ambos extremos y listar solo enlaces de esta ficha.
         var enlacesRegistrados = await contextoInventario.EnlacesFisicos.AsNoTracking().ToListAsync(cancelacion);
-        // conexionesParciales conserva las observaciones cuyo puerto local pertenece a este switch.
-        var identificadoresInterfacesSwitch = interfacesDelSwitch.Select(interfaz => interfaz.Identificador).ToList();
-        var conexionesParciales = await contextoInventario.ConexionesDocumentadas.AsNoTracking()
-            .Where(relacion => identificadoresInterfacesSwitch.Contains(relacion.IdentificadorPuertoLocal))
+        // relacionesParcialesRegistradas incluye filas de ambos extremos para cotejar tablas recíprocas.
+        var relacionesParcialesRegistradas = await contextoInventario.ConexionesDocumentadas.AsNoTracking()
             .OrderBy(relacion => relacion.IdentificadorPuertoLocal)
             .ToListAsync(cancelacion);
-        // conexionParcial recorre registros con origen para respetar la confirmación documental del usuario.
-        foreach (var conexionParcial in conexionesParciales)
-        {
-            if (!string.IsNullOrWhiteSpace(conexionParcial.FuentePagina))
-                conexionParcial.EstadoDatos = "Confirmado";
-        }
         // interfacesPorId resuelve cada extremo guardado sin buscar por nombre o IP.
         var interfacesPorId = await contextoInventario.InterfacesEquipo.AsNoTracking()
             .ToDictionaryAsync(interfaz => interfaz.Identificador, cancelacion);
         // equiposPorId permite presentar el nombre/IP del otro equipo que figura en el enlace.
         var equiposPorId = await contextoInventario.Equipos.AsNoTracking()
             .ToDictionaryAsync(equipo => equipo.Identificador, cancelacion);
+        // relacionesParciales convierte observaciones en vistas con tipo de capa y contraparte localizada.
+        var relacionesParciales = new List<ConexionParcialTopologiaViewModel>();
+        foreach (var relacion in relacionesParcialesRegistradas)
+        {
+            if (!interfacesPorId.TryGetValue(relacion.IdentificadorPuertoLocal, out var puertoLocal)
+                || !equiposPorId.TryGetValue(puertoLocal.IdentificadorEquipo, out var equipoLocal))
+                continue;
+
+            relacionesParciales.Add(new ConexionParcialTopologiaViewModel
+            {
+                Identificador = relacion.Identificador,
+                IdentificadorEquipoLocal = equipoLocal.Identificador,
+                IdentificadorPuertoLocal = puertoLocal.Identificador,
+                EquipoLocal = equipoLocal.Nombre,
+                IpLocal = equipoLocal.IpAdministracion,
+                PuertoLocal = puertoLocal.EtiquetaPuerto,
+                EquipoRemoto = relacion.EquipoRemoto,
+                IpRemota = relacion.IpRemota,
+                PuertoRemoto = relacion.PuertoRemoto,
+                Medio = relacion.Medio,
+                EstadoDatos = string.IsNullOrWhiteSpace(relacion.FuentePagina) ? relacion.EstadoDatos : "Confirmado",
+                FuentePagina = relacion.FuentePagina,
+                FuenteLibro = relacion.FuenteLibro,
+                FuenteFila = relacion.FuenteFila,
+                Observaciones = relacion.Observaciones
+            });
+        }
+        // equiposParaResolver permite cotejar las filas con las fichas almacenadas sin alterar SQLite.
+        var equiposParaResolver = equiposPorId.Values.ToList();
+        ResolverRelacionesParciales(relacionesParciales, equiposParaResolver);
+        // conexionesParciales limita el detalle a las relaciones locales del switch actual.
+        var conexionesParciales = relacionesParciales
+            .Where(relacion => relacion.IdentificadorEquipoLocal == identificador)
+            .ToList();
+
         // enlacesDelSwitch convierte solo sus enlaces explícitos en filas legibles.
         var enlacesDelSwitch = new List<EnlaceTopologiaViewModel>();
         foreach (var enlace in enlacesRegistrados.Where(enlace =>
@@ -281,7 +312,8 @@ public class TopologiaController : Controller
                     ? enlace.EstadoDatos is "Confirmado" or "Vigente"
                     : true,
                 Fuente = enlace.Fuente,
-                FechaUltimaRevision = enlace.FechaUltimaRevision
+                FechaUltimaRevision = enlace.FechaUltimaRevision,
+                CapaRelacional = ClasificarCapaRelacion(equipoOrigen, equipoDestino)
             });
         }
 
@@ -358,4 +390,158 @@ public class TopologiaController : Controller
 
         return View(new DetalleTopologiaViewModel { Dispositivo = dispositivo, Enlaces = enlacesDelSwitch, ConexionesParciales = conexionesParciales });
     }
+    /// <summary>
+    /// Resuelve el equipo remoto por IP o etiqueta y completa pares únicamente cuando hay una contraparte única.
+    /// Cambiar la lista de equipos cambia qué destinos pueden enlazarse; cambiar datos de una relación cambia su clasificación o emparejamiento.
+    /// </summary>
+    /// <param name="relaciones">Registros con un puerto local; añadir registros puede revelar o desambiguar una contraparte.</param>
+    /// <param name="equipos">Fichas del inventario; añadir o renombrar equipos puede resolver un destino.</param>
+    private static void ResolverRelacionesParciales(
+        IReadOnlyList<ConexionParcialTopologiaViewModel> relaciones,
+        IReadOnlyList<EquipoRed> equipos)
+    {
+        // relacion recorre cada fila local para resolver su equipo remoto sin completar valores ausentes.
+        foreach (var relacion in relaciones)
+        {
+            // equipoLocal permite clasificar el vínculo desde el tipo real del nodo de origen.
+            var equipoLocal = equipos.FirstOrDefault(equipo => equipo.Identificador == relacion.IdentificadorEquipoLocal);
+            // equipoRemoto es una ficha única coincidente; si no es única, el enlace queda solo como nota local.
+            var equipoRemoto = ResolverEquipoRelacionado(equipos, relacion.EquipoRemoto, relacion.IpRemota);
+            if (equipoLocal is null)
+                continue;
+
+            if (equipoRemoto is not null)
+            {
+                relacion.IdentificadorEquipoRemoto = equipoRemoto.Identificador;
+                relacion.CapaRelacional = ClasificarCapaRelacion(equipoLocal, equipoRemoto);
+            }
+            else if (NormalizarEtiquetaRelacion(relacion.EquipoRemoto).Contains("SWITCH", StringComparison.Ordinal))
+            {
+                relacion.CapaRelacional = "switching";
+            }
+            else if (!string.IsNullOrWhiteSpace(relacion.EquipoRemoto) || !string.IsNullOrWhiteSpace(relacion.IpRemota))
+            {
+                relacion.CapaRelacional = "acceso";
+            }
+        }
+
+        // relacion recorre cada enlace entre switches para buscar una sola fila que apunte de regreso.
+        foreach (var relacion in relaciones.Where(relacion => relacion.CapaRelacional == "switching"
+                     && relacion.IdentificadorEquipoRemoto.HasValue))
+        {
+            // candidatasReciprocas contiene tablas del switch remoto cuyo destino es el switch local actual.
+            var candidatasReciprocas = relaciones.Where(candidata =>
+                candidata.IdentificadorEquipoLocal == relacion.IdentificadorEquipoRemoto
+                && candidata.IdentificadorEquipoRemoto == relacion.IdentificadorEquipoLocal
+                && candidata.Identificador != relacion.Identificador).ToList();
+            if (candidatasReciprocas.Count != 1)
+                continue;
+
+            // contraparte conserva el único puerto local de la tabla remota que apunta al switch actual.
+            var contraparte = candidatasReciprocas[0];
+            // candidatasDeVuelta evita emparejar dos puertos locales distintos con el mismo remoto.
+            var candidatasDeVuelta = relaciones.Where(candidata =>
+                candidata.IdentificadorEquipoLocal == contraparte.IdentificadorEquipoRemoto
+                && candidata.IdentificadorEquipoRemoto == contraparte.IdentificadorEquipoLocal
+                && candidata.Identificador != contraparte.Identificador).ToList();
+            if (candidatasDeVuelta.Count != 1 || candidatasDeVuelta[0].Identificador != relacion.Identificador)
+                continue;
+
+            relacion.IdentificadorRelacionReciproca = contraparte.Identificador;
+            relacion.IdentificadorPuertoRemoto = contraparte.IdentificadorPuertoLocal;
+            relacion.PuertoRemoto = contraparte.PuertoLocal;
+        }
+    }
+
+    /// <summary>
+    /// Encuentra una ficha remota usando primero una IP inequívoca y luego una etiqueta única normalizada.
+    /// Cambiar nombre o IP permite resolver el enlace; si dos candidatos siguen coincidiendo, devuelve nulo.
+    /// </summary>
+    /// <param name="equipos">Fichas disponibles; agregar duplicados puede hacer que el resultado sea ambiguo.</param>
+    /// <param name="nombreRemoto">Etiqueta escrita en el Visio; cambiarla selecciona otra ficha por nombre.</param>
+    /// <param name="ipRemota">IP escrita en el Visio; cambiarla prioriza otra coincidencia exacta.</param>
+    /// <returns>La ficha única encontrada o nulo si la evidencia no distingue un solo equipo.</returns>
+    private static EquipoRed? ResolverEquipoRelacionado(
+        IReadOnlyList<EquipoRed> equipos,
+        string? nombreRemoto,
+        string? ipRemota)
+    {
+        // coincidenciasIp agrupa coincidencias exactas sin limpiar rangos o corregir direcciones.
+        var coincidenciasIp = string.IsNullOrWhiteSpace(ipRemota)
+            ? new List<EquipoRed>()
+            : equipos.Where(equipo => string.Equals(equipo.IpAdministracion?.Trim(), ipRemota.Trim(),
+                StringComparison.OrdinalIgnoreCase)).ToList();
+        // nombreNormalizado elimina espacios y signos para tolerar diferencias menores del rótulo.
+        var nombreNormalizado = NormalizarEtiquetaRelacion(nombreRemoto);
+        // coincidenciasNombre conserva coincidencias exactas antes de intentar una búsqueda parcial.
+        var coincidenciasNombre = string.IsNullOrWhiteSpace(nombreNormalizado)
+            ? new List<EquipoRed>()
+            : equipos.Where(equipo => NormalizarEtiquetaRelacion(equipo.Nombre) == nombreNormalizado).ToList();
+
+        if (coincidenciasIp.Count == 1)
+        {
+            // coincidenciaNombre evita asociar una IP única a una ficha con una etiqueta contradictoria.
+            if (coincidenciasNombre.Count == 1
+                && coincidenciasNombre[0].Identificador != coincidenciasIp[0].Identificador)
+                return null;
+            return coincidenciasIp[0];
+        }
+
+        if (coincidenciasIp.Count > 1)
+        {
+            // candidatoPorNombre resuelve IP repetida solo cuando el nombre señala uno de sus equipos.
+            var candidatoPorNombre = coincidenciasNombre.SingleOrDefault();
+            return candidatoPorNombre is not null
+                && coincidenciasIp.Any(equipo => equipo.Identificador == candidatoPorNombre.Identificador)
+                    ? candidatoPorNombre
+                    : null;
+        }
+
+        if (coincidenciasNombre.Count == 1)
+            return coincidenciasNombre[0];
+
+        // coincidenciasParciales admite etiquetas breves únicamente si una sola ficha las contiene.
+        var coincidenciasParciales = string.IsNullOrWhiteSpace(nombreNormalizado) || nombreNormalizado.Length < 4
+            ? new List<EquipoRed>()
+            : equipos.Where(equipo =>
+            {
+                // etiquetaNormalizada representa cada nombre inventariado en la misma forma compacta.
+                var etiquetaNormalizada = NormalizarEtiquetaRelacion(equipo.Nombre);
+                return etiquetaNormalizada.Contains(nombreNormalizado, StringComparison.Ordinal)
+                    || nombreNormalizado.Contains(etiquetaNormalizada, StringComparison.Ordinal);
+            }).ToList();
+        return coincidenciasParciales.Count == 1 ? coincidenciasParciales[0] : null;
+    }
+
+    /// <summary>
+    /// Clasifica un vínculo de switch a switch como switching y una relación entre switch y equipo final como acceso.
+    /// Cambiar cualquiera de los tipos modifica la capa asignada al enlace.
+    /// </summary>
+    /// <param name="equipoOrigen">Equipo desde el que se registra la relación; su tipo afecta la clasificación.</param>
+    /// <param name="equipoDestino">Equipo remoto resuelto; su tipo completa la clasificación del par.</param>
+    /// <returns>El identificador físico, switching o acceso que usa el mapa.</returns>
+    private static string ClasificarCapaRelacion(EquipoRed equipoOrigen, EquipoRed equipoDestino)
+    {
+        // origenEsSwitch identifica si el primer extremo es un switch.
+        var origenEsSwitch = string.Equals(equipoOrigen.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase);
+        // destinoEsSwitch identifica si el segundo extremo es un switch.
+        var destinoEsSwitch = string.Equals(equipoDestino.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase);
+        return origenEsSwitch && destinoEsSwitch ? "switching"
+            : origenEsSwitch || destinoEsSwitch ? "acceso"
+            : "fisica";
+    }
+
+    /// <summary>
+    /// Normaliza una etiqueta para comparar solo sus letras y números.
+    /// Cambiar el texto cambia únicamente su forma de comparación, no la etiqueta guardada.
+    /// </summary>
+    /// <param name="etiqueta">Nombre o etiqueta de origen; cambiarlo puede alterar coincidencias de resolución.</param>
+    /// <returns>La etiqueta compactada en mayúsculas.</returns>
+    private static string NormalizarEtiquetaRelacion(string? etiqueta)
+    {
+        // claveNormalizada quita espacios y signos para comparar rótulos con diferencias menores de formato.
+        var claveNormalizada = string.Concat((etiqueta ?? string.Empty).Where(char.IsLetterOrDigit)).ToUpperInvariant();
+        return claveNormalizada;
+    }
+
 }
