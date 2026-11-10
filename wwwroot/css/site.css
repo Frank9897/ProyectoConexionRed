@@ -809,3 +809,12 @@ tbody tr:hover { background: #f7fafb; }
         box-shadow: none;
     }
 }
+
+
+/* Enlaces entre switches con destino confirmado pero sin tabla recíproca se diferencian por trazo, no como datos dudosos. */
+.enlace-topologia.enlace-parcial-switch {
+    stroke: #527f98;
+    stroke-dasharray: 5 4;
+    opacity: .88;
+}
+.muestra-enlace.enlace-parcial-switch { border-top: 2px dashed #527f98; }
