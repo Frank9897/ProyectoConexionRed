@@ -97,7 +97,10 @@
             <h2 id="titulo-mapa-topologia">Mapa de conexiones documentadas</h2>
             <p>Selecciona una perspectiva para filtrar los equipos; las líneas aparecen solo entre extremos guardados.</p>
         </div>
-        <span class="contador-enlaces">@Model.Dispositivos.Count equipos · @Model.Enlaces.Count enlaces</span>
+        <div class="acciones-topologia">
+            <span class="contador-enlaces">@Model.Dispositivos.Count equipos · @Model.Enlaces.Count enlaces</span>
+            <button class="boton boton-secundario" type="button" data-imprimir-topologia>Imprimir vista</button>
+        </div>
     </div>
 
     <div class="filtros-topologia-grafica">
@@ -132,7 +135,7 @@
 
     <p class="aclaracion-topologia-grafica">Un enlace registrado no confirma que el equipo responda ahora. Un puerto sin enlace solo se considera libre si alguien lo marcó explícitamente como libre confirmado.</p>
 
-    <div class="mapa-topologia" data-mapa-topologia>
+    <div class="mapa-topologia" data-mapa-topologia data-capa-actual="fisica">
         <svg class="capa-svg-enlaces" data-capa-enlaces aria-hidden="true"></svg>
         @if (Model.Dispositivos.Count == 0)
         {
@@ -235,7 +238,7 @@
         </div>
         <p class="sobrelinea">CAPA FÍSICA</p>
         <h2>Los nodos aún no tienen enlaces registrados</h2>
-        <p>Los equipos y sus puertos siguen visibles. Las líneas aparecerán cuando se documenten sus dos extremos y el medio; no se infieren relaciones por área o cercanía.</p>
+        <p>Las líneas aparecerán cuando estén documentados ambos puertos. Las conexiones incompletas se conservan para revisión sin inventar el extremo remoto.</p>
         <a class="boton boton-secundario" asp-controller="Inventario" asp-action="Index">Revisar inventario</a>
     </section>
 }
@@ -247,28 +250,45 @@ else
                 <p class="sobrelinea">CAPA 1 · DETALLE DE CONEXIONES</p>
                 <h2>Enlaces físicos documentados</h2>
             </div>
-            <span class="contador-enlaces">@Model.Enlaces.Count enlaces</span>
+            <div class="acciones-topologia">
+                <span class="contador-enlaces">@Model.Enlaces.Count enlaces completos</span>
+                <button class="boton boton-secundario" type="button" data-imprimir-topologia>Imprimir vista</button>
+            </div>
         </div>
-        <div class="tabla-contenedor">
-            <table>
-                <thead>
-                    <tr><th>Origen</th><th>Destino</th><th>Medio</th><th>Estado</th><th>Fuente</th><th>Última revisión</th></tr>
-                </thead>
-                <tbody>
-                @* enlace representa cada relación física guardada; cambiar la lista de datos cambia las filas mostradas. *@
-                @foreach (var enlace in Model.Enlaces)
-                {
-                    <tr>
-                        <td><strong>@enlace.EquipoOrigen</strong><small>Puerto @enlace.PuertoOrigen</small></td>
-                        <td><strong>@enlace.EquipoDestino</strong><small>Puerto @enlace.PuertoDestino</small></td>
-                        <td>@enlace.Medio</td>
-                        <td><span class="estado @(enlace.EstadoDatos.Equals("Vigente", StringComparison.OrdinalIgnoreCase) ? "estado-vigente" : "estado-alerta")">@enlace.EstadoDatos</span></td>
-                        <td>@(enlace.Fuente ?? "No indicada")</td>
-                        <td>@(enlace.FechaUltimaRevision?.ToString("yyyy-MM-dd") ?? "Sin fecha confirmada")</td>
-                    </tr>
-                }
-                </tbody>
-            </table>
+        <div class="lista-fichas-conexion listado-topologia-enlaces">
+            @* enlace recorre relaciones completas y muestra los datos de los dos extremos existentes. *@
+            @foreach (var enlace in Model.Enlaces)
+            {
+                <article class="ficha-conexion ficha-enlace" data-registro-paginable>
+                    <div class="trayecto-enlace">
+                        <div class="extremo-enlace">
+                            <p class="identificador-secundario">ORIGEN</p>
+                            <h3>@enlace.EquipoOrigen</h3>
+                            <small class="ip-extremo-conexion">@(enlace.IpEquipoOrigen ?? "IP no indicada")</small>
+                            <span class="puerto-extremo-conexion">Puerto @enlace.PuertoOrigen</span>
+                        </div>
+                        <span class="flecha-enlace" aria-hidden="true">→</span>
+                        <div class="extremo-enlace">
+                            <p class="identificador-secundario">DESTINO</p>
+                            <h3>@enlace.EquipoDestino</h3>
+                            <small class="ip-extremo-conexion">@(enlace.IpEquipoDestino ?? "IP no indicada")</small>
+                            <span class="puerto-extremo-conexion">Puerto @enlace.PuertoDestino</span>
+                        </div>
+                        <span class="etiqueta-estado-conexion">@enlace.EstadoDatos</span>
+                    </div>
+                    @if ((enlace.EstadoDatos.Equals("Confirmado", StringComparison.OrdinalIgnoreCase)
+                         || enlace.EstadoDatos.Equals("Vigente", StringComparison.OrdinalIgnoreCase))
+                         && !string.IsNullOrWhiteSpace(enlace.Medio)
+                         && !enlace.Medio.Equals("No confirmado", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <span class="medio-confirmado-conexion">Medio confirmado: @enlace.Medio</span>
+                    }
+                    <details class="detalles-fuente-conexion">
+                        <summary>Ver fecha y respaldo</summary>
+                        <p>Revisión: @(enlace.FechaUltimaRevision?.ToString("dd/MM/yyyy") ?? "Sin fecha confirmada") · Fuente: @(enlace.Fuente ?? "No indicada")</p>
+                    </details>
+                </article>
+            }
         </div>
     </section>
 }
@@ -289,22 +309,44 @@ else
             </div>
         </div>
         <p class="aclaracion-topologia-grafica">Estos puertos se marcan ocupados en el frontal. No se dibuja una línea de extremo a extremo porque el puerto remoto todavía no está confirmado.</p>
-        <div class="tabla-contenedor" data-lista-paginada>
-            <table>
-                <thead><tr><th>Puerto local</th><th>Destino disponible</th><th>Medio</th><th>Estado</th><th>Procedencia</th></tr></thead>
-                <tbody>
-                @foreach (var relacion in Model.RelacionesParciales)
-                {
-                    <tr data-registro-paginable>
-                        <td><strong>@relacion.EquipoLocal</strong><small>@relacion.PuertoLocal</small></td>
-                        <td><strong>@(relacion.EquipoRemoto ?? "No identificado")</strong><small>@(relacion.IpRemota ?? "IP no indicada") · @(relacion.PuertoRemoto ?? "Puerto remoto no documentado")</small></td>
-                        <td>@relacion.Medio</td>
-                        <td>@relacion.EstadoDatos</td>
-                        <td>@relacion.FuentePagina · @(relacion.FuenteLibro ?? "sin libro") · @(relacion.FuenteFila ?? "fila sin indicar")</td>
-                    </tr>
-                }
-                </tbody>
-            </table>
+        <div class="lista-fichas-conexion listado-topologia-enlaces" data-lista-paginada>
+            @* relacion conserva el puerto local y el extremo remoto parcial tal como aparece en la fuente. *@
+            @foreach (var relacion in Model.RelacionesParciales)
+            {
+                <article class="ficha-conexion ficha-enlace" data-registro-paginable>
+                    <div class="trayecto-enlace">
+                        <div class="extremo-enlace">
+                            <p class="identificador-secundario">PUERTO LOCAL</p>
+                            <h3>@relacion.EquipoLocal</h3>
+                            <small class="ip-extremo-conexion">@(relacion.IpLocal ?? "IP no indicada")</small>
+                            <span class="puerto-extremo-conexion">Puerto @relacion.PuertoLocal</span>
+                        </div>
+                        <span class="flecha-enlace flecha-pendiente" aria-hidden="true">→</span>
+                        <div class="extremo-enlace">
+                            <p class="identificador-secundario">EXTREMO DOCUMENTADO</p>
+                            <h3>@(relacion.EquipoRemoto ?? "No identificado")</h3>
+                            <small class="ip-extremo-conexion">@(relacion.IpRemota ?? "IP no indicada")</small>
+                            <span class="puerto-extremo-conexion">@(relacion.PuertoRemoto ?? "Puerto remoto no documentado")</span>
+                        </div>
+                        <span class="etiqueta-estado-conexion">@relacion.EstadoDatos</span>
+                    </div>
+                    @if ((relacion.EstadoDatos.Equals("Confirmado", StringComparison.OrdinalIgnoreCase)
+                         || relacion.EstadoDatos.Equals("Vigente", StringComparison.OrdinalIgnoreCase))
+                         && !string.IsNullOrWhiteSpace(relacion.Medio)
+                         && !relacion.Medio.Equals("No confirmado", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <span class="medio-confirmado-conexion">Medio confirmado: @relacion.Medio</span>
+                    }
+                    <details class="detalles-fuente-conexion">
+                        <summary>Ver fuente y notas</summary>
+                        <p>@relacion.FuentePagina · @(relacion.FuenteLibro ?? "Sin libro") · fila @(relacion.FuenteFila ?? "sin indicar")</p>
+                        @if (!string.IsNullOrWhiteSpace(relacion.Observaciones))
+                        {
+                            <p>@relacion.Observaciones</p>
+                        }
+                    </details>
+                </article>
+            }
         </div>
     </section>
 }
