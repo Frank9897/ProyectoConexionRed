@@ -103,3 +103,48 @@ Se incorporan las posiciones 1–24 de Excel3 (HP 5500), Excel5 (HP 1920 E), Exc
 Dell R770 se incorpora como equipo sin IP de administración asignada: 192.168.1.22 aparece en Excel1 en una disposición de celdas cuya atribución no es segura. Se registran P1/iDRAC 192.168.0.247, P2/LAN 192.168.0.246, P3 LIBRE y P4 NO CONFIGURADO. Los enlaces de HP 1920 puerto 16 a P1 y S4148U puerto 21 a P2 se guardan completos, con estado confirmado por el usuario, medio y transceptores sin confirmar. El mapa puede trazar esos dos enlaces; no se inventó fecha de inspección.
 
 El S4148U tiene un perfil exacto de fabricante con 48 jaulas SFP+. Se tipifican como SFP+ solo las posiciones 1–24 listadas en Excel8; el estado de módulos se conserva aparte. No se importan todavía las hojas SFP independientes de propietario ambiguo ni otras tablas del rack que no tienen una atribución fiable.
+
+
+## Importación del mapa de ubicaciones de octubre de 2026
+
+Se cotejó `UBICACION-EQUIPOS-OCTUBRE 2026.pdf` con los destinos e IP de las tablas del V3. El octeto entre paréntesis se interpreta como `192.168.0.x`, según confirmó el usuario. Se normalizaron errores evidentes de extracción/OCR (`ensura05` → `Agrimensura05`, `Agimensura20` → `Agrimensura20`, `Cartograf�a05` → `Cartografia05`, `Valucion25` → `Valuacion25`, `ebles02` → `Inmuebles02`, `ia02` → `Secretaria02`, `Secretar�a07` → `Secretaria07`). Cinco filas repetidas se consolidan y se mantienen sus números de página.
+
+### Resultado de resolución de IP
+
+| Resultado | Cantidad | Tratamiento |
+|---|---:|---|
+| IP V3 única o resuelta por coincidencia con PDF | 123 | Guardar la IP V3 |
+| Discordancia PDF/V3 | 15 | Guardar la IP V3 y anotar ambas |
+| Solo IP en PDF | 44 | Guardar la IP PDF como `A verificar` |
+| IP V3 múltiple sin resolución | 1 | IP principal vacía; mantener candidatas en observación |
+| **Total de fichas importadas** | **168** | Sin usuario asignado |
+
+### Discrepancias donde prevalece V3
+
+| Equipo | PDF | V3 elegido |
+|---|---|---|
+| Agrimensura07 | 192.168.0.40 | 192.168.0.160 |
+| Agrimensura21 | 192.168.0.207 | 192.168.0.124 |
+| Agrimensura27 | 192.168.0.59 | 192.168.0.58 |
+| Cartografia04 | 192.168.0.35 | 192.168.0.62 |
+| Cartografia16 | 192.168.0.169 | 192.168.0.146 |
+| Cartografia19 | 192.168.0.168 | 192.168.0.154 |
+| Cartografia21 | 192.168.0.170 | 192.168.0.176 |
+| Dominial03 | 192.168.0.57 | 192.168.0.230 |
+| Gestion02 | 192.168.0.71 | 192.168.0.199 |
+| Inmuebles02 | 192.168.0.133 | 192.168.0.220 |
+| Inmuebles04 | 192.168.0.138 | 192.168.0.179 |
+| Secretaria02 | 192.168.0.220 | 192.168.0.170 |
+| Secretaria03 | 192.168.0.221 | 192.168.0.123 |
+| Sumarios04 | 192.168.0.101 | 192.168.0.44 |
+| Valuacion08 | 192.168.0.131 | 192.168.0.112 |
+
+### Casos a confirmar
+
+- `Sistemas23`: el PDF indica `192.168.0.64`; V3 contiene `192.168.0.127` y `192.168.1.105`. Se guardan ambas direcciones V3 en observaciones y se deja vacía la IP principal.
+- `T7200`: aparece como `192.168.0.189` en ubicación; V3 lo identifica como plotter Epson T7200 con `192.168.0.202`. Se excluye hasta confirmar que la etiqueta corta corresponde al mismo equipo.
+- `TrimbleNET-R9`: el PDF asigna `192.168.0.17`; V3 usa la etiqueta `TRIMBLE TUC1` con esa dirección. Se excluye hasta confirmar si es el mismo dispositivo.
+- `Sistemas06` (PDF `.127` y `.189`) se resuelve a `192.168.0.189`, que coincide con una de las IP V3 (`.189`, `.197`); ambas diferencias quedan en observaciones.
+- `Valuacion51` usa `192.168.0.158`, coincidente con una de sus IP V3 (`.158`, `.196`). `Agrimensura60` usa `192.168.0.141`; se mantiene `192.168.1.250` como dirección adicional consignada en V3.
+
+Las áreas y pisos se toman de la página del PDF. El usuario asignado queda vacío hasta integrar los Visios de PCs y usuarios. Las estaciones nuevas se crean de forma idempotente en SQLite y cada alta genera su evento de historial; si una ficha con ese nombre ya existe, el importador la conserva sin sobrescribir datos de técnicos. El catálogo tipado C# es una carga fuente reproducible, no una base paralela ni reemplazo de SQLite; la base `.db` no se agrega al repositorio.
