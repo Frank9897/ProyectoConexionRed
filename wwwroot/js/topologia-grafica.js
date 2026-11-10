@@ -5,6 +5,57 @@
     const botonesImprimir = Array.from(document.querySelectorAll("[data-imprimir-topologia]"));
     botonesImprimir.forEach(boton => boton.addEventListener("click", () => window.print()));
 
+    // hojasImpresion reúne vistas que tienen una plantilla de una sola hoja A4 horizontal.
+    const hojasImpresion = Array.from(document.querySelectorAll("[data-hoja-impresion]"));
+    // anchoA4HorizontalPx conserva el ancho imprimible aproximado tras márgenes de 5 mm.
+    const anchoA4HorizontalPx = 287 * 96 / 25.4;
+    // altoA4HorizontalPx conserva el alto imprimible aproximado tras márgenes de 5 mm.
+    const altoA4HorizontalPx = 200 * 96 / 25.4;
+
+    /**
+     * Calcula la escala mínima que permite incluir la vista imprimible en una página.
+     * Cambiar los límites A4 modifica cuánto se reduce el contenido antes de imprimir.
+     */
+    const ajustarEscalaImpresion = () => {
+        // hoja recorre una plantilla imprimible; cambiar el conjunto cambia qué vistas se escalan.
+        hojasImpresion.forEach(hoja => {
+            // contenidoImpresion es el único bloque cuyo tamaño se reduce para ajustarse a la página.
+            const contenidoImpresion = hoja.querySelector("[data-contenido-impresion]");
+            if (!contenidoImpresion) return;
+
+            contenidoImpresion.style.setProperty("--escala-impresion", "1");
+            // anchoContenido mide el contenido a escala normal para calcular el ancho que requiere.
+            const anchoContenido = contenidoImpresion.scrollWidth;
+            // altoContenido mide todo el contenido visible en modo impresión.
+            const altoContenido = contenidoImpresion.scrollHeight;
+            if (anchoContenido <= 0 || altoContenido <= 0) return;
+
+            // escalaImpresion mantiene la vista en su tamaño natural si cabe y la reduce si se excede.
+            const escalaImpresion = Math.min(
+                1,
+                anchoA4HorizontalPx / anchoContenido,
+                altoA4HorizontalPx / altoContenido
+            );
+            contenidoImpresion.style.setProperty("--escala-impresion", escalaImpresion.toFixed(4));
+        });
+    };
+
+    /**
+     * Limpia las escalas temporales al volver a la vista normal.
+     * Cambiar las hojas seleccionadas limita qué bloques se restauran tras cerrar la impresión.
+     */
+    const restaurarEscalaImpresion = () => {
+        // hoja recorre una plantilla imprimible; cambiar el conjunto cambia qué vistas se restauran.
+        hojasImpresion.forEach(hoja => {
+            // contenidoImpresion recupera su tamaño de pantalla después del diálogo de impresión.
+            const contenidoImpresion = hoja.querySelector("[data-contenido-impresion]");
+            contenidoImpresion?.style.removeProperty("--escala-impresion");
+        });
+    };
+
+    window.addEventListener("beforeprint", ajustarEscalaImpresion);
+    window.addEventListener("afterprint", restaurarEscalaImpresion);
+
     // puertosInteractivos reúne las bocas seleccionables del frontal para teclado y ratón.
     const puertosInteractivos = Array.from(document.querySelectorAll("[data-puerto-topologia]"));
     // tarjetasConexion reúne fichas con una etiqueta local para enlazarlas con el frontal.
