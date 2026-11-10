@@ -3877,7 +3877,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": "192.168.1.115",
     "EsRack": true,
     "TipoInterfaz": "SFP+"
-  }
+  },
   {
     "EquipoLocal": "Switch HP 5500 (D)",
     "Pagina": "Switch HP 5500 (D) RACK1",
