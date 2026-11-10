@@ -260,14 +260,14 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 - Al añadir filas a un JSON incrustado en C#, validar el bloque JSON completo antes de actualizar el repositorio; una fila mal separada impide el arranque del inicializador.
 
 ## Impresión y UX de topología
-- El detalle de un switch debe imprimirse completo en una página A4 horizontal: frontal, información del equipo y relaciones. Usar una plantilla de página acotada y calcular en `beforeprint` una escala proporcional al contenido; restaurar estilos en `afterprint`.
+- El detalle de un switch debe imprimirse completo en una página A4 horizontal: frontal, información del equipo y relaciones. Usar el ancho útil de la hoja y el CSS de impresión para compactar/refluir los bloques. No calcular una escala de toda la página a partir de la altura de pantalla; el detalle debe ocupar el ancho A4, no quedar como miniatura centrada. Restaurar tras imprimir cualquier estilo temporal.
 - El mapa general imprime un resumen gráfico compacto en una hoja. No incluir fichas largas de enlaces en esa hoja panorámica; conservarlas en la vista interactiva y en el detalle del switch.
 - No marcar conexiones documentadas como pendientes cuando solo falte el puerto remoto. Mantener textos, métricas y leyendas coherentes con la capa y la fuente.
 - Actualizar README y este prompt al cambiar impresión o interacción.
 
 - (Reemplazado el 10 de noviembre de 2026) El mapa de topología es un lienzo libre dentro de una ventana recortada; se desplaza con el fondo y se acerca con zoom en lugar de usar barras de desplazamiento. Permitir maximizar el panel completo para navegarlo en cualquiera de las capas y conservar sus controles.
 - Las líneas se dibujan en coordenadas del lienzo (mismo sistema que las tarjetas) y el lienzo se traslada y escala como un bloque, por lo que maximizar o hacer zoom no obliga a recalcular las coordenadas de los extremos.
-- Para la impresión A4 horizontal, distribuir tarjetas de conexión en más columnas según su cantidad antes de aplicar la escala final. Mantener margen y evitar reducir excesivamente la página por el diseño vertical de pantalla.
+- Para la impresión A4 horizontal, distribuir tarjetas de conexión en más columnas según su cantidad y mantener el contenido al ancho imprimible. No encoger la página entera con el alto de la vista de pantalla; conservar el margen A4 y evitar miniaturas centradas.
 - Actualizar README y este prompt junto con las mejoras de mapa o impresión.
 
 - (Reemplazado el 10 de noviembre de 2026) Las tarjetas ya no se limitan a dos columnas: cada tarjeta es independiente, se puede arrastrar libremente y sus líneas la siguen. La disposición automática inicial agrupa en clústeres (equipo central a la izquierda; cada switch con sus equipos a su derecha).
