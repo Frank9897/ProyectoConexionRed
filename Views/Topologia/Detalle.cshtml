@@ -85,7 +85,7 @@
                             <small class="ip-extremo-conexion">@(ipRemota ?? "IP no indicada")</small>
                             <span class="puerto-extremo-conexion">Puerto @puertoRemoto</span>
                         </div>
-                        <span class="etiqueta-estado-conexion">@enlace.EstadoDatos</span>
+                        <span class="etiqueta-estado-conexion">@(enlace.CapaRelacional == "switching" ? "Capa 2 · Switching" : enlace.CapaRelacional == "acceso" ? "Capa 3 · Acceso" : "Capa 1 · Física") · @enlace.EstadoDatos</span>
                     </div>
                     @if ((enlace.EstadoDatos.Equals("Confirmado", StringComparison.OrdinalIgnoreCase)
                          || enlace.EstadoDatos.Equals("Vigente", StringComparison.OrdinalIgnoreCase))
@@ -109,33 +109,33 @@
 {
     <section class="panel panel-enlaces">
         <div class="encabezado-seccion-topologia">
-            <div><p class="sobrelinea">EXTREMO REMOTO INCOMPLETO</p><h2>Conexiones pendientes de completar</h2></div>
+            <div><p class="sobrelinea">RELACIONES DEL VISIO · CAPAS 2 Y 3</p><h2>Equipos conectados y enlaces entre switches</h2></div>
             <span class="contador-enlaces">@Model.ConexionesParciales.Count registros</span>
         </div>
-        <p class="aclaracion-topologia-grafica">El registro del Visio está confirmado. Si el documento no indica equipo, puerto remoto o medio, ese dato permanece sin completar.</p>
+        <p class="aclaracion-topologia-grafica">El usuario confirma estos registros del Visio. Para una PC o equipo final basta el puerto local del switch; para dos switches se muestra el puerto del otro lado cuando aparece en la tabla recíproca.</p>
         <div class="lista-fichas-conexion">
             @* conexionParcial recorre las notas cuyo puerto local pertenece al switch. *@
             @foreach (var conexionParcial in Model.ConexionesParciales)
             {
-                // puertoLocal busca la etiqueta real correspondiente a la relación almacenada.
-                var puertoLocal = Model.Dispositivo.Puertos.FirstOrDefault(puerto =>
-                    puerto.IdentificadorInterfaz == conexionParcial.IdentificadorPuertoLocal);
-                <article class="ficha-conexion ficha-enlace" data-puerto-local="@(puertoLocal?.Etiqueta ?? "Puerto local")">
+                <article class="ficha-conexion ficha-enlace" data-puerto-local="@conexionParcial.PuertoLocal">
                     <div class="trayecto-enlace">
                         <div class="extremo-enlace">
                             <p class="identificador-secundario">PUERTO LOCAL</p>
                             <h3>@Model.Dispositivo.Nombre</h3>
                             <small class="ip-extremo-conexion">@(Model.Dispositivo.IpAdministracion ?? "IP no indicada")</small>
-                            <span class="puerto-extremo-conexion">@(puertoLocal?.Etiqueta ?? "Puerto local")</span>
+                            <span class="puerto-extremo-conexion">Puerto @conexionParcial.PuertoLocal</span>
                         </div>
                         <span class="flecha-enlace flecha-pendiente" aria-hidden="true">→</span>
                         <div class="extremo-enlace">
-                            <p class="identificador-secundario">EXTREMO DOCUMENTADO</p>
+                            <p class="identificador-secundario">@(conexionParcial.CapaRelacional == "switching" ? "SWITCH REMOTO" : "EQUIPO FINAL / SERVICIO")</p>
                             <h3>@(conexionParcial.EquipoRemoto ?? "No identificado")</h3>
                             <small class="ip-extremo-conexion">@(conexionParcial.IpRemota ?? "IP no indicada")</small>
-                            <span class="puerto-extremo-conexion">@(conexionParcial.PuertoRemoto ?? "Puerto remoto no documentado")</span>
+                            @if (conexionParcial.CapaRelacional == "switching")
+                            {
+                                <span class="puerto-extremo-conexion">@(conexionParcial.PuertoRemoto is null ? "Puerto remoto sin tabla recíproca" : $"Puerto {conexionParcial.PuertoRemoto}")</span>
+                            }
                         </div>
-                        <span class="etiqueta-estado-conexion">@conexionParcial.EstadoDatos</span>
+                        <span class="etiqueta-estado-conexion">@(conexionParcial.CapaRelacional == "switching" ? "Capa 2 · Switching" : conexionParcial.CapaRelacional == "acceso" ? "Capa 3 · Acceso" : "Capa 1 · Física") · @conexionParcial.EstadoDatos</span>
                     </div>
                     @if ((conexionParcial.EstadoDatos.Equals("Confirmado", StringComparison.OrdinalIgnoreCase)
                          || conexionParcial.EstadoDatos.Equals("Vigente", StringComparison.OrdinalIgnoreCase))
