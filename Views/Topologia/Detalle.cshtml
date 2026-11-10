@@ -1,19 +1,36 @@
 @model ProyectoConexionRed.Web.Models.DetalleTopologiaViewModel
 @{
     ViewData["Title"] = $"Switch · {Model.Dispositivo.Nombre}";
+    // cantidadOcupados resume puertos con una relación guardada; cambiarlo altera el indicador.
+    var cantidadOcupados = Model.Dispositivo.Puertos.Count(puerto => puerto.ClaseVisual == "puerto-ocupado");
+    // cantidadLibres resume solo puertos marcados libres de forma confirmada.
+    var cantidadLibres = Model.Dispositivo.Puertos.Count(puerto => puerto.ClaseVisual == "puerto-libre");
+    // cantidadDesconocidos hace visibles puertos aún sin estado sustentado.
+    var cantidadDesconocidos = Model.Dispositivo.Puertos.Count(puerto => puerto.ClaseVisual == "puerto-desconocido");
 }
 
 <section class="encabezado-pagina encabezado-topologia">
     <div>
-        <p class="sobrelinea">DETALLE DE SWITCH</p>
+        <p class="sobrelinea">DETALLE DE SWITCH · @Model.Dispositivo.Area</p>
         <h1>@Model.Dispositivo.Nombre</h1>
-        <p>Frontal de puertos y relaciones físicas que están registradas para este equipo.</p>
+        <p>Vista de puertos, extremos y estado documental. Esta página no consulta ni modifica el switch real.</p>
     </div>
-    <a class="boton boton-secundario" asp-action="Index">← Volver a topología</a>
+    <div class="acciones-topologia">
+        <a class="boton boton-secundario" asp-controller="Conexiones" asp-action="CrearInterfaz" asp-route-identificadorEquipo="@Model.Dispositivo.Identificador">Agregar puerto</a>
+        <button class="boton boton-secundario" type="button" data-imprimir-topologia>Imprimir switch</button>
+        <a class="boton boton-secundario" asp-action="Index">← Topología</a>
+    </div>
+</section>
+
+<section class="resumen-puertos-switch" aria-label="Estado documental de puertos">
+    <article><span class="indicador-estado-puerto ocupado" aria-hidden="true"></span><strong>@cantidadOcupados</strong><span>Ocupados en registros</span></article>
+    <article><span class="indicador-estado-puerto libre" aria-hidden="true"></span><strong>@cantidadLibres</strong><span>Libres confirmados</span></article>
+    <article><span class="indicador-estado-puerto desconocido" aria-hidden="true"></span><strong>@cantidadDesconocidos</strong><span>Sin estado confirmado</span></article>
+    <article><span class="indicador-estado-puerto enlace" aria-hidden="true"></span><strong>@Model.Enlaces.Count</strong><span>Enlaces completos</span></article>
 </section>
 
 <section class="detalle-topologia-switch">
-    <div>
+    <div class="panel-frontal-detalle-switch">
         @await Html.PartialAsync("_FrontalSwitch", Model.Dispositivo)
     </div>
     <dl class="datos-detalle-switch">
@@ -21,7 +38,7 @@
         <div><dt>Área</dt><dd>@(Model.Dispositivo.Area ?? "No indicada")</dd></div>
         <div><dt>Rol</dt><dd>@Model.Dispositivo.RolEnArea</dd></div>
         <div><dt>IP</dt><dd>@(Model.Dispositivo.IpAdministracion ?? "No indicada")</dd></div>
-        <div><dt>Estado</dt><dd>@Model.Dispositivo.EstadoCapacidad</dd></div>
+        <div><dt>Capacidad</dt><dd>@Model.Dispositivo.EstadoCapacidad</dd></div>
         @if (!string.IsNullOrWhiteSpace(Model.Dispositivo.FuentePerfil))
         {
             <div><dt>Perfil</dt><dd><a href="@Model.Dispositivo.FuentePerfil" target="_blank" rel="noopener noreferrer">Fuente técnica del perfil</a></dd></div>
@@ -32,30 +49,55 @@
 <section class="panel panel-enlaces">
     <div class="encabezado-seccion-topologia">
         <div><p class="sobrelinea">CONEXIONES REGISTRADAS</p><h2>Enlaces de @Model.Dispositivo.Nombre</h2></div>
-        <span class="contador-enlaces">@Model.Enlaces.Count enlaces</span>
+        <span class="contador-enlaces">@Model.Enlaces.Count completos</span>
     </div>
     @if (Model.Enlaces.Count == 0)
     {
-        <p class="aclaracion-topologia-grafica">No hay enlaces guardados con ambos extremos identificados. Las posiciones y los puertos remotos desconocidos no se completan automáticamente.</p>
+        <p class="aclaracion-topologia-grafica">No hay enlaces guardados con ambos extremos identificados. No se inventan puertos remotos ni medios.</p>
     }
     else
     {
-        <div class="tabla-contenedor">
-            <table>
-                <thead><tr><th>Extremo local</th><th>Extremo remoto</th><th>Medio</th><th>Estado</th><th>Fuente</th></tr></thead>
-                <tbody>
-                @foreach (var enlace in Model.Enlaces)
-                {
-                    <tr>
-                        <td><strong>@(enlace.IdentificadorEquipoOrigen == Model.Dispositivo.Identificador ? enlace.EquipoOrigen : enlace.EquipoDestino)</strong><small>@(enlace.IdentificadorEquipoOrigen == Model.Dispositivo.Identificador ? enlace.PuertoOrigen : enlace.PuertoDestino)</small></td>
-                        <td><strong>@(enlace.IdentificadorEquipoOrigen == Model.Dispositivo.Identificador ? enlace.EquipoDestino : enlace.EquipoOrigen)</strong><small>@(enlace.IdentificadorEquipoOrigen == Model.Dispositivo.Identificador ? enlace.PuertoDestino : enlace.PuertoOrigen)</small></td>
-                        <td>@enlace.Medio</td>
-                        <td>@enlace.EstadoDatos</td>
-                        <td>@(enlace.Fuente ?? "No indicada")</td>
-                    </tr>
-                }
-                </tbody>
-            </table>
+        <div class="lista-fichas-conexion">
+            @* enlace recorre cada conexión de dos extremos documentada para el switch actual. *@
+            @foreach (var enlace in Model.Enlaces)
+            {
+                // esOrigen indica cuál extremo del enlace pertenece a este switch.
+                var esOrigen = enlace.IdentificadorEquipoOrigen == Model.Dispositivo.Identificador;
+                // nombreRemoto y puertoRemoto seleccionan el otro extremo sin inferir su posición.
+                var nombreRemoto = esOrigen ? enlace.EquipoDestino : enlace.EquipoOrigen;
+                var ipRemota = esOrigen ? enlace.IpEquipoDestino : enlace.IpEquipoOrigen;
+                var puertoLocal = esOrigen ? enlace.PuertoOrigen : enlace.PuertoDestino;
+                var puertoRemoto = esOrigen ? enlace.PuertoDestino : enlace.PuertoOrigen;
+                <article class="ficha-conexion ficha-enlace">
+                    <div class="trayecto-enlace">
+                        <div class="extremo-enlace">
+                            <p class="identificador-secundario">ESTE SWITCH</p>
+                            <h3>@Model.Dispositivo.Nombre</h3>
+                            <small class="ip-extremo-conexion">@(Model.Dispositivo.IpAdministracion ?? "IP no indicada")</small>
+                            <span class="puerto-extremo-conexion">Puerto @puertoLocal</span>
+                        </div>
+                        <span class="flecha-enlace" aria-hidden="true">→</span>
+                        <div class="extremo-enlace">
+                            <p class="identificador-secundario">EQUIPO REMOTO</p>
+                            <h3>@nombreRemoto</h3>
+                            <small class="ip-extremo-conexion">@(ipRemota ?? "IP no indicada")</small>
+                            <span class="puerto-extremo-conexion">Puerto @puertoRemoto</span>
+                        </div>
+                        <span class="etiqueta-estado-conexion">@enlace.EstadoDatos</span>
+                    </div>
+                    @if ((enlace.EstadoDatos.Equals("Confirmado", StringComparison.OrdinalIgnoreCase)
+                         || enlace.EstadoDatos.Equals("Vigente", StringComparison.OrdinalIgnoreCase))
+                         && !string.IsNullOrWhiteSpace(enlace.Medio)
+                         && !enlace.Medio.Equals("No confirmado", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <span class="medio-confirmado-conexion">Medio confirmado: @enlace.Medio</span>
+                    }
+                    <details class="detalles-fuente-conexion">
+                        <summary>Ver fecha y respaldo documental</summary>
+                        <p>Revisión: @(enlace.FechaUltimaRevision?.ToString("dd/MM/yyyy") ?? "Sin fecha confirmada") · Fuente: @(enlace.Fuente ?? "No indicada")</p>
+                    </details>
+                </article>
+            }
         </div>
     }
 </section>
@@ -64,29 +106,53 @@
 {
     <section class="panel panel-enlaces">
         <div class="encabezado-seccion-topologia">
-            <div><p class="sobrelinea">EXTREMO REMOTO INCOMPLETO</p><h2>Relaciones documentadas para revisar</h2></div>
+            <div><p class="sobrelinea">EXTREMO REMOTO INCOMPLETO</p><h2>Conexiones pendientes de completar</h2></div>
             <span class="contador-enlaces">@Model.ConexionesParciales.Count registros</span>
         </div>
-        <p class="aclaracion-topologia-grafica">El puerto local está ocupado según el registro. El otro extremo y el medio siguen pendientes cuando la fuente no los identifica.</p>
-        <div class="tabla-contenedor">
-            <table>
-                <thead><tr><th>Puerto local</th><th>Destino disponible</th><th>Medio</th><th>Estado</th><th>Procedencia</th></tr></thead>
-                <tbody>
-                @foreach (var conexionParcial in Model.ConexionesParciales)
-                {
-                    // puertoLocal busca la etiqueta real que corresponde al ID guardado.
-                    var puertoLocal = Model.Dispositivo.Puertos.FirstOrDefault(puerto =>
-                        puerto.IdentificadorInterfaz == conexionParcial.IdentificadorPuertoLocal);
-                    <tr>
-                        <td>@(puertoLocal?.Etiqueta ?? "Interfaz local")</td>
-                        <td><strong>@(conexionParcial.EquipoRemoto ?? "No identificado")</strong><small>@(conexionParcial.IpRemota ?? "IP no indicada") · @(conexionParcial.PuertoRemoto ?? "Puerto remoto no documentado")</small></td>
-                        <td>@conexionParcial.Medio</td>
-                        <td>@conexionParcial.EstadoDatos</td>
-                        <td>@conexionParcial.FuentePagina · @(conexionParcial.FuenteLibro ?? "sin libro") · @(conexionParcial.FuenteFila ?? "fila sin indicar")</td>
-                    </tr>
-                }
-                </tbody>
-            </table>
+        <p class="aclaracion-topologia-grafica">El puerto local está registrado como ocupado; el extremo remoto solo se muestra con los datos que tiene el inventario.</p>
+        <div class="lista-fichas-conexion">
+            @* conexionParcial recorre las notas cuyo puerto local pertenece al switch. *@
+            @foreach (var conexionParcial in Model.ConexionesParciales)
+            {
+                // puertoLocal busca la etiqueta real correspondiente a la relación almacenada.
+                var puertoLocal = Model.Dispositivo.Puertos.FirstOrDefault(puerto =>
+                    puerto.IdentificadorInterfaz == conexionParcial.IdentificadorPuertoLocal);
+                <article class="ficha-conexion ficha-enlace">
+                    <div class="trayecto-enlace">
+                        <div class="extremo-enlace">
+                            <p class="identificador-secundario">PUERTO LOCAL</p>
+                            <h3>@Model.Dispositivo.Nombre</h3>
+                            <small class="ip-extremo-conexion">@(Model.Dispositivo.IpAdministracion ?? "IP no indicada")</small>
+                            <span class="puerto-extremo-conexion">@(puertoLocal?.Etiqueta ?? "Puerto local")</span>
+                        </div>
+                        <span class="flecha-enlace flecha-pendiente" aria-hidden="true">→</span>
+                        <div class="extremo-enlace">
+                            <p class="identificador-secundario">EXTREMO DOCUMENTADO</p>
+                            <h3>@(conexionParcial.EquipoRemoto ?? "No identificado")</h3>
+                            <small class="ip-extremo-conexion">@(conexionParcial.IpRemota ?? "IP no indicada")</small>
+                            <span class="puerto-extremo-conexion">@(conexionParcial.PuertoRemoto ?? "Puerto remoto no documentado")</span>
+                        </div>
+                        <span class="etiqueta-estado-conexion">@conexionParcial.EstadoDatos</span>
+                    </div>
+                    @if ((conexionParcial.EstadoDatos.Equals("Confirmado", StringComparison.OrdinalIgnoreCase)
+                         || conexionParcial.EstadoDatos.Equals("Vigente", StringComparison.OrdinalIgnoreCase))
+                         && !string.IsNullOrWhiteSpace(conexionParcial.Medio)
+                         && !conexionParcial.Medio.Equals("No confirmado", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <span class="medio-confirmado-conexion">Medio confirmado: @conexionParcial.Medio</span>
+                    }
+                    <details class="detalles-fuente-conexion">
+                        <summary>Ver fuente y notas</summary>
+                        <p>@conexionParcial.FuentePagina · @(conexionParcial.FuenteLibro ?? "Sin libro") · fila @(conexionParcial.FuenteFila ?? "sin indicar")</p>
+                        @if (!string.IsNullOrWhiteSpace(conexionParcial.Observaciones))
+                        {
+                            <p>@conexionParcial.Observaciones</p>
+                        }
+                    </details>
+                </article>
+            }
         </div>
     </section>
 }
+
+<script src="~/js/topologia-grafica.js" asp-append-version="true"></script>
