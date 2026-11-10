@@ -173,3 +173,8 @@ La topología mantiene el lienzo en un área visible estable, con desplazamiento
 ### Navegación visual del mapa
 
 Las tarjetas de topología se organizan siempre en dos columnas, con separación para que el recorrido de las conexiones se vea entre ellas. El mapa conserva una ventana de tamaño estable y se navega con scroll o arrastrando el espacio libre. **Maximizar mapa** expande el panel completo; **Centrar vista** devuelve el lienzo al origen. Las conexiones se distinguen con colores por capa y mantienen su posición relativa al desplazarse.
+
+
+### Caja del mapa y expansión dentro de la página
+
+Los controles **Centrar vista** y **Maximizar mapa** están dentro del marco del mapa. Maximizar amplía la caja en la misma página con fondo atenuado; no solicita pantalla completa al navegador. Se puede restaurar con el botón o con Escape. Las tarjetas quedan en una composición escalonada con conexiones visibles entre ellas.
