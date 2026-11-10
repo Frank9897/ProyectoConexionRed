@@ -275,3 +275,8 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 - Permitir desplazar el fondo con puntero/scroll, restaurar la vista inicial y maximizar el panel conservando los filtros de capa.
 - Si el SVG cubre un lienzo desplazable, dimensionarlo al contenido y sumar el scroll actual al calcular las coordenadas de las aristas.
 - Actualizar README y este prompt junto con cambios del mapa.
+
+- El mapa debe estar contenido en una caja propia con sus controles de centrar y maximizar dentro del marco.
+- Maximizar significa expandir el marco dentro de la página con un fondo atenuado, botón para restaurar y tecla Escape; no usar la API de pantalla completa del navegador.
+- Evitar que la topología parezca una tabla: dejar espacio entre tarjetas y usar una distribución escalonada/canvas donde las conexiones documentadas se distingan por capa.
+- Mantener el lienzo SVG, las tarjetas y sus líneas dentro del mismo marco desplazable para conservar su alineación.
