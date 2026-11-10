@@ -158,3 +158,8 @@ Cuando una tabla de puerto documenta un endpoint Capa 3 que todavía no tiene un
 ### Corrección del importador V3
 
 Se corrigió un separador faltante entre filas del JSON incrustado de `CatalogoPuertosAreasV3.cs`, que impedía iniciar la importación. El contenido JSON del catálogo quedó validado antes de guardar el cambio.
+
+
+### Impresión de switch y mapa en una hoja
+
+El detalle individual de switch se imprime en A4 horizontal, ajustando automáticamente su escala para mantener el frontal, los datos y las conexiones en una sola página. El mapa general imprime una vista compacta con equipos y enlaces documentados; los filtros y las fichas extensas se omiten de esa hoja. En pantalla, los controles conservan sus funciones y no cambian el tamaño de lectura.
