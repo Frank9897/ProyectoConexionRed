@@ -289,7 +289,7 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 - Color por capa: Capa 1 morado, Capa 2 azul, Capa 3 verde; ámbar discontinuo para pendientes y azul discontinuo para uplinks sin contraparte única.
 - Las posiciones movidas por la persona se guardan por capa en `localStorage` (`topologia-tarjetas-v1`); el resto usa la disposición automática. **Distribuir** descarta las posiciones de la capa actual y reparte de nuevo con el modo elegido.
 - La casilla «Solo equipos con conexión» (activa por defecto) oculta los equipos sin ninguna conexión en la capa elegida; desmarcarla muestra todo el inventario.
-- La impresión encaja el mapa en una zona fija de A4 horizontal con las tarjetas a su tamaño real, para que las líneas sigan alineadas.
+- La impresión del mapa general oculta primero el resto de la página y encaja las tarjetas y enlaces en un área de 287 × 180 mm dentro de A4 horizontal con margen de 5 mm. No escalar el contenedor completo según secciones que la impresión oculta. El encaje puede ampliar por encima del 100 % (hasta 400 %) para aprovechar el papel y debe restaurar la posición y el zoom al cerrar la vista previa.
 - Actualizar README y este prompt junto con cambios del mapa. No usar emojis ni iconos en los textos de la interfaz.
 
 ### Distribuir y colapsar (10 de noviembre de 2026)
