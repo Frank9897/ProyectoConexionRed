@@ -1359,6 +1359,32 @@ internal static class CatalogoUbicacionesEquiposPdf
                 Area = "Valuación Principal",
                 Piso = "1.er piso"
             }
+            new()
+            {
+                Nombre = "PLOTTER EPSON T7200",
+                OctetosPdf = [189],
+                Paginas = [5],
+                Area = "Agrimensura",
+                Piso = "1.er piso",
+                EtiquetaPdf = "T7200",
+                Fabricante = "Epson",
+                Modelo = "T7200",
+                TipoDispositivo = "Impresora",
+                RolEnArea = "Periférico de impresión"
+            },
+            new()
+            {
+                Nombre = "TRIMBLE TUC1",
+                OctetosPdf = [17],
+                Paginas = [13],
+                Area = "Dirección y áreas administrativas",
+                Piso = "3.er piso",
+                EtiquetaPdf = "TrimbleNET-R9",
+                Fabricante = "Trimble",
+                Modelo = "NET-R9",
+                TipoDispositivo = "Otro",
+                RolEnArea = "Equipo topográfico"
+            }
         };
 
         return filasUbicacion;
@@ -1380,4 +1406,14 @@ internal sealed class FilaUbicacionEquipo
     public string Area { get; set; } = string.Empty;
     /// <summary>Piso de referencia; cambiarlo modifica la ubicación mostrada.</summary>
     public string Piso { get; set; } = string.Empty;
+    /// <summary>Etiqueta textual original; cambiarla altera la nota de normalización.</summary>
+    public string? EtiquetaPdf { get; set; }
+    /// <summary>Tipo documentado para periféricos excepcionales; cambiarlo modifica su icono y filtro.</summary>
+    public string? TipoDispositivo { get; set; }
+    /// <summary>Rol documentado para dispositivos no puestos; cambiarlo altera su clasificación funcional.</summary>
+    public string? RolEnArea { get; set; }
+    /// <summary>Fabricante confirmado para alias de equipo; cambiarlo modifica la ficha técnica.</summary>
+    public string? Fabricante { get; set; }
+    /// <summary>Modelo confirmado para alias de equipo; cambiarlo modifica el detalle técnico.</summary>
+    public string? Modelo { get; set; }
 }
