@@ -49,7 +49,7 @@ public class InventarioController : Controller
         // formularioNuevo define valores iniciales seguros; modificarlos cambia los valores que verá el técnico al abrir el alta.
         var formularioNuevo = new EditarEquipoViewModel
         {
-            RolEnArea = "No indicado",
+            RolEnArea = "Usuario",
             TipoDispositivo = "Puesto de usuario",
             EstadoDatos = "Pendiente de validación"
         };
