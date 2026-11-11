@@ -172,7 +172,7 @@ La topología mantiene el lienzo en un área visible estable, con desplazamiento
 
 ### Navegación visual del mapa
 
-Cada tarjeta del mapa se puede mover libremente y sus conexiones la siguen. La primera carga usa un esquema jerárquico por niveles. El mapa se navega arrastrando el fondo, con Ctrl + rueda o con la barra de zoom. **Restablecer mapa** borra las posiciones locales guardadas de las tres capas y vuelve al esquema inicial; **Encajar vista** encuadra las tarjetas visibles y **Maximizar mapa** amplía el lienzo dentro de la página. Las conexiones conservan sus colores por capa y se anclan al puerto documentado.
+Cada tarjeta del mapa se puede mover libremente y sus conexiones la siguen. La primera carga usa un esquema jerárquico por niveles y muestra también los equipos documentados sin enlace dibujable. El mapa se navega arrastrando el fondo, con Ctrl + rueda o con la barra de zoom. **Restablecer mapa** borra las posiciones locales guardadas de las tres capas y vuelve al esquema inicial; **Encajar vista** encuadra las tarjetas visibles y **Maximizar mapa** amplía el lienzo dentro de la página. Las conexiones conservan sus colores por capa y se anclan al puerto documentado.
 
 
 ### Caja del mapa y expansión dentro de la página
