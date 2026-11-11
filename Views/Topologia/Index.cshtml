@@ -145,27 +145,34 @@
         <div class="barra-herramientas-mapa">
             <span class="ayuda-mapa-topologia">Arrastra una tarjeta para moverla · arrastra el fondo para desplazarte · Ctrl + rueda para acercar · «Ocultar» colapsa el grupo de un switch</span>
             <div class="acciones-mapa-topologia">
-                <label class="control-solo-conectados" title="Oculta los equipos que no tienen ninguna conexión en la capa elegida">
-                    <input type="checkbox" data-solo-conectados checked /> Solo equipos con conexión
+                <label class="control-zoom-mapa">Zoom
+                    <input type="range" min="10" max="160" step="5" value="100" data-control-zoom aria-label="Nivel de zoom del mapa" />
+                    <output class="nivel-zoom-mapa" data-nivel-zoom aria-live="polite">100 %</output>
                 </label>
-                <button class="boton boton-secundario" type="button" data-zoom-mapa="alejar" title="Aleja el mapa">Alejar</button>
-                <span class="nivel-zoom-mapa" data-nivel-zoom aria-live="polite">100 %</span>
-                <button class="boton boton-secundario" type="button" data-zoom-mapa="acercar" title="Acerca el mapa">Acercar</button>
-                <label class="selector-distribucion">Distribución
-                    <select data-modo-distribucion title="Elige cómo se reparten las tarjetas">
-                        <option value="mosaico" selected>Mosaico (ver todo)</option>
-                        <option value="filas">Filas por grupo</option>
-                        <option value="cuadricula">Cuadrícula por área</option>
-                    </select>
-                </label>
-                <button class="boton boton-secundario" type="button" data-distribuir-mapa title="Reparte de nuevo las tarjetas de esta capa con la distribución elegida">Distribuir</button>
-                <button class="boton boton-secundario" type="button" data-contraer-todo title="Reduce todas las tarjetas a su cabecera y las redistribuye">Contraer todo</button>
-                <button class="boton boton-secundario" type="button" data-expandir-todo title="Restaura el contenido de todas las tarjetas y las redistribuye">Expandir todo</button>
-                <button class="boton boton-secundario" type="button" data-colapsar-grupos title="Oculta los equipos finales que cuelgan de cada switch">Colapsar grupos</button>
-                <button class="boton boton-secundario" type="button" data-expandir-grupos title="Muestra de nuevo todos los equipos ocultos">Expandir grupos</button>
-                <button class="boton boton-secundario" type="button" data-restablecer-mapa title="Vuelve al zoom legible centrado en el equipo principal">Vista inicial</button>
-                <button class="boton boton-secundario" type="button" data-ver-todo-mapa title="Encaja todas las tarjetas visibles en la ventana">Ver todo</button>
+                <button class="boton boton-secundario" type="button" data-restablecer-mapa title="Borra posiciones guardadas y vuelve al esquema jerárquico inicial">Restablecer mapa</button>
+                <button class="boton boton-secundario" type="button" data-ver-todo-mapa title="Encaja todas las tarjetas visibles en el área del mapa">Encajar vista</button>
                 <button class="boton boton-secundario" type="button" data-maximizar-mapa aria-pressed="false" title="Expande el mapa dentro de esta página">Maximizar mapa</button>
+                <details class="herramientas-avanzadas-mapa">
+                    <summary>Más opciones</summary>
+                    <div class="contenido-herramientas-mapa">
+                        <label class="control-solo-conectados" title="Oculta los equipos que no tienen ninguna conexión en la capa elegida">
+                            <input type="checkbox" data-solo-conectados checked /> Solo equipos con conexión
+                        </label>
+                        <label class="selector-distribucion">Distribución
+                            <select data-modo-distribucion title="Elige cómo se reparten las tarjetas">
+                                <option value="mosaico">Mosaico</option>
+                                <option value="filas" selected>Jerárquica por niveles</option>
+                                <option value="cuadricula">Cuadrícula por área</option>
+                            </select>
+                        </label>
+                        <button class="boton boton-secundario" type="button" data-distribuir-mapa title="Reparte de nuevo las tarjetas visibles con la distribución elegida">Reorganizar</button>
+                        <button class="boton boton-secundario" type="button" data-contraer-todo title="Reduce todas las tarjetas a su cabecera">Contraer tarjetas</button>
+                        <button class="boton boton-secundario" type="button" data-expandir-todo title="Restaura el contenido de todas las tarjetas">Expandir tarjetas</button>
+                        <button class="boton boton-secundario" type="button" data-colapsar-grupos title="Oculta los equipos finales que cuelgan de cada switch">Ocultar grupos</button>
+                        <button class="boton boton-secundario" type="button" data-expandir-grupos title="Muestra de nuevo todos los equipos ocultos">Mostrar grupos</button>
+                    </div>
+                </details>
+            </div>
             </div>
         </div>
         <div class="mapa-topologia" data-mapa-topologia data-capa-actual="fisica" role="region" aria-label="Mapa navegable de equipos y conexiones" tabindex="0">
@@ -180,7 +187,7 @@
             @* Cada tarjeta se posiciona de forma absoluta en el lienzo y se puede arrastrar de forma independiente. *@
             @foreach (var dispositivo in Model.Dispositivos)
             {
-                <article class="nodo-dispositivo-topologia" data-dispositivo
+                <article class="nodo-dispositivo-topologia @(dispositivo.EsSwitch && (dispositivo.Puertos.Count >= 48 || (dispositivo.Modelo?.Contains("S4148U", StringComparison.OrdinalIgnoreCase) ?? false)) ? "nodo-switch-alta-densidad" : string.Empty)" data-dispositivo
                          tabindex="0"
                          role="group"
                          aria-label="@($"{dispositivo.Nombre}. Arrastra la tarjeta o usa las flechas del teclado para moverla.")"
@@ -285,6 +292,55 @@
     </div>
 </section>
 
+@{
+    // relacionesSinEquipoUnico reúne remotos sin una ficha que coincida de forma inequívoca.
+    var relacionesSinEquipoUnico = Model.RelacionesParciales
+        .Where(relacion => !relacion.IdentificadorEquipoRemoto.HasValue
+            && !string.IsNullOrWhiteSpace(relacion.EquipoRemoto))
+        .ToList();
+    // relacionesSwitchSinPuertoUnico limita el faltante de puerto remoto a enlaces Capa 2 entre switches.
+    var relacionesSwitchSinPuertoUnico = Model.RelacionesParciales
+        .Where(relacion => relacion.CapaRelacional == "switching"
+            && relacion.IdentificadorEquipoRemoto.HasValue
+            && !relacion.IdentificadorPuertoRemoto.HasValue)
+        .ToList();
+    // enlacesSinMedio agrupa relaciones que no nombran el medio sin darlas por incorrectas.
+    var enlacesSinMedio = Model.Enlaces.Count(enlace => string.IsNullOrWhiteSpace(enlace.Medio)
+        || enlace.Medio.Equals("No confirmado", StringComparison.OrdinalIgnoreCase))
+        + Model.RelacionesParciales.Count(relacion => string.IsNullOrWhiteSpace(relacion.Medio)
+        || relacion.Medio.Equals("No confirmado", StringComparison.OrdinalIgnoreCase));
+}
+
+<section class="panel pendientes-topologia" aria-labelledby="titulo-pendientes-topologia">
+    <div class="encabezado-seccion-topologia">
+        <div>
+            <p class="sobrelinea">PENDIENTES DE DETALLE</p>
+            <h2 id="titulo-pendientes-topologia">Qué falta completar en la documentación</h2>
+        </div>
+    </div>
+    <p>Las relaciones del Visio se mantienen como confirmadas. Esta lista separa los campos que requieren más detalle y no interpreta su falta como una conexión incorrecta.</p>
+    <div class="lista-pendientes-topologia">
+        <article><strong>Tramos del rack</strong><span>Algunas conexiones físicas del rack aún requieren cotejo con la instalación actual; las conexiones de switches e interfaces verificadas en el V3 se conservan como documentadas.</span></article>
+        <article><strong>Módulos SFP/SFP+</strong><span>Falta confirmar el transceptor instalado en algunos switches y, por tanto, el tipo exacto de óptica o enlace en esos casos.</span></article>
+        <article><strong>Acceso administrativo</strong><span>Régimen y Mesa de Entrada Principal (Aruba 1930, 192.168.1.1) figuran sin acceso por falta de credenciales.</span></article>
+        <article><strong>Medio de conexión</strong><span>@enlacesSinMedio relaciones no indican un medio específico; no se asigna cobre o fibra por suposición.</span></article>
+    </div>
+    @if (relacionesSinEquipoUnico.Count > 0 || relacionesSwitchSinPuertoUnico.Count > 0)
+    {
+        <div class="pendientes-relaciones-topologia">
+            <strong>Extremos que no tienen cotejo único en las tablas</strong>
+            @foreach (var relacion in relacionesSinEquipoUnico)
+            {
+                <p>@relacion.EquipoLocal · Puerto @relacion.PuertoLocal → @(relacion.EquipoRemoto ?? "remoto sin identificar"): falta una ficha remota única.</p>
+            }
+            @foreach (var relacion in relacionesSwitchSinPuertoUnico)
+            {
+                <p>@relacion.EquipoLocal · Puerto @relacion.PuertoLocal → @(relacion.EquipoRemoto ?? "switch remoto"): el puerto remoto no aparece en una fila recíproca única.</p>
+            }
+        </div>
+    }
+</section>
+
 @if (Model.Enlaces.Count == 0)
 {
     <section class="vacio-topologia" id="enlaces-fisicos">
@@ -358,7 +414,7 @@ else
 {
     <section class="panel panel-enlaces" data-paginador="relaciones-parciales-topologia" aria-labelledby="titulo-conexiones-parciales-topologia">
         <div class="encabezado-seccion-topologia">
-            <div><p class="sobrelinea">EXTREMO REMOTO INCOMPLETO</p><h2 id="titulo-conexiones-parciales-topologia">Relaciones documentadas para revisar</h2></div>
+            <div><p class="sobrelinea">DETALLE DE EXTREMOS POR INTERFAZ</p><h2 id="titulo-conexiones-parciales-topologia">Relaciones registradas desde cada puerto</h2></div>
             <div class="controles-paginacion">
                 <label for="tamano-relaciones-topologia">Mostrar</label>
                 <select id="tamano-relaciones-topologia" data-tamano-pagina aria-label="Cantidad de relaciones parciales por página">
@@ -369,7 +425,7 @@ else
                 <button class="boton-paginacion" type="button" data-pagina-siguiente aria-label="Página siguiente">Siguiente →</button>
             </div>
         </div>
-        <p class="aclaracion-topologia-grafica">Las relaciones del Visio se muestran por capa: equipos finales en Capa 3, enlaces entre switches en Capa 2 y patcheras o recorrido físico en Capa 1. En un equipo final se indica el puerto del switch; no hace falta un puerto remoto de PC.</p>
+        <p class="aclaracion-topologia-grafica">Las relaciones del Visio se consideran confirmadas. En Capa 3 basta identificar el puerto del switch y el equipo final; el puerto de una PC no es un extremo remoto de switch. En Capa 2 solo se deja el puerto remoto vacío cuando las tablas no permiten cotejar una contraparte única.</p>
         <div class="lista-fichas-conexion listado-topologia-enlaces" data-lista-paginada>
             @* relacion conserva el puerto local y el extremo remoto parcial tal como aparece en la fuente. *@
             @foreach (var relacion in Model.RelacionesParciales)
