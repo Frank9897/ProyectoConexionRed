@@ -294,7 +294,18 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 
 ### Distribuir y colapsar (10 de noviembre de 2026)
 
-- Modos de distribución (`data-modo-distribucion`): **mosaico** (por defecto; clústeres repartidos en varias columnas para que el esquema quepa en la ventana), **filas** (clústeres apilados en una columna) y **cuadrícula** por área (ignora las conexiones). Cambiar de modo o pulsar Distribuir reubica las tarjetas visibles de la capa.
+- Modos de distribución (`data-modo-distribucion`): **filas jerárquicas** por defecto (padres a la izquierda, niveles hijos a la derecha, sin optimizar por tamaño de ventana), **mosaico** y **cuadrícula** por área. Cambiar de modo o pulsar Reorganizar reubica las tarjetas visibles de la capa.
 - Cada tarjeta tiene botones de texto: **Contraer/Expandir** (solo cabecera) y **Ocultar N/Mostrar N** (oculta o muestra los N equipos que cuelgan de ella en el árbol de recorrido). Los equipos ocultos por grupo no se cuentan como «sin conexión»: la conectividad se evalúa antes de colapsar.
 - Botones globales: Contraer todo, Expandir todo, Colapsar grupos (oculta los equipos finales de cada switch) y Expandir grupos; todos redistribuyen la capa. El estado de contraído/colapsado vale solo para la visita actual y no se guarda.
 - Cualquier función nueva del mapa debe usar botones de texto, sin emojis ni iconos, y mantener las líneas ancladas al puerto o al centro del lado cuando el puerto queda oculto.
+
+
+## Restablecimiento y disposición genérica del mapa
+
+- En una primera carga, disponer las tarjetas de forma jerárquica y determinista por niveles; la posición no debe depender de la proporción de la ventana. La persona puede mover cada tarjeta; las posiciones manuales se cachean por capa en `localStorage`.
+- **Restablecer mapa** borra las posiciones guardadas de todas las capas, limpia búsqueda, filtros y grupos colapsados, y reconstruye la disposición jerárquica inicial. No limitarse a restablecer el zoom. **Encajar vista** solo cambia el encuadre y conserva posiciones.
+- Reducir herramientas visibles: controles primarios para zoom, restablecer, encajar y maximizar; filtros y herramientas de distribución/colapso bajo «Más opciones». Usar una barra deslizante de zoom en lugar de botones separados de acercar y alejar.
+- Switches con 48 o más interfaces, incluido Dell S4148U, usan una tarjeta más ancha para mostrar el frontal con legibilidad; el tamaño se mide antes de calcular la distribución y los anclajes de línea.
+- Mostrar una sección de pendientes que distinga relaciones confirmadas de detalle faltante: puertos remotos Capa 2 sin cotejo único, medios no especificados, módulos SFP/SFP+ por confirmar, tramos de rack que requieren cotejo actual y switches sin credenciales (Régimen y Mesa de Entrada Principal). Un extremo de Capa 3 no requiere puerto de PC.
+- A petición del usuario, ejecutar una sola vez por base SQLite el reinicio inicial de `EventosModificacion`; guardar una marca en `MantenimientosEjecutados` dentro de la misma transacción. No borrar `EventosAcceso` ni volver a borrar el historial en cada arranque.
+- Actualizar README y este prompt con cambios de topología, auditoría e interfaz.
