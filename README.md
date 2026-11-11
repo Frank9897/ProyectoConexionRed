@@ -183,7 +183,7 @@ Los controles principales del mapa están agrupados en su marco. Las herramienta
 
 Cada equipo se muestra como una tarjeta sobre un lienzo libre. La disposición genérica coloca los equipos en niveles jerárquicos y conserva las relaciones documentadas como líneas. Las posiciones que se mueven se guardan por capa en el navegador; al restablecer, se elimina esa caché para todas las capas y se calcula nuevamente el esquema base. Al hacer clic en una tarjeta se resaltan sus conexiones y las tarjetas vecinas. Los archivos implicados son `Views/Topologia/Index.cshtml`, `wwwroot/js/topologia-grafica.js` y el bloque final «Mapa de tarjetas libres» de `wwwroot/css/site.css`.
 
-Para despejar el esquema puedes **contraer** una tarjeta (queda solo su cabecera) o **ocultar el grupo** de un switch con el botón «Ocultar N» de su tarjeta; **Contraer todo** y **Colapsar grupos** lo hacen en bloque y redistribuyen el mapa. Estos estados solo valen durante la visita.
+Para despejar el esquema puedes **contraer** una tarjeta o **ocultar el grupo** de un switch desde su tarjeta. Las acciones en bloque (**Contraer tarjetas**, **Expandir tarjetas**, **Ocultar grupos**, **Mostrar grupos**) están dentro de **Más opciones** y solo se aplican durante la visita. Los switches con 48 o más interfaces, incluido el Dell S4148U, usan una tarjeta de 700 px para distinguir mejor sus puertos. La disposición jerárquica mantiene más espacio entre niveles para que las líneas no queden apretadas.
 
 
 ### Revisión de pendientes documentales
