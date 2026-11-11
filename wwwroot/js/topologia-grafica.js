@@ -145,8 +145,8 @@
     const botonesMaximizarMapa = Array.from(document.querySelectorAll("[data-maximizar-mapa]"));
     // botonesRestablecerMapa devuelve la vista inicial: zoom legible centrado en el equipo principal.
     const botonesRestablecerMapa = Array.from(document.querySelectorAll("[data-restablecer-mapa]"));
-    // botonesZoom acercan o alejan el lienzo; su valor data-zoom-mapa es "acercar" o "alejar".
-    const botonesZoom = Array.from(document.querySelectorAll("[data-zoom-mapa]"));
+    // controlZoom cambia el acercamiento con una sola barra en vez de dos botones.
+    const controlZoom = document.querySelector("[data-control-zoom]");
     // botonVerTodo encaja todas las tarjetas visibles en la ventana, aunque el zoom quede pequeño.
     const botonVerTodo = document.querySelector("[data-ver-todo-mapa]");
     // botonDistribuir vuelve a aplicar el modo de distribución elegido, descartando las posiciones de la capa actual.
@@ -209,8 +209,8 @@
     const escalaInicialMinima = 0.5;
     // capaDispuesta indica si la capa ya recibió su disposición automática inicial.
     const capaDispuesta = { fisica: false, switching: false, acceso: false };
-    // modoDistribucion es la forma de repartir las tarjetas: mosaico (ver todo), filas o cuadricula.
-    let modoDistribucion = "mosaico";
+    // modoDistribucion define la disposición inicial jerárquica, con cada nivel a la derecha de su padre.
+    let modoDistribucion = "filas";
     // tarjetasContraidas son las tarjetas que solo muestran su cabecera; contraerlas las hace mucho más pequeñas.
     const tarjetasContraidas = new Set();
     // gruposColapsados guarda, por capa, las tarjetas cuyos equipos dependientes están ocultos.
@@ -350,6 +350,9 @@
         mapaTopologia.style.backgroundSize = `${26 * vista.escala}px ${26 * vista.escala}px`;
         if (etiquetaZoom) {
             etiquetaZoom.textContent = `${Math.round(vista.escala * 100)} %`;
+        }
+        if (controlZoom) {
+            controlZoom.value = String(Math.round(vista.escala * 100));
         }
     };
 
@@ -1366,14 +1369,13 @@
         }
     });
 
-    botonesZoom.forEach(boton => {
-        // boton acerca o aleja respecto del centro de la ventana.
-        boton.addEventListener("click", () => cambiarZoom(
-            boton.dataset.zoomMapa === "acercar" ? 1.25 : 1 / 1.25,
-            mapaTopologia.clientWidth / 2,
-            mapaTopologia.clientHeight / 2));
+    controlZoom?.addEventListener("input", () => {
+        // escalaSolicitada convierte el porcentaje del control a escala decimal.
+        const escalaSolicitada = Number(controlZoom.value) / 100;
+        // razonZoom ajusta la escala actual al valor elegido desde el centro del mapa.
+        const razonZoom = escalaSolicitada / vista.escala;
+        cambiarZoom(razonZoom, mapaTopologia.clientWidth / 2, mapaTopologia.clientHeight / 2);
     });
-    botonesRestablecerMapa.forEach(botonRestablecer => botonRestablecer.addEventListener("click", () => vistaInicial()));
     botonVerTodo?.addEventListener("click", () => ajustarVista());
     /**
      * Descarta las posiciones de la capa actual y reparte de nuevo las tarjetas visibles con el modo elegido.
@@ -1388,6 +1390,47 @@
         vistaInicial();
     };
     botonDistribuir?.addEventListener("click", distribuir);
+
+    /**
+     * Borra posiciones y estados temporales de todas las capas y restaura el esquema jerárquico inicial.
+     * Ejecutar esta acción elimina la caché de posiciones del navegador para este mapa.
+     */
+    const restablecerMapa = () => {
+        // temporizadorGuardado cancela escrituras pendientes que podrían recuperar una posición anterior.
+        window.clearTimeout(temporizadorGuardado);
+        // filtroTexto y filtroArea se limpian para que el mapa vuelva a mostrar la topología completa.
+        if (buscarTopologia) buscarTopologia.value = "";
+        if (filtrarArea) filtrarArea.value = "";
+        // casillaSoloConectados vuelve a la opción inicial que oculta fichas sin conexiones documentadas.
+        if (casillaSoloConectados) casillaSoloConectados.checked = true;
+        // selectorDistribucion coincide con el orden jerárquico genérico de primera carga.
+        modoDistribucion = "filas";
+        if (selectorDistribucion) selectorDistribucion.value = modoDistribucion;
+        // capa recorre cada vista para borrar sus coordenadas guardadas y permitir recomputar el origen.
+        Object.keys(posicionesPorCapa).forEach(capa => {
+            posicionesPorCapa[capa].clear();
+            movidasPorCapa[capa].clear();
+            capaDispuesta[capa] = false;
+            raizPorCapa[capa] = null;
+            gruposColapsados[capa].clear();
+        });
+        tarjetasContraidas.clear();
+        // nodo recorre las tarjetas y retira los estados visuales que alteran el mapa inicial.
+        nodosTopologia.forEach(nodo => {
+            nodo.classList.remove("nodo-contraido", "nodo-seleccionado", "nodo-vecino");
+        });
+        identificadorSeleccionado = null;
+        mapaTopologia.classList.remove("mapa-con-seleccion");
+        try {
+            window.localStorage.removeItem(claveAlmacenamiento);
+        } catch {
+            // Si el navegador bloquea localStorage, el mapa igual vuelve a su distribución inicial.
+        }
+        seleccionarCapa("fisica");
+        if (estadoMapa) estadoMapa.textContent = "Mapa restablecido a su distribución jerárquica inicial.";
+    };
+    botonesRestablecerMapa.forEach(botonRestablecer =>
+        botonRestablecer.addEventListener("click", restablecerMapa));
     selectorDistribucion?.addEventListener("change", () => {
         modoDistribucion = ["mosaico", "filas", "cuadricula"].includes(selectorDistribucion.value) ? selectorDistribucion.value : "mosaico";
         distribuir();
