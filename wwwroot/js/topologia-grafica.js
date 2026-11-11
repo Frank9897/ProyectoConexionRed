@@ -183,7 +183,7 @@
     const escalaMinima = 0.1;
     const escalaMaxima = 1.6;
     // claveAlmacenamiento nombra el registro local de posiciones movidas; cambiarla descarta las posiciones guardadas.
-    const claveAlmacenamiento = "topologia-tarjetas-v1";
+    const claveAlmacenamiento = "topologia-tarjetas-jerarquica-v2";
     // separacionVertical es el espacio entre tarjetas apiladas; aumentarlo deja más aire entre ellas.
     const separacionVertical = 56;
     // separacionNiveles es el espacio horizontal entre niveles de la red; es el pasillo por donde se ven las líneas.
