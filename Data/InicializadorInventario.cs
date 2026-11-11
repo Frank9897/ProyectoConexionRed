@@ -30,6 +30,9 @@ public static class InicializadorInventario
         // CrearTablasDeAccesoAsync permite conservar bases antiguas que ya tenían EquiposRed.
         await CrearTablasDeAccesoAsync(contextoInventario, cancelacion);
 
+        // ReiniciarHistorialCambiosUnaVezAsync cumple el reinicio solicitado sin repetirlo en cada inicio.
+        await ReiniciarHistorialCambiosUnaVezAsync(contextoInventario, cancelacion);
+
         // CargarEquiposInicialesAsync agrega el catálogo documental una sola vez.
         await CargarEquiposInicialesAsync(contextoInventario, cancelacion);
 
@@ -41,6 +44,54 @@ public static class InicializadorInventario
             contextoInventario,
             alcanceServicios.ServiceProvider.GetRequiredService<IPasswordHasher<UsuarioAplicacion>>(),
             cancelacion);
+    }
+
+    /// <summary>
+    /// Vacía una sola vez el historial de modificaciones por solicitud del usuario, preservando el historial de accesos.
+    /// </summary>
+    /// <param name="contextoInventario">Contexto SQLite; cambiarlo selecciona qué base recibe el reinicio.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla interrumpe el reinicio pendiente.</param>
+    private static async Task ReiniciarHistorialCambiosUnaVezAsync(
+        InventarioDbContext contextoInventario,
+        CancellationToken cancelacion)
+    {
+        // transaccion evita que la marca de ejecución quede guardada sin que se complete el borrado.
+        await using var transaccion = await contextoInventario.Database.BeginTransactionAsync(cancelacion);
+        // codigoMantenimiento evita repetir este borrado en los siguientes inicios de la misma base.
+        const string codigoMantenimiento = "reinicio-historial-cambios-2026-11";
+        // crearMarca prepara un registro idempotente que sirve como versión del reinicio solicitado.
+        const string crearMarca = """
+            CREATE TABLE IF NOT EXISTS "MantenimientosEjecutados" (
+                "Codigo" TEXT NOT NULL PRIMARY KEY,
+                "FechaUtc" TEXT NOT NULL
+            );
+            """;
+        await contextoInventario.Database.ExecuteSqlRawAsync(crearMarca, cancelacion);
+
+        // parametrosMarca registra el código y fecha sin interpolar texto dentro del SQL.
+        var parametrosMarca = new object[]
+        {
+            codigoMantenimiento,
+            DateTime.UtcNow.ToString("O")
+        };
+        // marcaInsertada vale 1 solo en la primera ejecución sobre esta base de datos.
+        var marcaInsertada = await contextoInventario.Database.ExecuteSqlRawAsync(
+            """
+            INSERT OR IGNORE INTO "MantenimientosEjecutados" ("Codigo", "FechaUtc")
+            VALUES ({0}, {1});
+            """,
+            parametrosMarca,
+            cancelacion);
+
+        if (marcaInsertada > 0)
+        {
+            // El borrado intencional deja en cero los cambios antiguos una sola vez; los accesos permanecen.
+            await contextoInventario.Database.ExecuteSqlRawAsync(
+                """DELETE FROM "EventosModificacion";""",
+                cancelacion);
+        }
+
+        await transaccion.CommitAsync(cancelacion);
     }
 
     /// <summary>
