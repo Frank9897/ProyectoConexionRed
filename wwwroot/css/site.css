@@ -990,6 +990,17 @@ body.mapa-ampliado-en-pagina { overflow: hidden; }
     font-weight: 650;
 }
 .acciones-mapa-topologia { display: flex; flex-wrap: wrap; gap: 8px; }
+/* La ficha de pendientes distingue faltantes de detalle sin rebajar la confirmación del Visio. */
+.pendientes-topologia { border-left: 4px solid #d4a348; }
+.lista-pendientes-topologia { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.lista-pendientes-topologia article { display: grid; gap: 4px; padding: 12px 14px; border: 1px solid #e1e9ed; border-radius: 10px; background: #f9fbfc; }
+.lista-pendientes-topologia strong { color: #294957; font-size: .84rem; }
+.lista-pendientes-topologia span, .pendientes-relaciones-topologia p { color: #596f7b; font-size: .82rem; }
+.pendientes-relaciones-topologia { margin-top: 12px; padding: 12px 14px; border-radius: 10px; background: #fff8e9; }
+.pendientes-relaciones-topologia > strong { color: #70551b; }
+.pendientes-relaciones-topologia p { margin: 6px 0 0; }
+@media (max-width: 760px) { .lista-pendientes-topologia { grid-template-columns: 1fr; } }
+
 .mapa-topologia {
     height: min(70vh, 780px);
     min-height: 520px;
@@ -1126,6 +1137,8 @@ body.mapa-ampliado-en-pagina::before {
     user-select: none;
     transition: box-shadow .15s ease, opacity .15s ease, border-color .15s ease;
 }
+/* Los switches con 48 o más interfaces reciben espacio extra para distinguir cada puerto. */
+.nodo-dispositivo-topologia.nodo-switch-alta-densidad { width: 700px; }
 .nodo-dispositivo-topologia.nodo-compacto { width: 270px; }
 .nodo-dispositivo-topologia.nodo-compacto .cabecera-nodo-topologia { gap: 10px; min-height: 56px; }
 .nodo-dispositivo-topologia.nodo-compacto .cabecera-nodo-topologia img { width: 56px; height: 42px; flex-basis: 56px; }
@@ -1186,6 +1199,48 @@ body.mapa-ampliado-en-pagina::before {
 .nodo-dispositivo-topologia.nodo-contraido .detalle-nodo-topologia { display: none; }
 .selector-distribucion { display: inline-flex; align-items: center; gap: 6px; color: #3f5866; font-size: .82rem; font-weight: 650; }
 .selector-distribucion select { padding: 4px 8px; border: 1px solid #c8d7de; border-radius: 8px; background: #fff; color: inherit; font: inherit; }
+
+/* controlZoom concentra acercamiento y alejamiento en un solo mando visible. */
+.acciones-mapa-topologia { align-items: center; }
+.control-zoom-mapa { display: inline-flex; align-items: center; gap: 8px; color: #3f5866; font-size: .82rem; font-weight: 650; }
+.control-zoom-mapa input { width: 130px; accent-color: #126b83; }
+.control-zoom-mapa .nivel-zoom-mapa { min-width: 48px; }
+.herramientas-avanzadas-mapa { position: relative; }
+.herramientas-avanzadas-mapa > summary {
+    display: inline-flex;
+    min-height: 36px;
+    align-items: center;
+    padding: 8px 12px;
+    border: 1px solid #d8e2e7;
+    border-radius: 8px;
+    background: #fff;
+    color: #294957;
+    font-size: .82rem;
+    font-weight: 650;
+    cursor: pointer;
+    list-style: none;
+}
+.herramientas-avanzadas-mapa > summary::-webkit-details-marker { display: none; }
+.contenido-herramientas-mapa {
+    position: absolute;
+    top: calc(100% + 7px);
+    right: 0;
+    z-index: 20;
+    display: flex;
+    min-width: 300px;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid #d4e0e5;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 12px 30px #19374424;
+}
+@media (max-width: 760px) {
+    .contenido-herramientas-mapa { position: static; min-width: 0; margin-top: 8px; }
+    .control-zoom-mapa input { width: 100px; }
+}
 
 @media (prefers-reduced-motion: reduce) {
     .nodo-dispositivo-topologia { transition: none; }
