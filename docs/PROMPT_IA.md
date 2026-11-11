@@ -296,7 +296,7 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 
 - Modos de distribución (`data-modo-distribucion`): **filas jerárquicas** por defecto (padres a la izquierda, niveles hijos a la derecha, sin optimizar por tamaño de ventana), **mosaico** y **cuadrícula** por área. Cambiar de modo o pulsar Reorganizar reubica las tarjetas visibles de la capa.
 - Cada tarjeta tiene botones de texto: **Contraer/Expandir** (solo cabecera) y **Ocultar N/Mostrar N** (oculta o muestra los N equipos que cuelgan de ella en el árbol de recorrido). Los equipos ocultos por grupo no se cuentan como «sin conexión»: la conectividad se evalúa antes de colapsar.
-- Las herramientas de contraer/expandir tarjetas y ocultar/mostrar grupos se agrupan bajo «Más opciones» para reducir controles visibles. Los estados de contraído/colapsado valen solo durante la visita actual y no se guardan.
+- Las herramientas globales de contraer/expandir tarjetas y ocultar/mostrar grupos se agrupan bajo «Más opciones»; las acciones individuales de cada tarjeta se guardan bajo su resumen «Acciones». Los estados de contraído/colapsado valen solo durante la visita actual y no se guardan.
 - Cualquier función nueva del mapa debe usar botones de texto, sin emojis ni iconos, y mantener las líneas ancladas al puerto o al centro del lado cuando el puerto queda oculto.
 
 
