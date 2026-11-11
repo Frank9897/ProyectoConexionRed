@@ -192,4 +192,4 @@ La página distingue los campos que faltan de detalle sin presentar las conexion
 
 ### Reinicio único del historial de cambios
 
-A petición del usuario, al próximo inicio de cada base SQLite existente se eliminan las filas anteriores de `EventosModificacion`. La tabla `MantenimientosEjecutados` conserva una marca para que los siguientes arranques no repitan el borrado. El historial de accesos no se modifica.
+A petición del usuario, al próximo inicio de cada base SQLite existente se eliminan las filas anteriores de `EventosModificacion`. La tabla `MantenimientosEjecutados` conserva una marca para que los siguientes arranques no repitan el borrado. El historial de accesos no se modifica. La página Cambios muestra un estado vacío hasta que se registre una modificación nueva.
