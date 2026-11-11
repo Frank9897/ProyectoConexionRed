@@ -294,8 +294,7 @@
 @{
     // relacionesSinEquipoUnico reúne remotos sin una ficha que coincida de forma inequívoca.
     var relacionesSinEquipoUnico = Model.RelacionesParciales
-        .Where(relacion => !relacion.IdentificadorEquipoRemoto.HasValue
-            && !string.IsNullOrWhiteSpace(relacion.EquipoRemoto))
+        .Where(relacion => !relacion.IdentificadorEquipoRemoto.HasValue)
         .ToList();
     // relacionesSwitchSinPuertoUnico limita el faltante de puerto remoto a enlaces Capa 2 entre switches.
     var relacionesSwitchSinPuertoUnico = Model.RelacionesParciales
@@ -330,7 +329,7 @@
             <strong>Extremos que no tienen cotejo único en las tablas</strong>
             @foreach (var relacion in relacionesSinEquipoUnico)
             {
-                <p>@relacion.EquipoLocal · Puerto @relacion.PuertoLocal → @(relacion.EquipoRemoto ?? "remoto sin identificar"): falta una ficha remota única.</p>
+                <p>@relacion.EquipoLocal · Puerto @relacion.PuertoLocal → @(string.IsNullOrWhiteSpace(relacion.EquipoRemoto) ? relacion.IpRemota ?? "remoto sin identificar" : relacion.EquipoRemoto): falta una ficha remota única.</p>
             }
             @foreach (var relacion in relacionesSwitchSinPuertoUnico)
             {
