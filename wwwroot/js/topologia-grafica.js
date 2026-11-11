@@ -611,16 +611,9 @@
      */
     const repartirEnFilas = (nodosParaDisponer, xInicial, yInicial, resultado) => {
         if (nodosParaDisponer.length === 0) return yInicial;
-        // relacionVentana es ancho/alto de la ventana; el reparto intenta parecerse a ella para que todo se vea a la vez.
-        const relacionVentana = Math.max(0.8, mapaTopologia.clientWidth / Math.max(1, mapaTopologia.clientHeight));
-        // areaTotal es la superficie aproximada que ocupan las tarjetas con su separación.
-        const areaTotal = nodosParaDisponer.reduce((suma, nodo) => {
-            const tamano = obtenerTamano(nodo);
-            return suma + (tamano.ancho + separacionVertical) * (tamano.alto + separacionVertical);
-        }, 0);
-        // anchoObjetivo es el ancho a partir del cual la fila se envuelve; nunca menor que la tarjeta más ancha.
+        // anchoObjetivo mantiene una base de lienzo fija para que el orden no dependa del tamaño de la ventana.
         const anchoObjetivo = Math.max(
-            Math.sqrt(areaTotal * relacionVentana),
+            1800,
             ...nodosParaDisponer.map(nodo => obtenerTamano(nodo).ancho));
         let cursorX = 0;
         let cursorY = yInicial;
