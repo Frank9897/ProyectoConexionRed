@@ -272,7 +272,7 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 
 - (Reemplazado el 10 de noviembre de 2026) Las tarjetas ya no se limitan a dos columnas: cada tarjeta es independiente, se puede arrastrar libremente y sus líneas la siguen. La disposición automática inicial agrupa en clústeres (equipo central a la izquierda; cada switch con sus equipos a su derecha).
 - Dejar espacio visible entre tarjetas para que las líneas no se confundan con el contenido. Las conexiones deben llevar color de alto contraste y una clave visual por capa.
-- Permitir desplazar el fondo arrastrando o con la rueda, acercar con Ctrl + rueda o los botones Acercar/Alejar, restaurar la vista inicial, ver todo y maximizar el panel conservando los filtros de capa.
+- Permitir mover el fondo y acercar con Ctrl + rueda o con una barra deslizante, restablecer todas las posiciones a la disposición genérica, encajar solo la vista actual y maximizar el panel sin perder el contexto de capa.
 - El SVG es de 1 px con overflow visible dentro del lienzo transformado; no dimensionarlo al contenido ni sumar scroll a las coordenadas.
 - Actualizar README y este prompt junto con cambios del mapa.
 
