@@ -1394,8 +1394,8 @@
         // filtroTexto y filtroArea se limpian para que el mapa vuelva a mostrar la topología completa.
         if (buscarTopologia) buscarTopologia.value = "";
         if (filtrarArea) filtrarArea.value = "";
-        // casillaSoloConectados vuelve a la opción inicial que oculta fichas sin conexiones documentadas.
-        if (casillaSoloConectados) casillaSoloConectados.checked = true;
+        // casillaSoloConectados queda apagada para incluir también fichas documentadas sin enlace dibujable.
+        if (casillaSoloConectados) casillaSoloConectados.checked = false;
         // selectorDistribucion coincide con el orden jerárquico genérico de primera carga.
         modoDistribucion = "filas";
         if (selectorDistribucion) selectorDistribucion.value = modoDistribucion;
@@ -1416,6 +1416,8 @@
         mapaTopologia.classList.remove("mapa-con-seleccion");
         try {
             window.localStorage.removeItem(claveAlmacenamiento);
+            // claveAnterior retira las coordenadas antiguas que no corresponden al mapa jerárquico nuevo.
+            window.localStorage.removeItem("topologia-tarjetas-v1");
         } catch {
             // Si el navegador bloquea localStorage, el mapa igual vuelve a su distribución inicial.
         }
