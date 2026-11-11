@@ -9,24 +9,31 @@
         <p>Cambios guardados en las fichas del inventario. No se envían comandos a los equipos.</p>
     </div>
 </section>
-<div class="tabla-contenedor">
-    <table>
-        <thead>
-            <tr><th>Fecha (UTC)</th><th>Usuario</th><th>Equipo</th><th>Campo</th><th>Valor anterior</th><th>Valor nuevo</th></tr>
-        </thead>
-        <tbody>
-        @* cambio representa cada fila del historial; cambiar el modelo de entrada cambia los registros mostrados. *@
-        @foreach (var cambio in Model)
-        {
-            <tr>
-                <td>@cambio.FechaUtc.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                <td>@cambio.NombreUsuario</td>
-                <td>@cambio.NombreEquipo</td>
-                <td>@cambio.Campo</td>
-                <td>@(cambio.ValorAnterior ?? "—")</td>
-                <td>@(cambio.ValorNuevo ?? "—")</td>
-            </tr>
-        }
-        </tbody>
-    </table>
-</div>
+@if (Model.Count == 0)
+{
+    <div class="mensaje-exito">El historial de cambios está vacío. Las próximas modificaciones del inventario se registrarán aquí.</div>
+}
+else
+{
+    <div class="tabla-contenedor">
+        <table>
+            <thead>
+                <tr><th>Fecha (UTC)</th><th>Usuario</th><th>Equipo</th><th>Campo</th><th>Valor anterior</th><th>Valor nuevo</th></tr>
+            </thead>
+            <tbody>
+            @* cambio representa cada fila del historial; cambiar el modelo de entrada cambia los registros mostrados. *@
+            @foreach (var cambio in Model)
+            {
+                <tr>
+                    <td>@cambio.FechaUtc.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    <td>@cambio.NombreUsuario</td>
+                    <td>@cambio.NombreEquipo</td>
+                    <td>@cambio.Campo</td>
+                    <td>@(cambio.ValorAnterior ?? "—")</td>
+                    <td>@(cambio.ValorNuevo ?? "—")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
