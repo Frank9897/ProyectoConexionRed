@@ -288,7 +288,7 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 - Las líneas salen del lado que mira a la otra tarjeta, a la altura del puerto documentado, con una pastilla de número de puerto. Si un extremo no tiene puerto documentado, la línea sale del centro del lado. No inferir conexiones nuevas.
 - Color por capa: Capa 1 morado, Capa 2 azul, Capa 3 verde; ámbar discontinuo para pendientes y azul discontinuo para uplinks sin contraparte única.
 - Las posiciones movidas por la persona se guardan por capa en `localStorage` (`topologia-tarjetas-jerarquica-v2`); el resto usa la disposición automática. Cambiar la versión de la clave descarta coordenadas anteriores que no corresponden al esquema inicial jerárquico. **Reorganizar** descarta las posiciones de la capa actual y reparte de nuevo con el modo elegido.
-- La casilla «Solo equipos con conexión» (activa por defecto) oculta los equipos sin ninguna conexión en la capa elegida; desmarcarla muestra todo el inventario.
+- La casilla «Solo equipos con conexión» está desactivada por defecto para mostrar toda la topología; al activarla oculta equipos sin conexión dibujable en la capa elegida.
 - La impresión del mapa general oculta primero el resto de la página y encaja las tarjetas y enlaces en un área de 287 × 180 mm dentro de A4 horizontal con margen de 5 mm. No escalar el contenedor completo según secciones que la impresión oculta. El encaje puede ampliar por encima del 100 % (hasta 400 %) para aprovechar el papel y debe restaurar la posición y el zoom al cerrar la vista previa.
 - Actualizar README y este prompt junto con cambios del mapa. No usar emojis ni iconos en los textos de la interfaz.
 
@@ -303,7 +303,7 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 ## Restablecimiento y disposición genérica del mapa
 
 - En una primera carga, disponer las tarjetas de forma jerárquica y determinista por niveles; la posición no debe depender de la proporción de la ventana. La persona puede mover cada tarjeta; las posiciones manuales se cachean por capa en `localStorage`.
-- **Restablecer mapa** borra las posiciones guardadas de todas las capas, limpia búsqueda, filtros y grupos colapsados, y reconstruye la disposición jerárquica inicial. No limitarse a restablecer el zoom. **Encajar vista** solo cambia el encuadre y conserva posiciones.
+- **Restablecer mapa** borra las posiciones guardadas de todas las capas, limpia búsqueda y filtros, deja «Solo equipos con conexión» desactivada, limpia grupos colapsados y reconstruye la disposición jerárquica inicial. No limitarse a restablecer el zoom. **Encajar vista** solo cambia el encuadre y conserva posiciones.
 - Reducir herramientas visibles: controles primarios para zoom, restablecer, encajar y maximizar; filtros y herramientas de distribución/colapso bajo «Más opciones». Usar una barra deslizante de zoom en lugar de botones separados de acercar y alejar.
 - Switches con 48 o más interfaces, incluido Dell S4148U, usan una tarjeta de 700 px para mostrar el frontal con legibilidad; el tamaño se mide antes de calcular la distribución y los anclajes de línea. Aumentar la separación de niveles para dejar visibles las líneas.
 - Mostrar una sección de pendientes que distinga relaciones confirmadas de detalle faltante: puertos remotos Capa 2 sin cotejo único, medios no especificados, módulos SFP/SFP+ por confirmar, tramos de rack que requieren cotejo actual y switches sin credenciales (Régimen y Mesa de Entrada Principal). Un extremo de Capa 3 no requiere puerto de PC.
