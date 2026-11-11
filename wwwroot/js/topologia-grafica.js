@@ -1491,8 +1491,11 @@
      * @param {HTMLElement} nodo Tarjeta que recibe los controles.
      */
     const agregarControlesTarjeta = nodo => {
-        const acciones = document.createElement("div");
+        const acciones = document.createElement("details");
         acciones.className = "acciones-tarjeta-topologia";
+        // resumenAcciones mantiene las acciones de la tarjeta ocultas hasta que se solicitan.
+        const resumenAcciones = document.createElement("summary");
+        resumenAcciones.textContent = "Acciones";
         const botonGrupo = document.createElement("button");
         botonGrupo.type = "button";
         botonGrupo.className = "control-tarjeta";
@@ -1505,7 +1508,7 @@
         botonContraer.title = "Reduce la tarjeta a su cabecera";
         botonContraer.setAttribute("aria-pressed", "false");
         botonContraer.textContent = "Contraer";
-        acciones.append(botonGrupo, botonContraer);
+        acciones.append(resumenAcciones, botonGrupo, botonContraer);
         nodo.prepend(acciones);
     };
     nodosTopologia.forEach(agregarControlesTarjeta);
