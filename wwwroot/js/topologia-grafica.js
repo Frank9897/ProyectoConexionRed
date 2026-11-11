@@ -185,13 +185,13 @@
     // claveAlmacenamiento nombra el registro local de posiciones movidas; cambiarla descarta las posiciones guardadas.
     const claveAlmacenamiento = "topologia-tarjetas-v1";
     // separacionVertical es el espacio entre tarjetas apiladas; aumentarlo deja más aire entre ellas.
-    const separacionVertical = 28;
+    const separacionVertical = 56;
     // separacionNiveles es el espacio horizontal entre niveles de la red; es el pasillo por donde se ven las líneas.
-    const separacionNiveles = 170;
+    const separacionNiveles = 240;
     // separacionSubcolumnas es el espacio entre columnas del mismo nivel cuando se parte una columna larga.
-    const separacionSubcolumnas = 60;
+    const separacionSubcolumnas = 100;
     // alturaMaximaColumna parte una columna en varias cuando suma más alto que este valor (px del lienzo).
-    const alturaMaximaColumna = 1500;
+    const alturaMaximaColumna = 2200;
     // altoMapaImpresionPx reserva casi toda la altura imprimible del mapa A4 horizontal.
     const altoMapaImpresionPx = 180 * 96 / 25.4;
 
