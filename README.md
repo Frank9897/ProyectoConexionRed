@@ -240,3 +240,9 @@ La tabla general conserva la búsqueda, edición, exportación e impresión, y a
 La clasificación usa datos persistidos: tipo de equipo, área, rol operativo y estado administrativo. «Datacenter» usa el área Rack/Datacenter; «Reserva» usa área o rol de reserva; «Sin acceso» usa un estado administrativo que indique inaccesibilidad; «Servidores» usa el rol de switch de servidores o de puente al Dell R770. Los usuarios se reconocen por el tipo explícito de puesto/computadora. Se marca como documentado cuando el nombre o IP del usuario coincide exactamente con una conexión registrada desde un puerto de switch o cuando hay un enlace físico completo entre interfaces del switch y del equipo. No se deducen relaciones por nombres parecidos. Los demás tipos, incluidos impresoras, fotocopiadoras, scanners, plotters y tipo desconocido, quedan en Otros equipos.
 
 El cambio se publicó directamente en `main`. Se revisó el código en GitHub, pero no se ejecutó compilación ni prueba de navegador en esta etapa.
+
+### Ajustes de Topología (paso 3, 13 de noviembre de 2026)
+
+La barra de herramientas dentro del marco del mapa contiene un solo botón **Maximizar mapa** y un solo botón **Imprimir mapa**; se retiraron las copias del encabezado y de los listados inferiores. Al abrir Topología, todas las tarjetas comienzan contraídas para que el mapa muestre primero su estructura y conexiones. **Restablecer mapa** también vuelve a esa presentación contraída, además de recuperar la disposición genérica. Se retiraron de la página general, debajo de Pendientes de detalle, los bloques «CAPA 1 · DETALLE DE CONEXIONES» y «DETALLE DE EXTREMOS POR INTERFAZ». Las relaciones y los datos guardados siguen disponibles en el mapa y en el detalle de cada switch; no se borró información.
+
+El código se revisó en GitHub y quedó publicado en `main`. En esta etapa no se ejecutó compilación ni revisión visual del navegador.
