@@ -305,7 +305,8 @@ public class CorreccionesController : Controller
                 IdInterfaz = interfaz.Identificador,
                 interfaz.EtiquetaPuerto,
                 IdEquipo = equipo.Identificador,
-                equipo.Nombre
+                equipo.Nombre,
+                equipo.TipoDispositivo
             }).ToListAsync(cancelacion);
 
         // origenAnterior y destinoAnterior identifican el enlace antes de corregirse.
@@ -356,7 +357,11 @@ public class CorreccionesController : Controller
         TempData["Mensaje"] = cambiosEnlace.Count == 0
             ? "No se detectaron cambios en el enlace."
             : $"Se actualizaron {cambiosEnlace.Count} campos del enlace.";
-        return RedirectToAction("Index", "Conexiones");
+        var equipoSwitch = new[] { origenNuevo, destinoNuevo }.FirstOrDefault(extremo =>
+            string.Equals(extremo.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase));
+        return equipoSwitch is not null
+            ? RedirectToAction("Detalle", "Topologia", new { identificador = equipoSwitch.IdEquipo })
+            : RedirectToAction("Index", "Conexiones");
     }
 
 
