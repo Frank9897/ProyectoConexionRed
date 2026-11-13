@@ -2808,7 +2808,8 @@ internal static class CatalogoPuertosAreasV3
     "FilaFuente": "24",
     "EtiquetaPuerto": "23",
     "Destino": "SWITCH VALUACIONR0",
-    "IpRemota": "192.168.0.32"
+    "IpRemota": "192.168.1.32",
+    "ObservacionesImportacion": "Excel26 fila 24 escribe 192.168.0.32 junto a SWITCH VALUACIONR0; SWITCHES AREAS (Excel9) identifica Valuación R0 como 192.168.1.32. Se usa la IP de administración del switch."
   },
   {
     "EquipoLocal": "Valuación R2",
