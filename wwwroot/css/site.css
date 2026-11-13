@@ -1387,3 +1387,50 @@ body.mapa-ampliado-en-pagina::before {
         display: none !important;
     }
 }
+
+/* Tarjetas de selección de switches dentro de la sección Puertos. */
+.switches-puertos-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 18px;
+}
+.switch-puertos-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+}
+.switch-puertos-card h2 { margin: 4px 0; }
+.detalle-switch-puertos,
+.conteo-puertos-switch { color: var(--secundario); margin: 0; font-size: .9rem; }
+.resumen-estado-switch-puertos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    padding: 12px 0;
+    border-top: 1px solid var(--borde);
+    border-bottom: 1px solid var(--borde);
+    font-size: .84rem;
+}
+.resumen-estado-switch-puertos span { display: inline-flex; align-items: center; gap: 6px; }
+.destinos-switch-puertos h3 { margin: 0 0 8px; font-size: .96rem; }
+.destinos-switch-puertos ul {
+    display: grid;
+    gap: 5px;
+    max-height: 150px;
+    overflow: auto;
+    margin: 0;
+    padding: 0 0 0 18px;
+    color: var(--secundario);
+    font-size: .88rem;
+}
+.acciones-switch-puertos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: auto;
+}
+@media (max-width: 760px) {
+    .switches-puertos-grid { grid-template-columns: 1fr; }
+}
