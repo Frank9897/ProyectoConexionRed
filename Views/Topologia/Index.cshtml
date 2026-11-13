@@ -316,10 +316,12 @@
             <h2 id="titulo-pendientes-topologia">Qué falta completar en la documentación</h2>
         </div>
     </div>
-    <p>Las relaciones del Visio se mantienen como confirmadas. Esta lista separa los campos que requieren más detalle y no interpreta su falta como una conexión incorrecta.</p>
+    <p>Las relaciones documentadas se muestran según el Visio V3.5 y las aclaraciones confirmadas. Esta lista separa los detalles incompletos y las discrepancias entre fuentes.</p>
     <div class="lista-pendientes-topologia">
-        <article><strong>Tramos del rack</strong><span>Algunas conexiones físicas del rack aún requieren cotejo con la instalación actual; las conexiones de switches e interfaces verificadas en el V3 se conservan como documentadas.</span></article>
-        <article><strong>Módulos SFP/SFP+</strong><span>Falta confirmar el transceptor instalado en algunos switches y, por tanto, el tipo exacto de óptica o enlace en esos casos.</span></article>
+        <article><strong>Tramos del rack</strong><span>V3.5 actualiza varias tablas de rack; aún faltan algunos extremos remotos exactos y el cotejo físico de enlaces que no tienen un par único.</span></article>
+        <article><strong>Módulos SFP/SFP+</strong><span>Las tablas indican algunas jaulas ocupadas o libres, pero no siempre identifican el transceptor instalado ni el tipo exacto de óptica.</span></article>
+        <article><strong>Discrepancia S4148U y R770</strong><span>V3.5, Excel8 fila 22, anota S4148U puerto 21 hacia R770/iDRAC (192.168.0.247). La aclaración previa identifica allí el puerto LAN P2 (192.168.0.246) y ubica el iDRAC en HP 1920 puerto 16. Se conserva el enlace previamente confirmado hasta cotejar ambos extremos.</span></article>
+        <article><strong>IP de Agrimensura 3Com</strong><span>El resumen «SWITCHES AREAS» de V3.5 escribe 192.168.0.24; se conserva 192.168.1.24, previamente confirmado y usado por las tablas detalladas.</span></article>
         <article><strong>Acceso administrativo</strong><span>Régimen y Mesa de Entrada Principal (Aruba 1930, 192.168.1.1) figuran sin acceso por falta de credenciales.</span></article>
         <article><strong>Medio de conexión</strong><span>@enlacesSinMedio relaciones no indican un medio específico; no se asigna cobre o fibra por suposición.</span></article>
     </div>
