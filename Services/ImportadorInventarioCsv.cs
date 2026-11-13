@@ -119,6 +119,16 @@ public static class ImportadorInventarioCsv
                     : string.Empty;
             }
 
+            // tipoDispositivo conserva el tipo leído para aplicar el rol inicial a puestos de usuario.
+            var tipoDispositivo = ObtenerCampo("Tipo");
+            // rolImportado conserva la función explícita o aplica Usuario si el puesto no tiene rol asignado.
+            var rolImportado = ObtenerCampo("Rol");
+            if (string.IsNullOrWhiteSpace(rolImportado)
+                && string.Equals(tipoDispositivo, "Puesto de usuario", StringComparison.OrdinalIgnoreCase))
+            {
+                rolImportado = "Usuario";
+            }
+
             // formularioEquipo permite aplicar las mismas restricciones de longitud y campos requeridos del alta manual.
             var formularioEquipo = new EditarEquipoViewModel
             {
@@ -129,8 +139,8 @@ public static class ImportadorInventarioCsv
                 DireccionMac = ObtenerCampo("MAC"),
                 Area = ObtenerCampo("Área"),
                 Piso = ObtenerCampo("Piso"),
-                RolEnArea = ObtenerCampo("Rol"),
-                TipoDispositivo = ObtenerCampo("Tipo"),
+                RolEnArea = rolImportado,
+                TipoDispositivo = tipoDispositivo,
                 EstadoDatos = ObtenerCampo("Vigencia")
             };
 
