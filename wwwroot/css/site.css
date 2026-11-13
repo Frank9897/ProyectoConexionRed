@@ -1434,3 +1434,13 @@ body.mapa-ampliado-en-pagina::before {
 @media (max-width: 760px) {
     .switches-puertos-grid { grid-template-columns: 1fr; }
 }
+
+.acciones-conexion-documentada {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+.acciones-conexion-documentada form { margin: 0; }
+.acciones-conexion-documentada .boton { min-height: 36px; }
