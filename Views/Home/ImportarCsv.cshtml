@@ -91,6 +91,11 @@
             </table>
         </div>
 
+        @if (Model.ConfirmacionAvisosPendiente)
+        {
+            <p class="aviso aviso-error" role="alert">Marca la casilla para confirmar que revisaste las advertencias.</p>
+        }
+
         <form asp-controller="Inventarios" asp-action="ConfirmarCsv" method="post" class="formulario-crear-inventario">
             <input type="hidden" name="contenidoCsvCodificado" value="@Model.ContenidoCsvCodificado" />
             <div class="grupo-formulario">
@@ -100,7 +105,7 @@
             @if (Model.Avisos.Count > 0)
             {
                 <label class="confirmacion-aviso">
-                    <input type="checkbox" name="confirmarAvisos" value="true" />
+                    <input type="checkbox" name="confirmarAvisos" value="true" required />
                     Revisé las advertencias y deseo continuar.
                 </label>
             }
