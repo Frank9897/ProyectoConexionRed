@@ -374,3 +374,15 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 - Mantener el ajuste de impresión del mapa dentro del marco y la distribución de hoja implementada anteriormente.
 - Estado 13/11/2026: cambios publicados en `main`; se revisó el HTML/JS fuente para confirmar un botón por acción, ausencia de las secciones retiradas y estado inicial contraído. No se ejecutó build ni prueba visual en navegador.
 - Actualizar README y este prompt con cualquier cambio adicional de Topología.
+
+
+## Paso 7 — selector y edición de puertos
+
+- La ruta /Conexiones es el selector de switches: las tarjetas resumen identidad, área, modelo, IP, interfaces registradas y estados de uso.
+- Los totales cuentan filas InterfazEquipo guardadas. No usar capacidades teóricas del hardware para contar puertos documentados.
+- «Libre confirmado» requiere estado de uso Libre confirmado, datos Confirmado y ausencia de relación. Un puerto con enlace completo o relación parcial es ocupado; los demás sin confirmación suficiente son desconocidos.
+- Mostrar destinos únicamente desde relaciones documentadas, sin inferir el remoto. El botón «Editar puertos» abre el mismo frontal del switch que Topología. Solo las interfaces con registro real en SQLite pueden seleccionarse y editarse; perfiles sintéticos requieren inventariar la interfaz primero.
+- En el detalle de switch, enlaces completos y relaciones parciales ofrecen editar/eliminar. Toda eliminación es POST con antifalsificación, confirmación visual y evento de historial. El servidor impide borrar una interfaz referenciada por una relación completa o parcial.
+- Tras añadir una interfaz a un switch, editar un enlace completo o editar/eliminar una relación parcial, regresar al detalle del switch correspondiente.
+- Estas acciones solo cambian la base documental; no consultan ni ejecutan cambios en la red real.
+- Este paso quedó escrito en la rama principal; no se ejecutaron pruebas, compilación ni navegador. Mantener README y este prompt actualizados.
