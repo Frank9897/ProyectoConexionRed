@@ -32,11 +32,21 @@ public class InventarioController : Controller
     /// <param name="cancelacion">Señal de cancelación; activarla interrumpe la consulta pendiente.</param>
     /// <returns>Vista con los equipos coincidentes; modificar la búsqueda cambia el conjunto mostrado.</returns>
     [HttpGet]
-    public async Task<IActionResult> Index(string? busqueda, CancellationToken cancelacion)
+    public async Task<IActionResult> Index(string? busqueda, string? seccion, string? categoria, CancellationToken cancelacion)
     {
-        // equiposEncontrados contiene la búsqueda actual; cambiar su contenido cambia las filas de la página.
+        // seccionActiva fija la familia que se presenta; cambiarla cambia el tipo de equipos filtrados.
+        var seccionActiva = NormalizarSeccion(seccion);
+        // categoriaActiva valida el subfiltro permitido; cambiarla selecciona otra agrupación documental.
+        var categoriaActiva = NormalizarCategoria(seccionActiva, categoria);
+        // equiposEncontrados conserva los criterios de búsqueda actuales antes de aplicar la sección.
         var equiposEncontrados = await ObtenerEquiposAsync(busqueda, cancelacion);
-        return View(equiposEncontrados);
+        // equiposVisibles contiene solo las fichas pertenecientes a la sección y categoría seleccionadas.
+        var equiposVisibles = await FiltrarPorSeccionAsync(equiposEncontrados, seccionActiva, categoriaActiva, cancelacion);
+
+        ViewBag.SeccionActiva = seccionActiva;
+        ViewBag.CategoriaActiva = categoriaActiva;
+        ViewBag.TituloVista = ObtenerTituloVista(seccionActiva, categoriaActiva);
+        return View(equiposVisibles);
     }
 
     /// <summary>
@@ -142,13 +152,20 @@ public class InventarioController : Controller
     /// Descarga como CSV los equipos que coinciden con la búsqueda actual.
     /// </summary>
     /// <param name="busqueda">Texto de búsqueda; cambiarlo filtra las filas incluidas en el archivo.</param>
+    /// <param name="seccion">Familia activa; cambiarla limita la exportación a switches, usuarios u otros equipos.</param>
+    /// <param name="categoria">Subfiltro activo; cambiarlo exporta otra categoría visible.</param>
     /// <param name="cancelacion">Señal de cancelación; activarla interrumpe la consulta pendiente.</param>
-    /// <returns>Archivo CSV UTF-8 con los resultados; cambiar búsqueda altera el contenido exportado.</returns>
+    /// <returns>Archivo CSV UTF-8 con los resultados visibles; cambiar filtros altera las filas exportadas.</returns>
     [HttpGet]
-    public async Task<IActionResult> ExportarCsv(string? busqueda, CancellationToken cancelacion)
+    public async Task<IActionResult> ExportarCsv(string? busqueda, string? seccion, string? categoria, CancellationToken cancelacion)
     {
-        // equiposExportados contiene las filas descargables; cambiar la búsqueda cambia sus datos.
-        var equiposExportados = await ObtenerEquiposAsync(busqueda, cancelacion);
+        // seccionActiva y categoriaActiva hacen que el archivo coincida con la agrupación vista en pantalla.
+        var seccionActiva = NormalizarSeccion(seccion);
+        var categoriaActiva = NormalizarCategoria(seccionActiva, categoria);
+        // equiposCoincidentes conserva el filtro textual antes de aplicar la categoría.
+        var equiposCoincidentes = await ObtenerEquiposAsync(busqueda, cancelacion);
+        // equiposExportados contiene solo las filas de la búsqueda, sección y categoría seleccionadas.
+        var equiposExportados = await FiltrarPorSeccionAsync(equiposCoincidentes, seccionActiva, categoriaActiva, cancelacion);
 
         // contenidoCsv acumula el archivo; cambiar encabezados o separadores modifica cómo se interpreta en hojas de cálculo.
         var contenidoCsv = new StringBuilder();
@@ -381,6 +398,292 @@ public class InventarioController : Controller
         }
 
         return equiposFiltrados;
+    }
+
+    /// <summary>
+    /// Valida el nombre de sección recibido y limita la vista a una familia conocida.
+    /// </summary>
+    /// <param name="seccion">Texto de URL; cambiarlo selecciona otra familia o vuelve a Todo si no está permitida.</param>
+    /// <returns>Clave de sección reconocida para filtrar el inventario.</returns>
+    private static string NormalizarSeccion(string? seccion)
+    {
+        // seccionNormalizada evita aceptar valores arbitrarios como categorías de inventario.
+        var seccionNormalizada = seccion?.Trim().ToLowerInvariant();
+        return seccionNormalizada is "switches" or "usuarios" or "otros" ? seccionNormalizada! : "todos";
+    }
+
+    /// <summary>
+    /// Valida la categoría según la sección seleccionada.
+    /// </summary>
+    /// <param name="seccion">Familia activa; cambiarla cambia las categorías disponibles.</param>
+    /// <param name="categoria">Subfiltro de URL; cambiarlo selecciona una agrupación dentro de la familia.</param>
+    /// <returns>Clave de categoría permitida o «todos».</returns>
+    private static string NormalizarCategoria(string seccion, string? categoria)
+    {
+        // categoriaNormalizada normaliza la clave y evita filtros que no pertenecen a esta sección.
+        var categoriaNormalizada = categoria?.Trim().ToLowerInvariant();
+        // categoriaPermitida impide abrir filtros que no existan en la familia activa.
+        var categoriaPermitida = seccion switch
+        {
+            "switches" => categoriaNormalizada is "areas" or "datacenter" or "reserva" or "sin-acceso" or "servidores",
+            "usuarios" => categoriaNormalizada is "documentados" or "sin-documentar",
+            _ => false
+        };
+        return categoriaPermitida ? categoriaNormalizada! : "todos";
+    }
+
+    /// <summary>
+    /// Devuelve un título legible para la combinación activa de sección y categoría.
+    /// </summary>
+    /// <param name="seccion">Familia activa; cambiarla modifica el título principal.</param>
+    /// <param name="categoria">Subfiltro activo; cambiarlo modifica el título secundario mostrado.</param>
+    /// <returns>Nombre de la agrupación visible sobre la tabla.</returns>
+    private static string ObtenerTituloVista(string seccion, string categoria)
+    {
+        // tituloCategoria traduce claves internas a nombres que entiende el técnico.
+        var tituloCategoria = categoria switch
+        {
+            "areas" => "Switches de áreas",
+            "datacenter" => "Switches de datacenter",
+            "reserva" => "Switches en reserva",
+            "sin-acceso" => "Switches sin acceso administrativo",
+            "servidores" => "Switches de servidores",
+            "documentados" => "Usuarios con conexión documentada a un switch",
+            "sin-documentar" => "Usuarios sin conexión documentada a un switch",
+            _ => string.Empty
+        };
+        // tituloSeccion mantiene nombres claros al navegar entre familias.
+        var tituloSeccion = seccion switch
+        {
+            "switches" => "Switches",
+            "usuarios" => "Usuarios",
+            "otros" => "Otros equipos",
+            _ => "Todos los equipos"
+        };
+        return string.IsNullOrEmpty(tituloCategoria) ? tituloSeccion : tituloCategoria;
+    }
+
+    /// <summary>
+    /// Filtra las fichas por tipo y categoría usando solo campos y relaciones documentados.
+    /// </summary>
+    /// <param name="equipos">Resultados de la búsqueda; cambiar la lista cambia los candidatos de la tabla.</param>
+    /// <param name="seccion">Familia elegida; cambiarla selecciona switches, usuarios, otros o todos.</param>
+    /// <param name="categoria">Subfiltro normalizado; cambiarlo selecciona una categoría permitida.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla interrumpe la lectura de relaciones.</param>
+    /// <returns>Fichas coincidentes con la familia y categoría solicitadas.</returns>
+    private async Task<List<EquipoRed>> FiltrarPorSeccionAsync(
+        List<EquipoRed> equipos, string seccion, string categoria, CancellationToken cancelacion)
+    {
+        // equiposDeSeccion restringe la lista por su tipo documentado, sin analizar nombres de equipo.
+        var equiposDeSeccion = seccion switch
+        {
+            "switches" => equipos.Where(EsSwitch).ToList(),
+            "usuarios" => equipos.Where(EsEquipoUsuario).ToList(),
+            "otros" => equipos.Where(equipo => !EsSwitch(equipo) && !EsEquipoUsuario(equipo)).ToList(),
+            _ => equipos
+        };
+
+        if (seccion == "switches")
+        {
+            return categoria switch
+            {
+                "areas" => equiposDeSeccion.Where(EsSwitchDeArea).ToList(),
+                "datacenter" => equiposDeSeccion.Where(EsEquipoDeDatacenter).ToList(),
+                "reserva" => equiposDeSeccion.Where(EsEquipoDeReserva).ToList(),
+                "sin-acceso" => equiposDeSeccion.Where(EsSwitchInaccesible).ToList(),
+                "servidores" => equiposDeSeccion.Where(EsSwitchDeServidores).ToList(),
+                _ => equiposDeSeccion
+            };
+        }
+
+        if (seccion != "usuarios" || categoria == "todos")
+        {
+            return equiposDeSeccion;
+        }
+
+        // usuariosConConexion contiene equipos finales vinculados explícitamente a un puerto de switch.
+        var usuariosConConexion = await ObtenerUsuariosConSwitchDocumentadoAsync(cancelacion);
+        return categoria == "documentados"
+            ? equiposDeSeccion.Where(equipo => usuariosConConexion.Contains(equipo.Identificador)).ToList()
+            : equiposDeSeccion.Where(equipo => !usuariosConConexion.Contains(equipo.Identificador)).ToList();
+    }
+
+    /// <summary>
+    /// Identifica los equipos finales vinculados a un switch por una relación explícita.
+    /// </summary>
+    /// <param name="cancelacion">Señal de cancelación; activarla detiene las consultas de puertos y conexiones.</param>
+    /// <returns>Identificadores de equipos de usuario con conexión documentada a un switch.</returns>
+    private async Task<HashSet<int>> ObtenerUsuariosConSwitchDocumentadoAsync(CancellationToken cancelacion)
+    {
+        // equiposRegistrados aporta identidades exactas para resolver destinos remotos sin hacer coincidencias parciales.
+        var equiposRegistrados = await contextoInventario.Equipos.AsNoTracking().ToListAsync(cancelacion);
+        // usuariosRegistrados limita el resultado a tipos de puesto de usuario reconocidos.
+        var usuariosRegistrados = equiposRegistrados.Where(EsEquipoUsuario).ToList();
+        // identificadoresSwitches se usa para reconocer los puertos locales pertenecientes a switches.
+        var identificadoresSwitches = equiposRegistrados.Where(EsSwitch).Select(equipo => equipo.Identificador).ToHashSet();
+        // interfacesRegistradas permite resolver ambos extremos de los enlaces físicos guardados.
+        var interfacesRegistradas = await contextoInventario.InterfacesEquipo.AsNoTracking().ToListAsync(cancelacion);
+        // puertosSwitch contiene los identificadores locales para buscar conexiones parciales del switch.
+        var puertosSwitch = interfacesRegistradas
+            .Where(interfaz => identificadoresSwitches.Contains(interfaz.IdentificadorEquipo))
+            .Select(interfaz => interfaz.Identificador)
+            .ToList();
+        // relacionesRegistradas conserva destinos y puertos locales para filtrar con la lista de interfaces ya cargada.
+        var relacionesRegistradas = await contextoInventario.ConexionesDocumentadas.AsNoTracking()
+            .Select(relacion => new { relacion.IdentificadorPuertoLocal, relacion.EquipoRemoto, relacion.IpRemota })
+            .ToListAsync(cancelacion);
+        // identificadoresPuertosSwitch evita parámetros SQL por puerto y conserva solo enlaces locales de switches.
+        var identificadoresPuertosSwitch = puertosSwitch.ToHashSet();
+        // relacionesParciales conserva los destinos escritos desde puertos de switch.
+        var relacionesParciales = relacionesRegistradas
+            .Where(relacion => identificadoresPuertosSwitch.Contains(relacion.IdentificadorPuertoLocal))
+            .ToList();
+        // usuariosDocumentados acumula identificadores con una relación exacta por nombre o IP.
+        var usuariosDocumentados = new HashSet<int>();
+
+        // relacion recorre destinos documentados desde un puerto de switch.
+        foreach (var relacion in relacionesParciales)
+        {
+            // usuario compara cada destino con las identidades de puestos persistidas.
+            foreach (var usuario in usuariosRegistrados)
+            {
+                if ((!string.IsNullOrWhiteSpace(relacion.EquipoRemoto)
+                        && string.Equals(NormalizarClaveComparacion(relacion.EquipoRemoto), NormalizarClaveComparacion(usuario.Nombre), StringComparison.OrdinalIgnoreCase))
+                    || (!string.IsNullOrWhiteSpace(relacion.IpRemota)
+                        && string.Equals(NormalizarClaveComparacion(relacion.IpRemota), NormalizarClaveComparacion(usuario.IpAdministracion), StringComparison.OrdinalIgnoreCase)))
+                {
+                    usuariosDocumentados.Add(usuario.Identificador);
+                }
+            }
+        }
+
+        // equiposPorIdentificador resuelve el tipo de ambos extremos de cada enlace completo.
+        var equiposPorIdentificador = equiposRegistrados.ToDictionary(equipo => equipo.Identificador);
+        // interfacesPorIdentificador resuelve el propietario de cada puerto enlazado.
+        var interfacesPorIdentificador = interfacesRegistradas.ToDictionary(interfaz => interfaz.Identificador);
+        // enlacesFisicos contiene únicamente relaciones con ambos puertos persistidos.
+        var enlacesFisicos = await contextoInventario.EnlacesFisicos.AsNoTracking().ToListAsync(cancelacion);
+
+        // enlace recorre relaciones completas entre interfaces existentes.
+        foreach (var enlace in enlacesFisicos)
+        {
+            // Los extremos se resuelven a interfaz y equipo; un extremo faltante no se clasifica como conexión confirmada.
+            if (!interfacesPorIdentificador.TryGetValue(enlace.IdentificadorPuertoOrigen, out var puertoOrigen)
+                || !interfacesPorIdentificador.TryGetValue(enlace.IdentificadorPuertoDestino, out var puertoDestino)
+                || !equiposPorIdentificador.TryGetValue(puertoOrigen.IdentificadorEquipo, out var equipoOrigen)
+                || !equiposPorIdentificador.TryGetValue(puertoDestino.IdentificadorEquipo, out var equipoDestino))
+            {
+                continue;
+            }
+
+            if (EsSwitch(equipoOrigen) && EsEquipoUsuario(equipoDestino))
+            {
+                usuariosDocumentados.Add(equipoDestino.Identificador);
+            }
+            else if (EsEquipoUsuario(equipoOrigen) && EsSwitch(equipoDestino))
+            {
+                usuariosDocumentados.Add(equipoOrigen.Identificador);
+            }
+        }
+
+        return usuariosDocumentados;
+    }
+
+    /// <summary>
+    /// Determina si el tipo de ficha indica un switch.
+    /// </summary>
+    /// <param name="equipo">Ficha evaluada; cambiar su tipo puede moverla entre secciones.</param>
+    /// <returns>Verdadero solo para el tipo Switch.</returns>
+    private static bool EsSwitch(EquipoRed equipo)
+    {
+        return string.Equals(NormalizarClaveComparacion(equipo.TipoDispositivo), "Switch", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Determina si el tipo de ficha es un puesto computacional de usuario.
+    /// </summary>
+    /// <param name="equipo">Ficha evaluada; cambiar su tipo puede moverla entre Usuarios y Otros equipos.</param>
+    /// <returns>Verdadero para los tipos explícitos de puesto o computadora.</returns>
+    private static bool EsEquipoUsuario(EquipoRed equipo)
+    {
+        // tipoNormalizado permite comparar variantes conocidas sin depender del nombre del PC.
+        var tipoNormalizado = NormalizarClaveComparacion(equipo.TipoDispositivo);
+        return tipoNormalizado is "PUESTO DE USUARIO" or "EQUIPO DE USUARIO" or "PC"
+            or "COMPUTADORA" or "COMPUTADOR" or "ESTACIÓN DE TRABAJO" or "ESTACION DE TRABAJO" or "USUARIO";
+    }
+
+    /// <summary>
+    /// Reconoce el rol operativo de un switch de área.
+    /// </summary>
+    /// <param name="equipo">Ficha evaluada; cambiar RolEnArea cambia su clasificación.</param>
+    /// <returns>Verdadero si el rol identifica el switch de área o su jerarquía local.</returns>
+    private static bool EsSwitchDeArea(EquipoRed equipo)
+    {
+        // rolNormalizado conserva el significado funcional separado del modelo.
+        var rolNormalizado = NormalizarClaveComparacion(equipo.RolEnArea);
+        return rolNormalizado is "SWITCH DE ÁREA" or "SWITCH DE AREA"
+            || (!string.IsNullOrWhiteSpace(equipo.Area)
+                && !EsEquipoDeDatacenter(equipo)
+                && !EsEquipoDeReserva(equipo)
+                && !EsSwitchDeServidores(equipo));
+    }
+
+    /// <summary>
+    /// Reconoce equipos ubicados en el rack o sector de datacenter.
+    /// </summary>
+    /// <param name="equipo">Ficha evaluada; cambiar su área modifica esta categoría.</param>
+    /// <returns>Verdadero para áreas documentadas como rack o centro de datos.</returns>
+    private static bool EsEquipoDeDatacenter(EquipoRed equipo)
+    {
+        // areaNormalizada usa la ubicación persistida y no supone datacenter por el modelo del switch.
+        var areaNormalizada = NormalizarClaveComparacion(equipo.Area);
+        return areaNormalizada is "RACK" or "DATACENTER" or "DATA CENTER" or "CENTRO DE DATOS";
+    }
+
+    /// <summary>
+    /// Reconoce la categoría de reserva por el área o el rol persistido.
+    /// </summary>
+    /// <param name="equipo">Ficha evaluada; cambiar área o rol actualiza la agrupación.</param>
+    /// <returns>Verdadero para equipos asignados a reserva.</returns>
+    private static bool EsEquipoDeReserva(EquipoRed equipo)
+    {
+        return string.Equals(NormalizarClaveComparacion(equipo.Area), "Reserva", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(NormalizarClaveComparacion(equipo.RolEnArea), "Reserva", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Reconoce switches cuyo acceso administrativo está documentado como inaccesible.
+    /// </summary>
+    /// <param name="equipo">Ficha evaluada; cambiar el estado administrativo modifica el resultado.</param>
+    /// <returns>Verdadero cuando falta acceso por credenciales u otra razón documentada.</returns>
+    private static bool EsSwitchInaccesible(EquipoRed equipo)
+    {
+        return equipo.EstadoAdministrativo.Contains("Inaccesible", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Reconoce switches que cumplen una función documentada de servidores o puente al servidor principal.
+    /// </summary>
+    /// <param name="equipo">Ficha evaluada; cambiar el rol operativo modifica su agrupación.</param>
+    /// <returns>Verdadero si el rol documenta servicios de servidor o puente al Dell R770.</returns>
+    private static bool EsSwitchDeServidores(EquipoRed equipo)
+    {
+        // rolNormalizado identifica las funciones ya documentadas para el HP 5500 y el Dell S4148U.
+        var rolNormalizado = NormalizarClaveComparacion(equipo.RolEnArea);
+        return rolNormalizado.Contains("SERVIDOR", StringComparison.OrdinalIgnoreCase)
+            || rolNormalizado.Contains("PUENTE HACIA DELL R770", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Normaliza espacios externos e internos para cotejar etiquetas documentales exactas.
+    /// </summary>
+    /// <param name="valor">Texto de fuente; cambiarlo cambia la clave exacta usada en las comparaciones.</param>
+    /// <returns>Texto con espacios consecutivos reducidos y sin espacios externos.</returns>
+    private static string NormalizarClaveComparacion(string? valor)
+    {
+        // claveNormalizada conserva todo el dato salvo espacios redundantes para evitar coincidencias parciales.
+        var claveNormalizada = string.Join(" ", (valor ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries));
+        return claveNormalizada.Trim();
     }
 
     /// <summary>
