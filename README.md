@@ -14,6 +14,10 @@ Aplicación web en español para documentar y visualizar la infraestructura de r
 
 Se agregó la página **Inventarios**. `Catastro` sigue apuntando al archivo SQLite ya configurado y aparece como base principal; las nuevas sedes se crean como archivos separados en la carpeta definida por `RutaInventarios` (por defecto `inventarios`). El límite de tres incluye Catastro. La selección queda guardada en una cookie propia del navegador y la conexión EF Core se resuelve por solicitud, de modo que inventario, puertos, topología e historial operan sobre la base elegida. Crear una sede aplica las migraciones y la deja vacía: no copia ni importa datos de Catastro y no accede a la red. Los archivos nuevos están excluidos de Git. Para hosting, `RutaInventarios` puede apuntar a una carpeta persistente con permisos de escritura.
 
+### Alta de equipos, switches y puertos (paso 4)
+
+El formulario existente permite crear y editar equipos con IP, área, tipo, rol y otros datos documentales. Para un switch, se pueden indicar cantidades de RJ45, SFP, SFP+, QSFP, QSFP+ y QSFP28. Al guardar, se crean registros editables para las posiciones que falten; las etiquetas secuenciales son provisionales, el estado inicial es «A verificar» y el uso «Desconocido». No se inventan enlaces. Las posiciones se pueden corregir desde **Puertos**; al aumentar una capacidad se agregan las posiciones nuevas que falten. Si se reduce una cantidad, los registros previos se conservan para no borrar documentación o enlaces.
+
 ## Propósito
 
 Reunir en un inventario navegable los dispositivos, IP, puertos, enlaces, áreas, PCs y usuarios de la red; mostrar su topología por vistas física, switching y red; registrar cambios; y permitir simulaciones locales y exportación imprimible.
