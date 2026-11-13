@@ -321,3 +321,13 @@ public class NuevaConexionDocumentadaViewModel
     /// <summary>Interfaces utilizables; cambiar la lista modifica las opciones del selector local.</summary>
     public List<SelectListItem> InterfacesDisponibles { get; set; } = [];
 }
+
+/// <summary>
+/// Reutiliza los campos de una relación parcial existente y guarda su identificador para editarla.
+/// </summary>
+public class EditarConexionDocumentadaViewModel : NuevaConexionDocumentadaViewModel
+{
+    /// <summary>ID de relación; cambiarlo selecciona otro registro documental.</summary>
+    [Range(1, int.MaxValue)]
+    public int Identificador { get; set; }
+}
