@@ -1346,3 +1346,44 @@ body.mapa-ampliado-en-pagina::before {
 @media print {
     .acciones-puerto-switch { display: none !important; }
 }
+
+/* Navegación jerárquica de la tabla de inventario por familia y categoría. */
+.navegacion-inventario,
+.categorias-inventario {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+}
+.categorias-inventario {
+    padding: 12px;
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    background: #f7fafb;
+}
+.boton-inventario-activo {
+    border-color: #0d6687;
+    background: #0d6687;
+    color: #fff;
+}
+.boton-inventario-activo:hover {
+    background: #09536e;
+    color: #fff;
+}
+@media (max-width: 600px) {
+    .navegacion-inventario,
+    .categorias-inventario {
+        gap: 6px;
+    }
+    .navegacion-inventario .boton,
+    .categorias-inventario .boton {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+}
+@media print {
+    .navegacion-inventario,
+    .categorias-inventario {
+        display: none !important;
+    }
+}
