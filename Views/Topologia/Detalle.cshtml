@@ -33,6 +33,10 @@
 
 <section class="detalle-topologia-switch">
     <div class="panel-frontal-detalle-switch">
+        <div class="acciones-puerto-switch">
+            <a class="boton boton-secundario" asp-controller="Conexiones" asp-action="CrearRelacion" asp-route-identificadorPuertoLocal="0" data-documentar-conexion aria-disabled="true">Documentar conexión del puerto seleccionado</a>
+            <span class="solo-lectores-pantalla" data-ayuda-documentar-puerto>Selecciona un puerto libre o sin estado confirmado.</span>
+        </div>
         @await Html.PartialAsync("_FrontalSwitch", Model.Dispositivo)
     </div>
     <dl class="datos-detalle-switch">
