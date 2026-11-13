@@ -67,6 +67,7 @@ public static class ImportadorInventarioCsv
         var posicionesCampos = encabezadosLeidos
             .Select((encabezado, indice) => new { encabezado, indice })
             .ToDictionary(par => par.encabezado, par => par.indice, StringComparer.OrdinalIgnoreCase);
+        // encabezadoRequerido recorre los nombres mínimos que identifican una ficha válida.
         foreach (var encabezadoRequerido in new[] { "equipo", "rol", "tipo", "vigencia" })
         {
             if (!posicionesCampos.ContainsKey(encabezadoRequerido))
@@ -93,6 +94,7 @@ public static class ImportadorInventarioCsv
         // puertosProvisionales suma las capacidades solicitadas para controlar el tamaño final del inventario.
         var puertosProvisionales = 0;
 
+        // indiceFila recorre los registros después de la fila de encabezados.
         for (var indiceFila = 1; indiceFila < filasCsv.Count; indiceFila++)
         {
             // filaCsv contiene las celdas originales de la línea lógica actual.
@@ -134,6 +136,7 @@ public static class ImportadorInventarioCsv
 
             // erroresFila conserva cuántas validaciones ya se emitieron para omitir una ficha inválida.
             var cantidadErroresAntes = resultadoCsv.Errores.Count;
+            // capacidades conserva las seis cantidades opcionales en el orden de las columnas canónicas.
             var capacidades = new[]
             {
                 LeerCantidad(ObtenerCampo("Puertos RJ45"), "Puertos RJ45", numeroFila, resultadoCsv.Errores),
@@ -146,6 +149,7 @@ public static class ImportadorInventarioCsv
 
             // contextoValidacion aplica Required, StringLength y Range usados en el alta individual.
             var contextoValidacion = new ValidationContext(formularioEquipo);
+            // erroresValidacion reúne los límites de longitud, campos requeridos y rangos numéricos.
             var erroresValidacion = new List<ValidationResult>();
             Validator.TryValidateObject(formularioEquipo, contextoValidacion, erroresValidacion, true);
             resultadoCsv.Errores.AddRange(erroresValidacion.Select(error =>
@@ -229,6 +233,7 @@ public static class ImportadorInventarioCsv
         // dentroDeComillas distingue separadores literales de los separadores de columnas.
         var dentroDeComillas = false;
 
+        // indiceCaracter recorre el CSV carácter por carácter para respetar el escapado de comillas.
         for (var indiceCaracter = 0; indiceCaracter < contenidoCsv.Length; indiceCaracter++)
         {
             // caracterActual procesa un símbolo de la celda actual.
@@ -324,6 +329,7 @@ public static class ImportadorInventarioCsv
             return null;
         }
 
+        // cantidad guarda el entero interpretado; cambiar el texto o rango modifica la capacidad resultante.
         if (!int.TryParse(texto, NumberStyles.None, CultureInfo.InvariantCulture, out var cantidad) || cantidad is < 0 or > 512)
         {
             errores.Add($"Fila {numeroFila}: «{nombreCampo}» debe ser un número entero entre 0 y 512.");
