@@ -364,3 +364,13 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 - Para la clasificación no se agregaron campos ni se migró la base: se consumen TipoDispositivo, RolEnArea, Area, EstadoAdministrativo y las relaciones persistidas. Cualquier cambio futuro de clasificación debe continuar alimentándose de datos del inventario, no del nombre arbitrario del dispositivo.
 - Código publicado directamente en `main`. En esta etapa se revisó el contenido remoto, pero no se ejecutó build ni validación en navegador.
 - Actualizar README y este prompt con cada cambio. Mantener variables y comentarios en español y commits breves en español.
+
+
+## Ajustes de Topología (paso 3, 13 de noviembre de 2026)
+
+- Dentro de la barra de herramientas del marco del mapa debe haber un único control **Maximizar mapa** y un único **Imprimir mapa**. Quitar duplicados del encabezado y de otros listados de la página general.
+- Contraer todas las tarjetas en cada carga inicial. Al pulsar **Restablecer mapa**, volver también a todas las tarjetas contraídas junto con el esquema jerárquico genérico. Las personas pueden expandir tarjetas individualmente o usar la acción global existente.
+- En la página general, después de **Pendientes de detalle**, retirar los bloques de lista «CAPA 1 · DETALLE DE CONEXIONES» y «DETALLE DE EXTREMOS POR INTERFAZ». Esto solo cambia la presentación de Topología; no borrar enlaces/relaciones, no retirar conexiones del mapa, ni quitar los detalles de la ficha individual de switch.
+- Mantener el ajuste de impresión del mapa dentro del marco y la distribución de hoja implementada anteriormente.
+- Estado 13/11/2026: cambios publicados en `main`; se revisó el HTML/JS fuente para confirmar un botón por acción, ausencia de las secciones retiradas y estado inicial contraído. No se ejecutó build ni prueba visual en navegador.
+- Actualizar README y este prompt con cualquier cambio adicional de Topología.
