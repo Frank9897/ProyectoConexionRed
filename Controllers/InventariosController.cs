@@ -30,13 +30,8 @@ public sealed class InventariosController : Controller
     [HttpGet]
     public IActionResult Index()
     {
-        // inventariosDisponibles limita la pantalla a bases encontradas por el registro.
-        var inventariosDisponibles = registroInventarios.Listar();
-        // identificadorActivo refleja la preferencia vigente del navegador sin cambiar la base.
-        var identificadorActivo = registroInventarios.ObtenerIdentificadorActivo(
-            Request.Cookies[RegistroInventarios.NombreCookieInventario]);
-        ViewBag.IdentificadorActivo = identificadorActivo;
-        return View("~/Views/Home/Inventarios.cshtml", inventariosDisponibles);
+        // La gestión de sedes vive en Inicio para evitar una segunda pantalla con el mismo propósito.
+        return RedirectToAction("Index", "Home");
     }
 
     /// <summary>
