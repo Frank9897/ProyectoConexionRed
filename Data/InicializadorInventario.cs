@@ -1,4 +1,3 @@
-using System.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ProyectoConexionRed.Web.Models;
@@ -12,7 +11,7 @@ namespace ProyectoConexionRed.Web.Data;
 public static class InicializadorInventario
 {
     /// <summary>
-    /// Crea el esquema necesario, completa tablas de acceso si la base existía y carga equipo y administrador inicial.
+    /// Aplica migraciones y carga datos documentales sin duplicar equipos ni cuentas.
     /// </summary>
     /// <param name="serviciosAplicacion">Proveedor de servicios; cambiarlo selecciona otra instancia configurada del inventario.</param>
     /// <param name="cancelacion">Señal de cancelación; activarla detiene la inicialización pendiente.</param>
@@ -24,11 +23,8 @@ public static class InicializadorInventario
         // contextoInventario representa la conexión SQLite del servidor; cambiarla dirige la carga a otra base configurada.
         var contextoInventario = alcanceServicios.ServiceProvider.GetRequiredService<InventarioDbContext>();
 
-        // Crear la estructura funciona para la base nueva; en bases existentes no agrega tablas faltantes.
-        await contextoInventario.Database.EnsureCreatedAsync(cancelacion);
-
-        // CrearTablasDeAccesoAsync permite conservar bases antiguas que ya tenían EquiposRed.
-        await CrearTablasDeAccesoAsync(contextoInventario, cancelacion);
+        // PreparadorMigraciones valida una base previa antes de registrarla y crea el esquema si está vacía.
+        await PreparadorMigraciones.AplicarAsync(contextoInventario, cancelacion);
 
         // ReiniciarHistorialCambiosUnaVezAsync cumple el reinicio solicitado sin repetirlo en cada inicio.
         await ReiniciarHistorialCambiosUnaVezAsync(contextoInventario, cancelacion);
@@ -59,32 +55,21 @@ public static class InicializadorInventario
         await using var transaccion = await contextoInventario.Database.BeginTransactionAsync(cancelacion);
         // codigoMantenimiento evita repetir este borrado en los siguientes inicios de la misma base.
         const string codigoMantenimiento = "reinicio-historial-cambios-2026-11";
-        // crearMarca prepara un registro idempotente que sirve como versión del reinicio solicitado.
-        const string crearMarca = """
-            CREATE TABLE IF NOT EXISTS "MantenimientosEjecutados" (
-                "Codigo" TEXT NOT NULL PRIMARY KEY,
-                "FechaUtc" TEXT NOT NULL
-            );
-            """;
-        await contextoInventario.Database.ExecuteSqlRawAsync(crearMarca, cancelacion);
+        // marcaExistente indica si esta base ya completó la limpieza solicitada.
+        var marcaExistente = await contextoInventario.MantenimientosEjecutados
+            .AnyAsync(mantenimiento => mantenimiento.Codigo == codigoMantenimiento, cancelacion);
 
-        // parametrosMarca registra el código y fecha sin interpolar texto dentro del SQL.
-        var parametrosMarca = new object[]
+        if (!marcaExistente)
         {
-            codigoMantenimiento,
-            DateTime.UtcNow.ToString("O")
-        };
-        // marcaInsertada vale 1 solo en la primera ejecución sobre esta base de datos.
-        var marcaInsertada = await contextoInventario.Database.ExecuteSqlRawAsync(
-            """
-            INSERT OR IGNORE INTO "MantenimientosEjecutados" ("Codigo", "FechaUtc")
-            VALUES ({0}, {1});
-            """,
-            parametrosMarca,
-            cancelacion);
+            // nuevaMarca conserva la fecha en formato ISO para mantener compatibilidad con datos anteriores.
+            var nuevaMarca = new MantenimientoEjecutado
+            {
+                Codigo = codigoMantenimiento,
+                FechaUtc = DateTime.UtcNow.ToString("O")
+            };
+            contextoInventario.MantenimientosEjecutados.Add(nuevaMarca);
+            await contextoInventario.SaveChangesAsync(cancelacion);
 
-        if (marcaInsertada > 0)
-        {
             // El borrado intencional deja en cero los cambios antiguos una sola vez; los accesos permanecen.
             await contextoInventario.Database.ExecuteSqlRawAsync(
                 """DELETE FROM "EventosModificacion";""",
@@ -92,223 +77,6 @@ public static class InicializadorInventario
         }
 
         await transaccion.CommitAsync(cancelacion);
-    }
-
-    /// <summary>
-    /// Garantiza que existan las tablas e índices de cuentas e historial incluso si EquiposRed ya estaba creada.
-    /// </summary>
-    /// <param name="contextoInventario">Contexto de la base; cambiarlo selecciona dónde se crean las tablas.</param>
-    /// <param name="cancelacion">Señal de cancelación; activarla detiene las instrucciones SQL.</param>
-    private static async Task CrearTablasDeAccesoAsync(
-        InventarioDbContext contextoInventario,
-        CancellationToken cancelacion)
-    {
-        // comandosSql crea solo tablas de acceso faltantes; cambiar estas sentencias altera su estructura persistida.
-        const string comandosSql = """
-            CREATE TABLE IF NOT EXISTS "UsuariosAplicacion" (
-                "Identificador" INTEGER NOT NULL CONSTRAINT "PK_UsuariosAplicacion" PRIMARY KEY AUTOINCREMENT,
-                "NombreUsuario" TEXT NOT NULL,
-                "NombreUsuarioNormalizado" TEXT NOT NULL,
-                "HashContrasena" TEXT NOT NULL,
-                "Rol" TEXT NOT NULL DEFAULT 'Administrador',
-                "Activo" INTEGER NOT NULL,
-                "FechaCreacionUtc" TEXT NOT NULL
-            );
-            CREATE UNIQUE INDEX IF NOT EXISTS "IX_UsuariosAplicacion_NombreUsuarioNormalizado"
-                ON "UsuariosAplicacion" ("NombreUsuarioNormalizado");
-            CREATE TABLE IF NOT EXISTS "EventosAcceso" (
-                "Identificador" INTEGER NOT NULL CONSTRAINT "PK_EventosAcceso" PRIMARY KEY AUTOINCREMENT,
-                "NombreUsuario" TEXT NOT NULL,
-                "FechaUtc" TEXT NOT NULL,
-                "TipoEvento" TEXT NOT NULL,
-                "Resultado" TEXT NOT NULL
-            );
-            CREATE INDEX IF NOT EXISTS "IX_EventosAcceso_FechaUtc"
-                ON "EventosAcceso" ("FechaUtc");
-            CREATE TABLE IF NOT EXISTS "EventosModificacion" (
-                "Identificador" INTEGER NOT NULL CONSTRAINT "PK_EventosModificacion" PRIMARY KEY AUTOINCREMENT,
-                "IdentificadorEquipo" INTEGER NOT NULL,
-                "NombreEquipo" TEXT NOT NULL,
-                "NombreUsuario" TEXT NOT NULL,
-                "FechaUtc" TEXT NOT NULL,
-                "Campo" TEXT NOT NULL,
-                "ValorAnterior" TEXT NULL,
-                "ValorNuevo" TEXT NULL
-            );
-            CREATE INDEX IF NOT EXISTS "IX_EventosModificacion_FechaUtc"
-                ON "EventosModificacion" ("FechaUtc");
-            CREATE INDEX IF NOT EXISTS "IX_EventosModificacion_IdentificadorEquipo"
-                ON "EventosModificacion" ("IdentificadorEquipo");
-            CREATE TABLE IF NOT EXISTS "InterfacesEquipo" (
-                "Identificador" INTEGER NOT NULL CONSTRAINT "PK_InterfacesEquipo" PRIMARY KEY AUTOINCREMENT,
-                "IdentificadorEquipo" INTEGER NOT NULL,
-                "EtiquetaPuerto" TEXT NOT NULL,
-                "TipoInterfaz" TEXT NOT NULL,
-                "EstadoDatos" TEXT NOT NULL,
-                "EstadoUso" TEXT NOT NULL DEFAULT 'Desconocido',
-                "FechaUltimaRevision" TEXT NULL,
-                "Observaciones" TEXT NULL,
-                CONSTRAINT "FK_InterfacesEquipo_EquiposRed_IdentificadorEquipo"
-                    FOREIGN KEY ("IdentificadorEquipo") REFERENCES "EquiposRed" ("Identificador") ON DELETE RESTRICT
-            );
-            CREATE UNIQUE INDEX IF NOT EXISTS "IX_InterfacesEquipo_IdentificadorEquipo_EtiquetaPuerto"
-                ON "InterfacesEquipo" ("IdentificadorEquipo", "EtiquetaPuerto");
-            CREATE TABLE IF NOT EXISTS "EnlacesFisicos" (
-                "Identificador" INTEGER NOT NULL CONSTRAINT "PK_EnlacesFisicos" PRIMARY KEY AUTOINCREMENT,
-                "IdentificadorPuertoOrigen" INTEGER NOT NULL,
-                "IdentificadorPuertoDestino" INTEGER NOT NULL,
-                "Medio" TEXT NOT NULL,
-                "ModuloOrigen" TEXT NULL,
-                "ModuloDestino" TEXT NULL,
-                "EstadoDatos" TEXT NOT NULL,
-                "FechaUltimaRevision" TEXT NULL,
-                "Fuente" TEXT NULL,
-                "Observaciones" TEXT NULL,
-                CONSTRAINT "FK_EnlacesFisicos_InterfacesEquipo_IdentificadorPuertoOrigen"
-                    FOREIGN KEY ("IdentificadorPuertoOrigen") REFERENCES "InterfacesEquipo" ("Identificador") ON DELETE RESTRICT,
-                CONSTRAINT "FK_EnlacesFisicos_InterfacesEquipo_IdentificadorPuertoDestino"
-                    FOREIGN KEY ("IdentificadorPuertoDestino") REFERENCES "InterfacesEquipo" ("Identificador") ON DELETE RESTRICT
-            );
-            CREATE INDEX IF NOT EXISTS "IX_EnlacesFisicos_IdentificadorPuertoOrigen"
-                ON "EnlacesFisicos" ("IdentificadorPuertoOrigen");
-            CREATE INDEX IF NOT EXISTS "IX_EnlacesFisicos_IdentificadorPuertoDestino"
-                ON "EnlacesFisicos" ("IdentificadorPuertoDestino");
-            CREATE TABLE IF NOT EXISTS "ConexionesDocumentadas" (
-                "Identificador" INTEGER NOT NULL CONSTRAINT "PK_ConexionesDocumentadas" PRIMARY KEY AUTOINCREMENT,
-                "IdentificadorPuertoLocal" INTEGER NOT NULL,
-                "EquipoRemoto" TEXT NULL,
-                "IpRemota" TEXT NULL,
-                "PuertoRemoto" TEXT NULL,
-                "Medio" TEXT NOT NULL DEFAULT 'No confirmado',
-                "EstadoDatos" TEXT NOT NULL DEFAULT 'A verificar',
-                "FechaUltimaRevision" TEXT NULL,
-                "FuentePagina" TEXT NOT NULL,
-                "FuenteLibro" TEXT NULL,
-                "FuenteFila" TEXT NULL,
-                "Observaciones" TEXT NULL,
-                CONSTRAINT "FK_ConexionesDocumentadas_InterfacesEquipo_IdentificadorPuertoLocal"
-                    FOREIGN KEY ("IdentificadorPuertoLocal") REFERENCES "InterfacesEquipo" ("Identificador") ON DELETE RESTRICT
-            );
-            CREATE UNIQUE INDEX IF NOT EXISTS "IX_ConexionesDocumentadas_IdentificadorPuertoLocal"
-                ON "ConexionesDocumentadas" ("IdentificadorPuertoLocal");
-            """;
-
-        await contextoInventario.Database.ExecuteSqlRawAsync(comandosSql, cancelacion);
-        await AgregarColumnaRolSiFaltaAsync(contextoInventario, cancelacion);
-        await AgregarColumnaSiFaltaAsync(contextoInventario, "EquiposRed", "Piso", "TEXT NULL", cancelacion);
-        await AgregarColumnaSiFaltaAsync(contextoInventario, "EquiposRed", "UsuarioAsignado", "TEXT NULL", cancelacion);
-        await AgregarColumnaSiFaltaAsync(contextoInventario, "EquiposRed", "FuenteDatos", "TEXT NULL", cancelacion);
-        await AgregarColumnaSiFaltaAsync(contextoInventario, "EquiposRed", "CantidadPuertosRj45", "INTEGER NULL", cancelacion);
-        await AgregarColumnaSiFaltaAsync(contextoInventario, "EquiposRed", "CantidadPuertosSfp", "INTEGER NULL", cancelacion);
-        await AgregarColumnaSiFaltaAsync(contextoInventario, "EquiposRed", "CantidadPuertosSfpPlus", "INTEGER NULL", cancelacion);
-        await AgregarColumnaSiFaltaAsync(contextoInventario, "EquiposRed", "CantidadPuertosQsfp", "INTEGER NULL", cancelacion);
-        await AgregarColumnaSiFaltaAsync(contextoInventario, "EquiposRed", "CantidadPuertosQsfpPlus", "INTEGER NULL", cancelacion);
-        await AgregarColumnaSiFaltaAsync(contextoInventario, "EquiposRed", "CantidadPuertosQsfp28", "INTEGER NULL", cancelacion);
-        await AgregarColumnaSiFaltaAsync(contextoInventario, "InterfacesEquipo", "EstadoUso", "TEXT NOT NULL DEFAULT 'Desconocido'", cancelacion);
-    }
-
-    /// <summary>
-    /// Agrega una columna a una tabla permitida si todavía no existe en SQLite.
-    /// </summary>
-    /// <param name="contextoInventario">Contexto de base; cambiarlo aplica el cambio en otra conexión.</param>
-    /// <param name="nombreTabla">Tabla destino; solo se aceptan nombres internos de inventario.</param>
-    /// <param name="nombreColumna">Columna destino; cambiarla modifica el dato agregado.</param>
-    /// <param name="tipoColumna">Definición SQLite; cambiarla altera tipo y nulabilidad.</param>
-    /// <param name="cancelacion">Señal de cancelación; activarla detiene la revisión o el cambio.</param>
-    private static async Task AgregarColumnaSiFaltaAsync(InventarioDbContext contextoInventario,
-        string nombreTabla, string nombreColumna, string tipoColumna, CancellationToken cancelacion)
-    {
-        // tablaPermitida limita la interpolación SQL a tablas internas conocidas.
-        var tablaPermitida = nombreTabla == "EquiposRed" || nombreTabla == "InterfacesEquipo";
-        if (!tablaPermitida) throw new InvalidOperationException("La tabla solicitada no está permitida para la actualización.");
-
-        // conexionBase conserva la única conexión SQLite usada por el contexto.
-        var conexionBase = contextoInventario.Database.GetDbConnection();
-        // cerrarAlFinal conserva el estado original de la conexión al salir de la función.
-        var cerrarAlFinal = conexionBase.State != ConnectionState.Open;
-        if (cerrarAlFinal) await conexionBase.OpenAsync(cancelacion);
-
-        try
-        {
-            // existeColumna evita aplicar dos veces la misma actualización.
-            var existeColumna = false;
-            await using (var comandoEsquema = conexionBase.CreateCommand())
-            {
-                comandoEsquema.CommandText = $"PRAGMA table_info(\"{nombreTabla}\")";
-                await using var lectorEsquema = await comandoEsquema.ExecuteReaderAsync(cancelacion);
-                while (await lectorEsquema.ReadAsync(cancelacion))
-                {
-                    // columnaRevisada conserva el nombre inspeccionado en el esquema SQLite.
-                    var columnaRevisada = lectorEsquema.GetString(1);
-                    if (columnaRevisada == nombreColumna)
-                    {
-                        existeColumna = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!existeColumna)
-            {
-                // Tabla y columna llegan desde llamadas internas con identificadores constantes.
-                await contextoInventario.Database.ExecuteSqlRawAsync(
-                    $"ALTER TABLE \"{nombreTabla}\" ADD COLUMN \"{nombreColumna}\" {tipoColumna}", cancelacion);
-            }
-        }
-        finally
-        {
-            if (cerrarAlFinal) await conexionBase.CloseAsync();
-        }
-    }
-
-    /// <summary>
-    /// Agrega el rol a bases SQLite anteriores y conserva como administradoras las cuentas existentes.
-    /// </summary>
-    /// <param name="contextoInventario">Contexto de base; cambiarlo aplica el ajuste en otra base.</param>
-    /// <param name="cancelacion">Señal de cancelación; activarla interrumpe la lectura del esquema o la alteración.</param>
-    private static async Task AgregarColumnaRolSiFaltaAsync(
-        InventarioDbContext contextoInventario,
-        CancellationToken cancelacion)
-    {
-        // conexionBase representa la conexión actual de EF; cambiarla inspecciona otra base.
-        var conexionBase = contextoInventario.Database.GetDbConnection();
-        // cerrarAlFinal indica si esta función abrió la conexión; cambiarlo altera si la conexión se cierra al terminar.
-        var cerrarAlFinal = conexionBase.State != ConnectionState.Open;
-        if (cerrarAlFinal)
-        {
-            await conexionBase.OpenAsync(cancelacion);
-        }
-
-        // existeColumnaRol evita repetir ALTER TABLE; cambiar su resultado decide si se amplía el esquema.
-        var existeColumnaRol = false;
-        await using (var comandoEsquema = conexionBase.CreateCommand())
-        {
-            comandoEsquema.CommandText = "PRAGMA table_info(\"UsuariosAplicacion\")";
-            await using var lectorEsquema = await comandoEsquema.ExecuteReaderAsync(cancelacion);
-            while (await lectorEsquema.ReadAsync(cancelacion))
-            {
-                // nombreColumna contiene el nombre leído del esquema; cambiar el índice cambia qué dato se compara.
-                var nombreColumna = lectorEsquema.GetString(1);
-                if (nombreColumna == "Rol")
-                {
-                    existeColumnaRol = true;
-                    break;
-                }
-            }
-        }
-
-        if (!existeColumnaRol)
-        {
-            // ALTER TABLE asigna un rol administrador predeterminado a cuentas previas para conservar el acceso.
-            await contextoInventario.Database.ExecuteSqlRawAsync(
-                "ALTER TABLE \"UsuariosAplicacion\" ADD COLUMN \"Rol\" TEXT NOT NULL DEFAULT 'Administrador'",
-                cancelacion);
-        }
-
-        if (cerrarAlFinal)
-        {
-            await conexionBase.CloseAsync();
-        }
     }
 
     /// <summary>
