@@ -140,7 +140,75 @@ public class CorreccionesController : Controller
         TempData["Mensaje"] = cambiosInterfaz.Count == 0
             ? "No se detectaron cambios en el puerto."
             : $"Se actualizaron {cambiosInterfaz.Count} campos del puerto.";
-        return RedirectToAction("Index", "Conexiones");
+        return string.Equals(equipoNuevo.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase)
+            ? RedirectToAction("Detalle", "Topologia", new { identificador = equipoNuevo.Identificador })
+            : RedirectToAction("Index", "Conexiones");
+    }
+
+    /// <summary>
+    /// Elimina una interfaz solo si no sostiene una relación documentada.
+    /// </summary>
+    /// <param name="identificador">ID del puerto; cambiarlo selecciona otra interfaz a retirar.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla detiene las verificaciones.</param>
+    /// <returns>Regresa al frontal del switch o al listado de puertos tras la operación.</returns>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EliminarInterfaz(int identificador, CancellationToken cancelacion)
+    {
+        // interfazGuardada es el registro que se intenta eliminar; cambiar el ID afecta otra posición.
+        var interfazGuardada = await contextoInventario.InterfacesEquipo
+            .SingleOrDefaultAsync(interfaz => interfaz.Identificador == identificador, cancelacion);
+        if (interfazGuardada is null) return NotFound();
+
+        // tieneEnlaceCompleto comprueba si algún enlace físico usa el puerto.
+        var tieneEnlaceCompleto = await contextoInventario.EnlacesFisicos.AnyAsync(enlace =>
+            enlace.IdentificadorPuertoOrigen == identificador || enlace.IdentificadorPuertoDestino == identificador,
+            cancelacion);
+        // tieneRelacionParcial comprueba las asignaciones guardadas desde ese puerto.
+        var tieneRelacionParcial = await contextoInventario.ConexionesDocumentadas.AnyAsync(
+            relacion => relacion.IdentificadorPuertoLocal == identificador, cancelacion);
+        if (tieneEnlaceCompleto || tieneRelacionParcial)
+        {
+            TempData["Error"] = "No se puede eliminar este puerto mientras tenga una conexión registrada. Edita o elimina primero la relación.";
+            return await VolverAlEquipoAsync(interfazGuardada.IdentificadorEquipo, cancelacion);
+        }
+
+        // equipoPropietario determina dónde volver y a qué ficha se atribuye el historial.
+        var equipoPropietario = await contextoInventario.Equipos
+            .SingleAsync(equipo => equipo.Identificador == interfazGuardada.IdentificadorEquipo, cancelacion);
+        // eventoEliminacion conserva el texto anterior sin borrar la auditoría histórica.
+        var eventoEliminacion = new EventoModificacion
+        {
+            IdentificadorEquipo = equipoPropietario.Identificador,
+            NombreEquipo = equipoPropietario.Nombre,
+            NombreUsuario = User.Identity?.Name ?? "Pruebas sin sesión",
+            FechaUtc = DateTime.UtcNow,
+            Campo = "Interfaz eliminada",
+            ValorAnterior = $"{interfazGuardada.EtiquetaPuerto} · {interfazGuardada.TipoInterfaz} · {interfazGuardada.EstadoDatos} · {interfazGuardada.EstadoUso}",
+            ValorNuevo = null
+        };
+        contextoInventario.InterfacesEquipo.Remove(interfazGuardada);
+        await contextoInventario.EventosModificacion.AddAsync(eventoEliminacion, cancelacion);
+        await contextoInventario.SaveChangesAsync(cancelacion);
+
+        TempData["Mensaje"] = $"Se eliminó el puerto {interfazGuardada.EtiquetaPuerto}.";
+        return await VolverAlEquipoAsync(equipoPropietario.Identificador, cancelacion);
+    }
+
+    /// <summary>
+    /// Vuelve al frontal si el equipo es switch; de lo contrario abre Puertos.
+    /// </summary>
+    /// <param name="identificadorEquipo">Equipo propietario; cambiarlo selecciona otro destino de regreso.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla detiene la consulta del tipo de equipo.</param>
+    /// <returns>Redirección a la vista correspondiente del equipo.</returns>
+    private async Task<IActionResult> VolverAlEquipoAsync(int identificadorEquipo, CancellationToken cancelacion)
+    {
+        // equipoPropietario decide si corresponde abrir un frontal o el listado general.
+        var equipoPropietario = await contextoInventario.Equipos.AsNoTracking()
+            .SingleOrDefaultAsync(equipo => equipo.Identificador == identificadorEquipo, cancelacion);
+        return string.Equals(equipoPropietario?.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase)
+            ? RedirectToAction("Detalle", "Topologia", new { identificador = identificadorEquipo })
+            : RedirectToAction("Index", "Conexiones");
     }
 
     /// <summary>
