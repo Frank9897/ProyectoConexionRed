@@ -1,26 +1,63 @@
 @model IReadOnlyList<EquipoRed>
 @{
     ViewData["Title"] = "Inventario";
+    // seccionActiva conserva la categoría superior elegida en la URL.
+    var seccionActiva = ViewBag.SeccionActiva as string ?? "todos";
+    // categoriaActiva identifica el subfiltro mostrado para switches o usuarios.
+    var categoriaActiva = ViewBag.CategoriaActiva as string ?? "todos";
+    // tituloVista describe la tabla con términos visibles para el técnico.
+    var tituloVista = ViewBag.TituloVista as string ?? "Todos los equipos";
+    // busquedaActual mantiene el texto escrito al cambiar de categoría o exportar.
+    var busquedaActual = Context.Request.Query["busqueda"].ToString();
 }
 
 <section class="encabezado-pagina">
     <div>
         <p class="sobrelinea">EQUIPOS DOCUMENTADOS</p>
         <h1>Inventario</h1>
-        <p>Consulta los equipos, direcciones IP y su ubicación documental.</p>
+        <p>@tituloVista</p>
     </div>
 </section>
+<nav class="navegacion-inventario" aria-label="Secciones del inventario">
+    <a class="boton @(seccionActiva == "todos" ? "boton-inventario-activo" : "boton-secundario")" asp-action="Index" asp-route-seccion="todos" asp-route-busqueda="@busquedaActual">Todo</a>
+    <a class="boton @(seccionActiva == "switches" ? "boton-inventario-activo" : "boton-secundario")" asp-action="Index" asp-route-seccion="switches" asp-route-busqueda="@busquedaActual">Switches</a>
+    <a class="boton @(seccionActiva == "usuarios" ? "boton-inventario-activo" : "boton-secundario")" asp-action="Index" asp-route-seccion="usuarios" asp-route-busqueda="@busquedaActual">Usuarios</a>
+    <a class="boton @(seccionActiva == "otros" ? "boton-inventario-activo" : "boton-secundario")" asp-action="Index" asp-route-seccion="otros" asp-route-busqueda="@busquedaActual">Otros equipos</a>
+</nav>
+
+@if (seccionActiva == "switches")
+{
+    <nav class="categorias-inventario" aria-label="Categorías de switches">
+        <a class="boton @(categoriaActiva == "todos" ? "boton-inventario-activo" : "boton-secundario")" asp-action="Index" asp-route-seccion="switches" asp-route-categoria="todos" asp-route-busqueda="@busquedaActual">Todos los switches</a>
+        <a class="boton @(categoriaActiva == "areas" ? "boton-inventario-activo" : "boton-secundario")" asp-action="Index" asp-route-seccion="switches" asp-route-categoria="areas" asp-route-busqueda="@busquedaActual">Áreas</a>
+        <a class="boton @(categoriaActiva == "datacenter" ? "boton-inventario-activo" : "boton-secundario")" asp-action="Index" asp-route-seccion="switches" asp-route-categoria="datacenter" asp-route-busqueda="@busquedaActual">Datacenter</a>
+        <a class="boton @(categoriaActiva == "reserva" ? "boton-inventario-activo" : "boton-secundario")" asp-action="Index" asp-route-seccion="switches" asp-route-categoria="reserva" asp-route-busqueda="@busquedaActual">Reserva</a>
+        <a class="boton @(categoriaActiva == "sin-acceso" ? "boton-inventario-activo" : "boton-secundario")" asp-action="Index" asp-route-seccion="switches" asp-route-categoria="sin-acceso" asp-route-busqueda="@busquedaActual">Sin acceso</a>
+        <a class="boton @(categoriaActiva == "servidores" ? "boton-inventario-activo" : "boton-secundario")" asp-action="Index" asp-route-seccion="switches" asp-route-categoria="servidores" asp-route-busqueda="@busquedaActual">Servidores</a>
+    </nav>
+}
+else if (seccionActiva == "usuarios")
+{
+    <nav class="categorias-inventario" aria-label="Categorías de usuarios">
+        <a class="boton @(categoriaActiva == "todos" ? "boton-inventario-activo" : "boton-secundario")" asp-action="Index" asp-route-seccion="usuarios" asp-route-categoria="todos" asp-route-busqueda="@busquedaActual">Todos los usuarios</a>
+        <a class="boton @(categoriaActiva == "documentados" ? "boton-inventario-activo" : "boton-secundario")" asp-action="Index" asp-route-seccion="usuarios" asp-route-categoria="documentados" asp-route-busqueda="@busquedaActual">Documentados</a>
+        <a class="boton @(categoriaActiva == "sin-documentar" ? "boton-inventario-activo" : "boton-secundario")" asp-action="Index" asp-route-seccion="usuarios" asp-route-categoria="sin-documentar" asp-route-busqueda="@busquedaActual">Sin documentar</a>
+    </nav>
+}
+
 @* mensajeInventario informa el resultado de la edición; cambiarlo modifica el aviso de confirmación. *@
 @if (TempData["Mensaje"] is string mensajeInventario)
 {
     <p class="mensaje-exito" role="status">@mensajeInventario</p>
 }
 <form method="get" class="busqueda">
+    <input type="hidden" name="seccion" value="@seccionActiva" />
+    <input type="hidden" name="categoria" value="@categoriaActiva" />
     <label for="busqueda">Buscar por equipo, IP, área, piso, tipo, modelo o fabricante</label>
     <div class="fila-busqueda">
         <input id="busqueda" name="busqueda" value="@Context.Request.Query["busqueda"]" placeholder="Ej.: 192.168.1.44 o Agrimensura" />
         <button class="boton" type="submit">Buscar</button>
-        <a class="boton boton-secundario" asp-controller="Inventario" asp-action="Index">Limpiar</a>
+        <a class="boton boton-secundario" asp-controller="Inventario" asp-action="Index" asp-route-seccion="@seccionActiva" asp-route-categoria="@categoriaActiva">Limpiar</a>
     </div>
 </form>
 
@@ -33,6 +70,7 @@
     <select id="limite-registros-inventario" data-limite-registros>
         <option value="10">10</option>
         <option value="30">30</option>
+        <option value="100">100</option>
         <option value="todos">Todos</option>
     </select>
     <span data-resumen-pagina-inventario aria-live="polite"></span>
@@ -45,7 +83,7 @@
 </div>
 
 <div class="acciones-tabla">
-    <a class="boton boton-secundario" asp-controller="Inventario" asp-action="ExportarCsv" asp-route-busqueda="@Context.Request.Query["busqueda"]">Descargar CSV</a>
+    <a class="boton boton-secundario" asp-controller="Inventario" asp-action="ExportarCsv" asp-route-busqueda="@busquedaActual" asp-route-seccion="@seccionActiva" asp-route-categoria="@categoriaActiva">Descargar CSV</a>
     @* La impresión usa el diálogo del navegador y conserva el formato de tabla para papel o PDF. *@
     <button class="boton boton-secundario" type="button" onclick="window.print()">Imprimir inventario</button>
 </div>
