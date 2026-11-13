@@ -239,7 +239,9 @@ public class ConexionesController : Controller
         await contextoInventario.SaveChangesAsync(cancelacion);
 
         TempData["Mensaje"] = $"Se registró el puerto {nuevaInterfaz.EtiquetaPuerto} de {equipoPropietario.Nombre}.";
-        return RedirectToAction(nameof(Index));
+        return string.Equals(equipoPropietario.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase)
+            ? RedirectToAction("Detalle", "Topologia", new { identificador = equipoPropietario.Identificador })
+            : RedirectToAction(nameof(Index));
     }
 
     /// <summary>
