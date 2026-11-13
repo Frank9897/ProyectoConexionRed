@@ -1291,3 +1291,49 @@ body.mapa-ampliado-en-pagina::before {
     .hoja-impresion-topologia .mapa-sin-elementos { display: none !important; }
     .hoja-impresion-topologia .acciones-tarjeta-topologia { visibility: hidden; }
 }
+/* Estas reglas mantienen el selector de inventarios compacto, legible y adaptable. */
+.inventario-contador {
+    display: grid;
+    min-width: 130px;
+    gap: 3px;
+    justify-items: center;
+    padding: 14px 20px;
+    border: 1px solid var(--borde, #d6e0e8);
+    border-radius: 16px;
+    background: #fff;
+    color: #536879;
+}
+.inventario-activo-global { align-self: center; color: #63798a; font-size: .82rem; white-space: nowrap; }
+
+.inventario-contador strong { color: #16334b; font-size: 1.35rem; }
+.inventario-contador span { font-size: .78rem; }
+.inventarios-panel, .crear-inventario-panel { margin-top: 22px; padding: 24px; }
+.inventarios-lista { display: grid; gap: 12px; margin-top: 18px; }
+.inventario-ficha { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 16px 18px; border: 1px solid #dce5eb; border-radius: 13px; background: #fff; }
+.inventario-ficha-activa { border-color: #3b9b79; box-shadow: inset 3px 0 #3b9b79; }
+.inventario-ficha-info { display: flex; align-items: center; gap: 13px; }
+.inventario-ficha-info h3 { margin: 0; color: #17364d; }
+.inventario-ficha-info p { margin: 4px 0 0; color: #718391; font-size: .88rem; }
+.inventario-indicador { width: 11px; height: 11px; border-radius: 50%; background: #9aa8b2; }
+.inventario-ficha-activa .inventario-indicador { background: #24a36f; box-shadow: 0 0 0 4px #e2f5ec; }
+.etiqueta-activa, .etiqueta-suave { padding: 7px 12px; border-radius: 99px; background: #e8f5ef; color: #20714d; font-size: .84rem; font-weight: 700; }
+.etiqueta-suave { background: #eef3f6; color: #546a79; }
+.crear-inventario-panel { display: grid; grid-template-columns: minmax(0, .8fr) minmax(320px, 1fr); align-items: end; gap: 30px; }
+.crear-inventario-panel h2 { margin: 0 0 8px; }
+.crear-inventario-panel p:not(.sobrelinea) { margin: 0; color: #657989; }
+.formulario-crear-inventario { display: grid; gap: 8px; }
+.formulario-crear-inventario label { color: #3e5667; font-size: .9rem; font-weight: 650; }
+.campo-crear-inventario { display: flex; gap: 10px; }
+.campo-crear-inventario input { min-width: 0; flex: 1; padding: 11px 13px; border: 1px solid #cad7e0; border-radius: 9px; font: inherit; }
+.nota-limite-inventarios { margin-top: 16px; color: #667986; }
+.aviso { margin-top: 18px; padding: 12px 15px; border-radius: 10px; }
+.aviso-exito { border: 1px solid #b9e4ce; background: #effaf4; color: #216743; }
+.aviso-error { border: 1px solid #f1c3bd; background: #fff4f2; color: #913f34; }
+
+@media (max-width: 760px) {
+    .inventario-activo-global { display: none; }
+    .crear-inventario-panel { grid-template-columns: 1fr; }
+    .inventario-ficha { align-items: flex-start; flex-direction: column; }
+    .campo-crear-inventario { flex-direction: column; }
+    .inventario-contador { min-width: 100px; }
+}
