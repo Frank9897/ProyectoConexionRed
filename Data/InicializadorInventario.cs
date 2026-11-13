@@ -747,23 +747,38 @@ public static class InicializadorInventario
                 if (!mismaFilaFuente)
                     continue;
 
-                // estadoAnteriorRelacion permite auditar el estado y destino que estaban guardados.
+                // estadoAnteriorRelacion y equipoRemotoAnterior conservan los valores previos para dejar el cambio trazable.
                 var estadoAnteriorRelacion = relacionExistente.EstadoDatos;
-                // ipRemotaExistente conserva IP anterior salvo la corrección ProCurve confirmada.
+                var equipoRemotoAnterior = relacionExistente.EquipoRemoto;
+                // ipRemotaExistente conserva la IP previa para describir el cambio en el historial.
                 var ipRemotaExistente = relacionExistente.IpRemota;
-                // cambioRelacion indica si la confirmación documental altera un dato ya guardado.
+                // cambioRelacion indica si la confirmación V3.5 modifica datos de la misma fila fuente.
                 var cambioRelacion = false;
-                if (relacionExistente.EstadoDatos == "A verificar")
+                // equipoRemotoDocumentado aplica el destino literal más reciente de la hoja enlazada.
+                var equipoRemotoDocumentado = filaPuerto.Destino.Trim();
+                if (!string.Equals(relacionExistente.EquipoRemoto?.Trim(), equipoRemotoDocumentado, StringComparison.Ordinal))
                 {
-                    relacionExistente.EstadoDatos = "Confirmado";
+                    relacionExistente.EquipoRemoto = equipoRemotoDocumentado;
                     cambioRelacion = true;
                 }
+                // ipRemotaDocumentada conserva las IP vacías cuando el Visio no informa una dirección.
+                var ipRemotaDocumentada = filaPuerto.IpRemota?.Trim();
                 if (filaPuerto.EquipoLocal == "Puerta Agrimensura"
                     && filaPuerto.EtiquetaPuerto == "1"
                     && filaPuerto.Destino.Contains("ProCurve", StringComparison.OrdinalIgnoreCase)
-                    && relacionExistente.IpRemota == "10.0.1.0")
+                    && ipRemotaDocumentada == "10.0.1.0")
                 {
-                    relacionExistente.IpRemota = "10.0.1.1";
+                    ipRemotaDocumentada = "10.0.1.1";
+                }
+                if (!string.IsNullOrWhiteSpace(ipRemotaDocumentada)
+                    && !string.Equals(relacionExistente.IpRemota?.Trim(), ipRemotaDocumentada, StringComparison.Ordinal))
+                {
+                    relacionExistente.IpRemota = ipRemotaDocumentada;
+                    cambioRelacion = true;
+                }
+                if (relacionExistente.EstadoDatos == "A verificar")
+                {
+                    relacionExistente.EstadoDatos = "Confirmado";
                     cambioRelacion = true;
                 }
                 if (relacionExistente.Observaciones?.Contains("verificar la vigencia física", StringComparison.OrdinalIgnoreCase) == true)
@@ -780,9 +795,9 @@ public static class InicializadorInventario
                         NombreEquipo = equipoLocal.Nombre,
                         NombreUsuario = usuarioImportacion,
                         FechaUtc = DateTime.UtcNow,
-                        Campo = "Confirmación de conexión del Visio",
-                        ValorAnterior = $"{estadoAnteriorRelacion} · {ipRemotaExistente ?? "IP no indicada"}",
-                        ValorNuevo = $"{relacionExistente.EstadoDatos} · {relacionExistente.IpRemota ?? "IP no indicada"} · {filaPuerto.Pagina}/{filaPuerto.Libro}/fila {filaPuerto.FilaFuente}"
+                        Campo = "Actualización de conexión desde Visio V3.5",
+                        ValorAnterior = $"{estadoAnteriorRelacion} · {equipoRemotoAnterior ?? "remoto no indicado"} · {ipRemotaExistente ?? "IP no indicada"}",
+                        ValorNuevo = $"{relacionExistente.EstadoDatos} · {relacionExistente.EquipoRemoto ?? "remoto no indicado"} · {relacionExistente.IpRemota ?? "IP no indicada"} · {filaPuerto.Pagina}/{filaPuerto.Libro}/fila {filaPuerto.FilaFuente}"
                     });
                 }
                 continue;
