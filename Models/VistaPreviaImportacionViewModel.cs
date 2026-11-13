@@ -17,6 +17,9 @@ public sealed class VistaPreviaImportacionViewModel
     /// <summary>Errores del análisis; cambiar la lista bloquea o habilita la confirmación.</summary>
     public List<string> Errores { get; set; } = [];
 
+    /// <summary>Requiere repetir la confirmación de avisos; cambiarlo muestra el motivo para volver a enviar el formulario.</summary>
+    public bool ConfirmacionAvisosPendiente { get; set; }
+
     /// <summary>Avisos de revisión; cambiar la lista altera las advertencias visibles antes de crear la base.</summary>
     public List<string> Avisos { get; set; } = [];
 
