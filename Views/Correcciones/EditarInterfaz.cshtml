@@ -10,6 +10,11 @@
         <input asp-for="Identificador" type="hidden" />
         <div asp-validation-summary="ModelOnly" class="mensaje-error"></div>
         <partial name="~/Views/Conexiones/_CamposInterfaz.cshtml" model="Model" />
-        <div class="acciones-formulario"><button class="boton" type="submit">Guardar corrección</button><a class="boton boton-secundario" asp-controller="Conexiones" asp-action="Index">Cancelar</a></div>
+        <div class="acciones-formulario"><button class="boton" type="submit">Guardar cambios del puerto</button><a class="boton boton-secundario" asp-controller="Topologia" asp-action="Detalle" asp-route-identificador="@Model.IdentificadorEquipo">Volver al switch</a></div>
+        <p>Un puerto con una relación registrada no se puede eliminar hasta resolver esa relación.</p>
+    </form>
+    <form asp-controller="Correcciones" asp-action="EliminarInterfaz" method="post" onsubmit="return confirm('¿Eliminar este puerto del inventario documental? La acción quedará en el historial.');">
+        <input type="hidden" name="identificador" value="@Model.Identificador" />
+        <button class="boton boton-secundario" type="submit">Eliminar puerto</button>
     </form>
 </section>
