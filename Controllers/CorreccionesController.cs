@@ -374,11 +374,22 @@ public class CorreccionesController : Controller
             .SingleOrDefaultAsync(relacion => relacion.Identificador == identificador, cancelacion);
         if (relacionGuardada is null) return NotFound();
 
+        // interfazLocal identifica legiblemente el puerto cuya relación se corrige.
+        var interfazLocal = await (
+            from interfaz in contextoInventario.InterfacesEquipo.AsNoTracking()
+            join equipo in contextoInventario.Equipos.AsNoTracking()
+                on interfaz.IdentificadorEquipo equals equipo.Identificador
+            where interfaz.Identificador == relacionGuardada.IdentificadorPuertoLocal
+            select new { equipo.Nombre, equipo.IpAdministracion, interfaz.EtiquetaPuerto })
+            .SingleOrDefaultAsync(cancelacion);
+        if (interfazLocal is null) return NotFound();
+
         // formularioEdicion carga los valores guardados para editar el extremo remoto.
         var formularioEdicion = new EditarConexionDocumentadaViewModel
         {
             Identificador = relacionGuardada.Identificador,
             IdentificadorPuertoLocal = relacionGuardada.IdentificadorPuertoLocal,
+            NombrePuertoLocal = $"{interfazLocal.Nombre} · {interfazLocal.IpAdministracion ?? "IP no indicada"} · Puerto {interfazLocal.EtiquetaPuerto}",
             EquipoRemoto = relacionGuardada.EquipoRemoto,
             IpRemota = relacionGuardada.IpRemota,
             PuertoRemoto = relacionGuardada.PuertoRemoto,
@@ -417,10 +428,12 @@ public class CorreccionesController : Controller
             join equipo in contextoInventario.Equipos.AsNoTracking()
                 on interfaz.IdentificadorEquipo equals equipo.Identificador
             where interfaz.Identificador == relacionGuardada.IdentificadorPuertoLocal
-            select new { equipo.Identificador, equipo.Nombre, equipo.TipoDispositivo })
+            select new { equipo.Identificador, equipo.Nombre, equipo.TipoDispositivo, equipo.IpAdministracion, interfaz.EtiquetaPuerto })
             .SingleOrDefaultAsync(cancelacion);
         if (equipoLocal is null) return NotFound();
 
+        // nombrePuertoLocal muestra el extremo local sin permitir cambiar su propietario en este formulario.
+        formulario.NombrePuertoLocal = $"{equipoLocal.Nombre} · {equipoLocal.IpAdministracion ?? "IP no indicada"} · Puerto {equipoLocal.EtiquetaPuerto}";
         // Se conserva el puerto local original para evitar mover la relación con un ID oculto manipulado.
         formulario.IdentificadorPuertoLocal = relacionGuardada.IdentificadorPuertoLocal;
         if (!ModelState.IsValid)
