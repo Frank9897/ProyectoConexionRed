@@ -788,6 +788,16 @@ public static class InicializadorInventario
                     relacionExistente.IpRemota = ipRemotaDocumentada;
                     cambioRelacion = true;
                 }
+                // La nota de conciliación conserva por qué se usó la IP confirmada por la tabla de switches.
+                if (!string.IsNullOrWhiteSpace(filaPuerto.ObservacionesImportacion)
+                    && (string.IsNullOrWhiteSpace(relacionExistente.Observaciones)
+                        || !relacionExistente.Observaciones.Contains(filaPuerto.ObservacionesImportacion, StringComparison.Ordinal)))
+                {
+                    relacionExistente.Observaciones = string.IsNullOrWhiteSpace(relacionExistente.Observaciones)
+                        ? filaPuerto.ObservacionesImportacion
+                        : $"{relacionExistente.Observaciones} {filaPuerto.ObservacionesImportacion}";
+                    cambioRelacion = true;
+                }
                 if (relacionExistente.EstadoDatos == "A verificar")
                 {
                     relacionExistente.EstadoDatos = "Confirmado";
@@ -817,8 +827,8 @@ public static class InicializadorInventario
 
             // ipRemota conserva el texto original salvo la corrección expresa del ProCurve confirmada por el usuario.
             var ipRemota = filaPuerto.IpRemota?.Trim();
-            // observacionesRelacion registra la discrepancia de fuente cuando se aplica la IP canónica confirmada.
-            string? observacionesRelacion = null;
+            // observacionesRelacion conserva la conciliación escrita junto a la fila de origen.
+            string? observacionesRelacion = filaPuerto.ObservacionesImportacion;
             var esFilaProCurveCorregida = filaPuerto.EquipoLocal == "Puerta Agrimensura"
                 && filaPuerto.EtiquetaPuerto == "1"
                 && filaPuerto.Destino.Contains("ProCurve", StringComparison.OrdinalIgnoreCase)
