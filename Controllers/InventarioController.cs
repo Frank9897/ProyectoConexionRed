@@ -104,6 +104,13 @@ public class InventarioController : Controller
         await contextoInventario.Equipos.AddAsync(equipoNuevo, cancelacion);
         await contextoInventario.SaveChangesAsync(cancelacion);
 
+        // interfacesGeneradas crea un registro por conector cuando la ficha del switch declara cantidades.
+        var interfacesGeneradas = GeneradorInterfacesSwitch.CrearInterfacesFaltantes(equipoNuevo, []);
+        if (interfacesGeneradas.Count > 0)
+        {
+            await contextoInventario.InterfacesEquipo.AddRangeAsync(interfacesGeneradas, cancelacion);
+        }
+
         // cambiosIniciales contiene los campos cargados al crear el equipo; cambiar estos pares altera el detalle del evento.
         var cambiosIniciales = new List<EventoModificacion>();
         UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Alta de ficha", null, "Equipo registrado");
@@ -116,6 +123,10 @@ public class InventarioController : Controller
         UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Rol en el área", null, equipoNuevo.RolEnArea);
         UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Tipo de dispositivo", null, equipoNuevo.TipoDispositivo);
         AgregarCambiosCapacidad(cambiosIniciales, equipoNuevo, usuarioEditor, null);
+        // resumenInterfaces evita registrar una línea de auditoría independiente por cada puerto.
+        var resumenInterfaces = GeneradorInterfacesSwitch.DescribirInterfacesCreadas(interfacesGeneradas);
+        UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre,
+            usuarioEditor, "Interfaces generadas desde capacidad", null, resumenInterfaces);
         UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Vigencia de datos", null, equipoNuevo.EstadoDatos);
         UtilidadesConexiones.AgregarCambio(cambiosIniciales, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor, "Observaciones", null, equipoNuevo.Observaciones);
 
@@ -304,6 +315,21 @@ public class InventarioController : Controller
         equipoGuardado.EstadoDatos = formulario.EstadoDatos.Trim();
         equipoGuardado.FechaUltimaRevision = formulario.FechaUltimaRevision;
         equipoGuardado.Observaciones = UtilidadesConexiones.NormalizarTexto(formulario.Observaciones);
+
+        // interfacesExistentes conserva etiquetas o estados previamente documentados.
+        var interfacesExistentes = await contextoInventario.InterfacesEquipo.AsNoTracking()
+            .Where(interfaz => interfaz.IdentificadorEquipo == equipoGuardado.Identificador)
+            .ToListAsync(cancelacion);
+        // interfacesGeneradas agrega solo las posiciones que todavía no existen para la capacidad guardada.
+        var interfacesGeneradas = GeneradorInterfacesSwitch.CrearInterfacesFaltantes(equipoGuardado, interfacesExistentes);
+        if (interfacesGeneradas.Count > 0)
+        {
+            await contextoInventario.InterfacesEquipo.AddRangeAsync(interfacesGeneradas, cancelacion);
+            // resumenInterfaces atribuye una sola diferencia al grupo de conectores recién agregados.
+            UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador,
+                nombreEquipoAnterior, usuarioEditor, "Interfaces generadas desde capacidad", null,
+                GeneradorInterfacesSwitch.DescribirInterfacesCreadas(interfacesGeneradas));
+        }
 
         if (cambiosRegistrados.Count > 0)
         {
