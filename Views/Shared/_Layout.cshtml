@@ -1,3 +1,10 @@
+@inject ProyectoConexionRed.Web.Services.RegistroInventarios RegistroInventarios
+@{
+    @* identificadorInventario identifica la base elegida por este navegador. *@
+    var identificadorInventario = Context.Request.Cookies[ProyectoConexionRed.Web.Services.RegistroInventarios.NombreCookieInventario];
+    @* inventarioActivo aporta el nombre que se muestra en la barra del sitio. *@
+    var inventarioActivo = RegistroInventarios.Listar().FirstOrDefault(inventario => inventario.Identificador == RegistroInventarios.ObtenerIdentificadorActivo(identificadorInventario));
+}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -37,10 +44,12 @@
         @* La navegación de usuarios y el cierre quedan ocultos mientras el acceso está deshabilitado. *@
         <nav aria-label="Navegación principal">
             <a asp-controller="Home" asp-action="Index">Inicio</a>
+            <a asp-controller="Inventarios" asp-action="Index">Inventarios</a>
             <a asp-controller="Inventario" asp-action="Index">Inventario</a>
             <a asp-controller="Topologia" asp-action="Index">Topología</a>
             <a asp-controller="Cambios" asp-action="Index">Cambios</a>
         </nav>
+        <span class="inventario-activo-global">Base: @inventarioActivo?.Nombre</span>
     </header>
     <main class="contenedor">
         @RenderBody()
