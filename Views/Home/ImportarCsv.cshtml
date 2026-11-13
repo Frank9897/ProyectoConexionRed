@@ -37,6 +37,7 @@
     <section class="panel aviso-error" aria-labelledby="titulo-errores-carga">
         <h2 id="titulo-errores-carga">Corrige estos puntos</h2>
         <ul>
+            @* errorCarga presenta cada error bloqueante devuelto por el análisis CSV. *@
             @foreach (var errorCarga in Model.Errores)
             {
                 <li>@errorCarga</li>
@@ -57,6 +58,7 @@
             <div class="aviso aviso-error" role="status">
                 <strong>Revisión recomendada</strong>
                 <ul>
+                    @* avisoCarga muestra una advertencia no bloqueante que requiere confirmación humana. *@
                     @foreach (var avisoCarga in Model.Avisos)
                     {
                         <li>@avisoCarga</li>
@@ -76,6 +78,7 @@
                     <tr><th>Equipo</th><th>Tipo</th><th>IP</th><th>Área</th><th>Modelo</th><th>Vigencia</th></tr>
                 </thead>
                 <tbody>
+                @* filaImportacion muestra una de las primeras 25 fichas válidas del archivo. *@
                 @foreach (var filaImportacion in Model.Filas)
                 {
                     <tr>
