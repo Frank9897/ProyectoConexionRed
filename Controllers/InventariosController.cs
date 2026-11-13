@@ -1,4 +1,7 @@
+using System.Text;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ProyectoConexionRed.Web.Models;
 using ProyectoConexionRed.Web.Services;
 
 namespace ProyectoConexionRed.Web.Controllers;
@@ -93,6 +96,284 @@ public sealed class InventariosController : Controller
         GuardarSeleccion(inventarioSeleccionado.Identificador);
         TempData["AvisoInventario"] = $"Inventario activo: {inventarioSeleccionado.Nombre}.";
         return Url.IsLocalUrl(volverA) ? Redirect(volverA!) : RedirectToAction("Index", "Home");
+    }
+
+    /// <summary>
+    /// Abre la carga guiada de equipos desde un archivo CSV.
+    /// </summary>
+    /// <returns>Formulario que permite subir una plantilla sin modificar las bases existentes.</returns>
+    [HttpGet]
+    public IActionResult ImportarCsv()
+    {
+        if (registroInventarios.Listar().Count >= 3)
+        {
+            TempData["ErrorInventario"] = "Ya se alcanzó el máximo de tres inventarios.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // formularioCarga comienza sin archivo ni datos; cambiar sus campos define la futura sede importada.
+        return View("~/Views/Home/ImportarCsv.cshtml", new VistaPreviaImportacionViewModel());
+    }
+
+    /// <summary>
+    /// Descarga el encabezado CSV compatible con la exportación de inventario.
+    /// </summary>
+    /// <returns>Plantilla vacía; cambiar los encabezados cambia qué columnas reconoce el importador.</returns>
+    [HttpGet]
+    public IActionResult DescargarPlantillaCsv()
+    {
+        // bytesPlantilla incorpora BOM UTF-8 para que las hojas de cálculo reconozcan las tildes.
+        var bytesPlantilla = Encoding.UTF8.GetPreamble()
+            .Concat(Encoding.UTF8.GetBytes(ImportadorInventarioCsv.CrearPlantilla()))
+            .ToArray();
+        return File(bytesPlantilla, "text/csv; charset=utf-8", "plantilla-inventario-red.csv");
+    }
+
+    /// <summary>
+    /// Analiza un CSV y presenta errores y una muestra antes de crear otra base SQLite.
+    /// </summary>
+    /// <param name="nombreInventario">Nombre de la sede; cambiarlo modifica el archivo que se crearía.</param>
+    /// <param name="archivo">CSV subido; cambiarlo modifica la vista previa, pero aún no escribe en SQLite.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla detiene la lectura del archivo.</param>
+    /// <returns>Vista previa con advertencias y candidatos, o formulario con errores.</returns>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [RequestSizeLimit(2_000_000)]
+    public async Task<IActionResult> PrevisualizarCsv(
+        string? nombreInventario,
+        IFormFile? archivo,
+        CancellationToken cancelacion)
+    {
+        if (registroInventarios.Listar().Count >= 3)
+        {
+            TempData["ErrorInventario"] = "Ya se alcanzó el máximo de tres inventarios.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // erroresNombre registra problemas de etiqueta antes de reservar un archivo SQLite.
+        var erroresNombre = ValidarNombreInventario(nombreInventario);
+        if (archivo is null || archivo.Length == 0)
+        {
+            erroresNombre.Add("Selecciona un archivo CSV con encabezados y al menos un equipo.");
+            return View("~/Views/Home/ImportarCsv.cshtml", new VistaPreviaImportacionViewModel
+            {
+                NombreInventario = nombreInventario ?? string.Empty,
+                Errores = erroresNombre
+            });
+        }
+
+        if (!string.Equals(Path.GetExtension(archivo.FileName), ".csv", StringComparison.OrdinalIgnoreCase))
+        {
+            erroresNombre.Add("El archivo debe tener extensión .csv.");
+            return View("~/Views/Home/ImportarCsv.cshtml", new VistaPreviaImportacionViewModel
+            {
+                NombreInventario = nombreInventario ?? string.Empty,
+                Errores = erroresNombre
+            });
+        }
+
+        if (archivo.Length > 1_000_000)
+        {
+            erroresNombre.Add("El archivo no puede superar 1 MB.");
+            return View("~/Views/Home/ImportarCsv.cshtml", new VistaPreviaImportacionViewModel
+            {
+                NombreInventario = nombreInventario ?? string.Empty,
+                Errores = erroresNombre
+            });
+        }
+
+        // lectorCsv interpreta UTF-8 y detecta el BOM opcional del archivo exportado.
+        using var lectorCsv = new StreamReader(archivo.OpenReadStream(), Encoding.UTF8, true);
+        // contenidoCsv queda limitado por el tamaño máximo de archivo antes de analizar las filas.
+        var contenidoCsv = await lectorCsv.ReadToEndAsync();
+        // resultadoAnalisis contiene fichas candidatas y avisos sin persistirlos.
+        var resultadoAnalisis = ImportadorInventarioCsv.Analizar(contenidoCsv);
+        // vistaPrevia incluye solo una muestra de filas para revisar antes de confirmar.
+        var vistaPrevia = CrearVistaPrevia(nombreInventario ?? string.Empty, contenidoCsv, resultadoAnalisis);
+        vistaPrevia.Errores.AddRange(erroresNombre);
+        return View("~/Views/Home/ImportarCsv.cshtml", vistaPrevia);
+    }
+
+    /// <summary>
+    /// Reanaliza el contenido confirmado y crea una sede nueva sin modificar Catastro.
+    /// </summary>
+    /// <param name="nombreInventario">Nombre de sede confirmado; cambiarlo define la etiqueta y archivo creados.</param>
+    /// <param name="contenidoCsvCodificado">CSV de la vista previa; cambiarlo hace que el servidor vuelva a validar otro contenido.</param>
+    /// <param name="confirmarAvisos">Confirmación humana; marcarla autoriza continuar pese a avisos no bloqueantes.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla detiene la decodificación o escritura.</param>
+    /// <returns>Redirección al inventario nuevo o vista previa si el contenido ya no es válido.</returns>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [RequestSizeLimit(2_000_000)]
+    public async Task<IActionResult> ConfirmarCsv(
+        string? nombreInventario,
+        string? contenidoCsvCodificado,
+        bool confirmarAvisos,
+        CancellationToken cancelacion)
+    {
+        var erroresNombre = ValidarNombreInventario(nombreInventario);
+        if (string.IsNullOrWhiteSpace(contenidoCsvCodificado) || contenidoCsvCodificado.Length > 1_400_000)
+        {
+            erroresNombre.Add("La vista previa venció o su contenido supera el límite. Vuelve a seleccionar el archivo.");
+            return View("~/Views/Home/ImportarCsv.cshtml", new VistaPreviaImportacionViewModel
+            {
+                NombreInventario = nombreInventario ?? string.Empty,
+                Errores = erroresNombre
+            });
+        }
+
+        // contenidoBytes conserva el CSV original para verificarlo otra vez en el servidor.
+        byte[] contenidoBytes;
+        try
+        {
+            contenidoBytes = Convert.FromBase64String(contenidoCsvCodificado);
+        }
+        catch (FormatException)
+        {
+            erroresNombre.Add("El contenido de la vista previa no es válido. Vuelve a cargar el archivo.");
+            return View("~/Views/Home/ImportarCsv.cshtml", new VistaPreviaImportacionViewModel
+            {
+                NombreInventario = nombreInventario ?? string.Empty,
+                Errores = erroresNombre
+            });
+        }
+
+        if (contenidoBytes.Length > 1_000_000)
+        {
+            erroresNombre.Add("El CSV supera el límite de 1 MB.");
+            return View("~/Views/Home/ImportarCsv.cshtml", new VistaPreviaImportacionViewModel
+            {
+                NombreInventario = nombreInventario ?? string.Empty,
+                Errores = erroresNombre
+            });
+        }
+
+        // contenidoCsv vuelve a pasar por el mismo parser para impedir confiar en los datos del navegador.
+        string contenidoCsv;
+        try
+        {
+            contenidoCsv = new UTF8Encoding(false, true).GetString(contenidoBytes);
+        }
+        catch (DecoderFallbackException)
+        {
+            erroresNombre.Add("El archivo debe estar codificado en UTF-8. Vuelve a cargar una versión compatible.");
+            return View("~/Views/Home/ImportarCsv.cshtml", new VistaPreviaImportacionViewModel
+            {
+                NombreInventario = nombreInventario ?? string.Empty,
+                Errores = erroresNombre
+            });
+        }
+
+        // resultadoAnalisis valida contenido, duplicados y capacidades justo antes de escribir.
+        var resultadoAnalisis = ImportadorInventarioCsv.Analizar(contenidoCsv);
+        // vistaPrevia conserva el contenido y explica cualquier cambio inválido detectado al confirmar.
+        var vistaPrevia = CrearVistaPrevia(nombreInventario ?? string.Empty, contenidoCsv, resultadoAnalisis);
+        vistaPrevia.Errores.AddRange(erroresNombre);
+        if (registroInventarios.Listar().Count >= 3)
+        {
+            vistaPrevia.Errores.Add("Ya se alcanzó el máximo de tres inventarios.");
+        }
+
+        if (resultadoAnalisis.Avisos.Count > 0 && !confirmarAvisos)
+        {
+            vistaPrevia.Errores.Add("Revisa y confirma las advertencias antes de continuar.");
+        }
+
+        if (vistaPrevia.Errores.Count > 0 || resultadoAnalisis.Equipos.Count == 0)
+        {
+            return View("~/Views/Home/ImportarCsv.cshtml", vistaPrevia);
+        }
+
+        try
+        {
+            // usuarioEditor identifica la cuenta o el modo local que confirmó la carga.
+            var usuarioEditor = User.Identity?.Name ?? "Carga CSV sin sesión";
+            // cargaCompletada crea una base nueva e inserta equipos, puertos provisionales e historial dentro de ella.
+            var cargaCompletada = await registroInventarios.CrearConEquiposAsync(
+                nombreInventario!.Trim(), resultadoAnalisis.Equipos, usuarioEditor, cancelacion);
+            GuardarSeleccion(cargaCompletada.Inventario.Identificador);
+            TempData["AvisoInventario"] =
+                $"Se creó «{cargaCompletada.Inventario.Nombre}» con {cargaCompletada.CantidadEquipos} equipos y {cargaCompletada.CantidadInterfaces} puertos provisionales. No se importaron enlaces.";
+            return RedirectToAction("Index", "Inventario");
+        }
+        catch (InvalidOperationException excepcionCarga)
+        {
+            vistaPrevia.Errores.Add(excepcionCarga.Message);
+            return View("~/Views/Home/ImportarCsv.cshtml", vistaPrevia);
+        }
+        catch (IOException)
+        {
+            vistaPrevia.Errores.Add("No se pudo crear la nueva base. Revisa los permisos de la carpeta de inventarios.");
+            return View("~/Views/Home/ImportarCsv.cshtml", vistaPrevia);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            vistaPrevia.Errores.Add("El servidor no tiene permisos de escritura en la carpeta de inventarios.");
+            return View("~/Views/Home/ImportarCsv.cshtml", vistaPrevia);
+        }
+    }
+
+    /// <summary>
+    /// Construye la muestra visual a partir de una lectura, sin persistir datos.
+    /// </summary>
+    /// <param name="nombreInventario">Nombre propuesto; cambiarlo altera lo que se enviaría al crear la sede.</param>
+    /// <param name="contenidoCsv">Texto original; cambiarlo altera el contenido guardado para confirmación.</param>
+    /// <param name="resultadoAnalisis">Datos parseados; cambiarlo cambia filas, errores y advertencias.</param>
+    /// <returns>Modelo de vista con una muestra de hasta 25 equipos.</returns>
+    private static VistaPreviaImportacionViewModel CrearVistaPrevia(
+        string nombreInventario,
+        string contenidoCsv,
+        ResultadoImportacionCsv resultadoAnalisis)
+    {
+        // cantidadFilasVisibles limita la muestra sin quitar equipos de la carga confirmada.
+        const int cantidadFilasVisibles = 25;
+        // puertosProvisionales suma capacidades declaradas; las etiquetas concretas seguirán por verificar.
+        var puertosProvisionales = resultadoAnalisis.Equipos.Sum(equipo =>
+            (equipo.CantidadPuertosRj45 ?? 0) + (equipo.CantidadPuertosSfp ?? 0)
+            + (equipo.CantidadPuertosSfpPlus ?? 0) + (equipo.CantidadPuertosQsfp ?? 0)
+            + (equipo.CantidadPuertosQsfpPlus ?? 0) + (equipo.CantidadPuertosQsfp28 ?? 0));
+        // modeloPrevisualizacion conserva el CSV original y los resultados que se revisan en la interfaz.
+        var modeloPrevisualizacion = new VistaPreviaImportacionViewModel
+        {
+            NombreInventario = nombreInventario,
+            ContenidoCsvCodificado = Convert.ToBase64String(Encoding.UTF8.GetBytes(contenidoCsv)),
+            TieneVistaPrevia = true,
+            Errores = resultadoAnalisis.Errores.ToList(),
+            Avisos = resultadoAnalisis.Avisos.ToList(),
+            CantidadEquipos = resultadoAnalisis.Equipos.Count,
+            CantidadPuertosProvisionales = puertosProvisionales,
+            FilasNoMostradas = Math.Max(0, resultadoAnalisis.Equipos.Count - cantidadFilasVisibles),
+            Filas = resultadoAnalisis.Equipos.Take(cantidadFilasVisibles).Select((equipo, indice) =>
+                new FilaPreviaImportacionViewModel
+                {
+                    NumeroFila = indice + 2,
+                    Nombre = equipo.Nombre,
+                    Tipo = equipo.TipoDispositivo,
+                    Ip = equipo.IpAdministracion,
+                    Area = equipo.Area,
+                    Modelo = equipo.Modelo,
+                    EstadoDatos = equipo.EstadoDatos
+                }).ToList()
+        };
+        return modeloPrevisualizacion;
+    }
+
+    /// <summary>
+    /// Verifica el nombre visible antes de reservar una nueva base SQLite.
+    /// </summary>
+    /// <param name="nombreInventario">Texto propuesto; cambiarlo puede activar reglas de longitud.</param>
+    /// <returns>Errores de nombre que bloquean la confirmación.</returns>
+    private static List<string> ValidarNombreInventario(string? nombreInventario)
+    {
+        // erroresNombre acumula restricciones de tamaño sin tocar el archivo de inventario.
+        var erroresNombre = new List<string>();
+        var nombreNormalizado = nombreInventario?.Trim() ?? string.Empty;
+        if (nombreNormalizado.Length is < 2 or > 60)
+        {
+            erroresNombre.Add("El nombre de la sede debe tener entre 2 y 60 caracteres.");
+        }
+
+        return erroresNombre;
     }
 
     /// <summary>
