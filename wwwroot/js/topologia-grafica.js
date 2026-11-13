@@ -67,7 +67,7 @@
         if (accionDocumentarConexion) {
             // identificadorDisponible solo permite iniciar una relación desde un puerto sin vínculo guardado.
             const identificadorDisponible = Number(puerto.dataset.identificadorInterfaz) > 0
-                && !puerto.classList.contains("puerto-ocupado");
+                && puerto.classList.contains("puerto-desconocido");
             // urlDocumentacion conserva la ruta y cambia solo el puerto local preseleccionado.
             const urlDocumentacion = new URL(accionDocumentarConexion.href, window.location.origin);
             urlDocumentacion.searchParams.set("identificadorPuertoLocal",
