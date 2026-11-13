@@ -385,7 +385,7 @@ public class CorreccionesController : Controller
             join equipo in contextoInventario.Equipos.AsNoTracking()
                 on interfaz.IdentificadorEquipo equals equipo.Identificador
             where interfaz.Identificador == relacionGuardada.IdentificadorPuertoLocal
-            select new { equipo.Nombre, equipo.IpAdministracion, interfaz.EtiquetaPuerto })
+            select new { equipo.Identificador, equipo.Nombre, equipo.IpAdministracion, interfaz.EtiquetaPuerto })
             .SingleOrDefaultAsync(cancelacion);
         if (interfazLocal is null) return NotFound();
 
@@ -394,6 +394,7 @@ public class CorreccionesController : Controller
         {
             Identificador = relacionGuardada.Identificador,
             IdentificadorPuertoLocal = relacionGuardada.IdentificadorPuertoLocal,
+            IdentificadorEquipo = interfazLocal.Identificador,
             NombrePuertoLocal = $"{interfazLocal.Nombre} · {interfazLocal.IpAdministracion ?? "IP no indicada"} · Puerto {interfazLocal.EtiquetaPuerto}",
             EquipoRemoto = relacionGuardada.EquipoRemoto,
             IpRemota = relacionGuardada.IpRemota,
@@ -439,6 +440,7 @@ public class CorreccionesController : Controller
 
         // nombrePuertoLocal muestra el extremo local sin permitir cambiar su propietario en este formulario.
         formulario.NombrePuertoLocal = $"{equipoLocal.Nombre} · {equipoLocal.IpAdministracion ?? "IP no indicada"} · Puerto {equipoLocal.EtiquetaPuerto}";
+        formulario.IdentificadorEquipo = equipoLocal.Identificador;
         // Se conserva el puerto local original para evitar mover la relación con un ID oculto manipulado.
         formulario.IdentificadorPuertoLocal = relacionGuardada.IdentificadorPuertoLocal;
         if (!ModelState.IsValid)
