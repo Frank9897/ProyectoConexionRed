@@ -616,12 +616,12 @@ public class InventarioController : Controller
     /// Reconoce el rol operativo de un switch de área.
     /// </summary>
     /// <param name="equipo">Ficha evaluada; cambiar RolEnArea cambia su clasificación.</param>
-    /// <returns>Verdadero si el rol identifica el switch de área o su jerarquía local.</returns>
+    /// <returns>Verdadero si el rol o el área documentada lo clasifica como switch de oficina.</returns>
     private static bool EsSwitchDeArea(EquipoRed equipo)
     {
         // rolNormalizado conserva el significado funcional separado del modelo.
         var rolNormalizado = NormalizarClaveComparacion(equipo.RolEnArea);
-        return rolNormalizado is "SWITCH DE ÁREA" or "SWITCH DE AREA"
+        return (rolNormalizado is "SWITCH DE ÁREA" or "SWITCH DE AREA")
             || (!string.IsNullOrWhiteSpace(equipo.Area)
                 && !EsEquipoDeDatacenter(equipo)
                 && !EsEquipoDeReserva(equipo)
