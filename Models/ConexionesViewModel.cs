@@ -9,6 +9,11 @@ namespace ProyectoConexionRed.Web.Models;
 public class ConexionesIndexViewModel
 {
     /// <summary>
+    /// Switches disponibles con resumen de interfaces y destinos.
+    /// </summary>
+    public IReadOnlyList<SwitchPuertosResumenViewModel> Switches { get; set; } = [];
+
+    /// <summary>
     /// Puertos registrados; cambiar la lista modifica las filas de interfaces mostradas.
     /// </summary>
     public IReadOnlyList<InterfazListadoViewModel> Interfaces { get; set; } = [];
@@ -20,6 +25,33 @@ public class ConexionesIndexViewModel
 
     /// <summary>Relaciones con extremo remoto incompleto; cambiar la lista altera las filas pendientes.</summary>
     public IReadOnlyList<RelacionParcialListadoViewModel> RelacionesParciales { get; set; } = [];
+}
+
+/// <summary>
+/// Presenta un switch y el estado de los puertos registrados en él.
+/// </summary>
+public class SwitchPuertosResumenViewModel
+{
+    /// <summary>ID de equipo; cambiarlo abre el frontal de otro switch.</summary>
+    public int Identificador { get; set; }
+    /// <summary>Nombre documental; cambiarlo altera la etiqueta de la tarjeta.</summary>
+    public string Nombre { get; set; } = string.Empty;
+    /// <summary>Área registrada; cambiarla modifica el contexto de ubicación.</summary>
+    public string? Area { get; set; }
+    /// <summary>Modelo documentado; cambiarlo actualiza la descripción del switch.</summary>
+    public string? Modelo { get; set; }
+    /// <summary>IP registrada; cambiarla altera el dato de administración mostrado.</summary>
+    public string? IpAdministracion { get; set; }
+    /// <summary>Puertos inventariados; cambiarlo altera el total documentado en la tarjeta.</summary>
+    public int TotalPuertos { get; set; }
+    /// <summary>Puertos con vínculo completo o parcial; cambiarlo modifica el conteo de ocupados en registros.</summary>
+    public int PuertosOcupados { get; set; }
+    /// <summary>Puertos marcados libres con vigencia confirmada; cambiarlo modifica el conteo libre.</summary>
+    public int PuertosLibres { get; set; }
+    /// <summary>Puertos sin relación o estado libre confirmado; cambiarlo modifica el conteo desconocido.</summary>
+    public int PuertosDesconocidos { get; set; }
+    /// <summary>Destinos expresamente registrados; cambiar la lista altera los extremos resumidos en la tarjeta.</summary>
+    public IReadOnlyList<string> DestinosDocumentados { get; set; } = [];
 }
 
 /// <summary>
