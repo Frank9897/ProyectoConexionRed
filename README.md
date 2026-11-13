@@ -222,3 +222,9 @@ La página distingue los campos que faltan de detalle sin presentar las conexion
 
 A petición del usuario, al próximo inicio de cada base SQLite existente se eliminan las filas anteriores de `EventosModificacion`. La tabla `MantenimientosEjecutados` conserva una marca para que los siguientes arranques no repitan el borrado. El historial de accesos no se modifica. La página Cambios muestra un estado vacío hasta que se registre una modificación nueva.
 
+
+### Validación de importación CSV (paso 7, 13 de noviembre de 2026)
+
+Se corrigió un error de compilación de la vista previa: el modelo de fila no exponía el campo Piso que la vista Razor mostraba. El controlador ahora transfiere ese dato. También se eliminó una advertencia de acceso a un valor nullable en la preselección de conexiones. La compilación completa terminó correctamente; quedó una advertencia NU1900 porque este entorno no pudo consultar el servicio de vulnerabilidades de NuGet.
+
+La carga se comprobó con una copia temporal aislada y datos ficticios: la vista previa respondió correctamente, la confirmación creó dos fichas y la página de inventario las mostró. Un puesto de usuario sin rol recibió el rol predeterminado Usuario; un switch de prueba creó las tres interfaces indicadas por sus capacidades. No se usó ni modificó Catastro. El servidor temporal y la copia de validación se retiraron al terminar. No se completó inspección visual del navegador porque la autorización de Computer Use expiró; la comprobación fue por HTTP y compilación.
