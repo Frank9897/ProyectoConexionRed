@@ -13,10 +13,12 @@
     </div>
 </section>
 
+@* aviso contiene el mensaje de resultado de la última acción de inventarios. *@
 @if (TempData["AvisoInventario"] is string aviso)
 {
     <div class="aviso aviso-exito" role="status">@aviso</div>
 }
+@* error explica por qué no se completó la acción de inventarios. *@
 @if (TempData["ErrorInventario"] is string error)
 {
     <div class="aviso aviso-error" role="alert">@error</div>
@@ -28,14 +30,13 @@
             <p class="sobrelinea">SELECCIÓN ACTUAL</p>
             <h2 id="titulo-inventarios-disponibles">Bases disponibles</h2>
         </div>
-        
     </div>
 
     <div class="inventarios-lista">
+        @* inventario es cada base disponible que se puede activar en este navegador. *@
         @foreach (var inventario in Model)
         {
-            @* estaActivo indica qué tarjeta coincide con la selección guardada por el servidor. *@
-            // estaActivo indica si esta tarjeta corresponde al inventario seleccionado en el navegador.
+            @* estaActivo indica si esta tarjeta corresponde al inventario seleccionado en el navegador. *@
             var estaActivo = inventario.Identificador == identificadorActivo;
             <article class="inventario-ficha @(estaActivo ? "inventario-ficha-activa" : string.Empty)">
                 <div class="inventario-ficha-info">
