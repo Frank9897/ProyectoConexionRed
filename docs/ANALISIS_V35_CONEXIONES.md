@@ -26,7 +26,7 @@ El paquete contiene 22 páginas de Visio y 31 libros de Excel incrustados (el li
 | NOTIFICADORES | Excel20 | Tabla de puertos. La página muestra IP `192.168.1.40` y MAC `B8:AF:67:9A:C5:9E`, coincidentes con el switch que el inventario denomina Regularización Dominial (RD). |
 | SECRETARIA | Excel21, Excel22 | Puertos de acceso y tabla auxiliar de SFP. |
 | SISTEMAS | Excel23 | Puertos de acceso y equipos de usuario. Las celdas con más de una IP se mantienen como aparecen en la tabla. |
-| VALUACION R0 | Excel24 | Puertos de acceso y uplink. El puerto 24 apunta ahora a Valuación R2 (`192.168.1.32`). |
+| VALUACION R0 | Excel24 | Puertos de acceso y uplink. El puerto 24 apunta ahora a Valuación R2 (`192.168.1.20`), tras cotejar las dos IP remotas contra Excel9. |
 | VALUACION R1 | Excel25 | Puertos de acceso. El puerto 12 ahora identifica Valuacion37 (`192.168.0.198`). |
 | VALUACION R2 | Excel26 | Puertos de acceso y uplinks documentados. |
 | RESERVA | Excel27, Excel28 | Tablas de reserva; no agregan destinos de usuarios que deban inventariarse como activos. |
@@ -45,11 +45,15 @@ El paquete contiene 22 páginas de Visio y 31 libros de Excel incrustados (el li
 La carga se aplica al iniciar la aplicación, es idempotente y deja auditoría en `EventosModificacion` cuando cambia una relación cuya fila fuente ya estaba registrada:
 
 1. **Regularización Dominial / RD, puerto 19:** `Sistemas06` pasa a `Regimen10`; se conserva `192.168.0.197`. Aunque la página ahora se titula «NOTIFICADORES», su IP y MAC coinciden con la ficha RD existente, por lo que se conserva la identidad del equipo y se actualiza el nombre de página de la fuente.
-2. **Valuación R0, puerto 24:** pasa de la referencia anterior a Agrimensura 3Com a `Switch Valuación R2`, IP `192.168.1.32`.
+2. **Valuación R0, puerto 24:** pasa de la referencia anterior a Agrimensura 3Com a `Switch Valuación R2`, IP `192.168.1.20`. Se empareja con el puerto 23 de Valuación R2.
 3. **Valuación R1, puerto 12:** pasa de desconocido a `Valuacion37`, IP `192.168.0.198`.
 4. **HP 1920 (E), puerto 16:** se normaliza la etiqueta remota a `IDRAC R770`; la IP sigue siendo `192.168.0.247`.
 
 No se infiere puerto remoto, medio, módulo óptico ni configuración del equipo a partir de una etiqueta ambigua. Los cambios de valores se registran con su fila y página de origen.
+
+## Conciliación aplicada para el enlace Valuación R0–R2
+
+V3.5 Excel24 fila 25 identifica a Valuación R2, pero le asigna `192.168.1.32`, que corresponde al switch local Valuación R0. Excel9 identifica Valuación R2 como `192.168.1.20`. La tabla de Valuación R2 (Excel26, fila 24/puerto 23) vuelve a Valuación R0, aunque escribe `192.168.0.32`; Excel9 identifica Valuación R0 como `192.168.1.32`. Se corrigieron las IP remotas con ese listado general y las tablas ahora se emparejan como **R0 puerto 24 ↔ R2 puerto 23**. Al iniciar la aplicación se actualizará SQLite; la vista de topología podrá dibujar la relación al resolver ambos equipos.
 
 ## Discrepancias que quedan visibles
 
