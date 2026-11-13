@@ -22,6 +22,10 @@ El formulario existente permite crear y editar equipos con IP, área, tipo, rol 
 
 En el detalle de un switch se puede seleccionar un puerto sin relación y con uso desconocido y abrir **Documentar conexión del puerto seleccionado**. El formulario preselecciona esa interfaz si continúa disponible; los puertos ocupados no permiten iniciar otra relación desde esa acción. El técnico confirma el destino y guarda explícitamente el registro. Esto documenta un extremo conocido, permite conexiones de acceso a PCs e impresoras sin inventar un puerto remoto y no ejecuta acciones sobre la red real. Los enlaces completos entre switches continúan registrándose con sus dos puertos mediante **Puertos**; solo aparecerán en topología cuando se guarden ambos extremos.
 
+### Carga asistida a una sede nueva (paso 6)
+
+Desde **Inventarios** se puede descargar una plantilla CSV, analizar un archivo y revisar la vista previa antes de confirmar. El importador admite UTF-8, separador punto y coma, hasta 1 MB, 500 fichas y 10.000 puertos derivados de capacidades. Los encabezados obligatorios son Equipo, Rol, Tipo y Vigencia; el resto de columnas técnicas puede quedar vacío. Las filas con campos inválidos o nombres repetidos bloquean la creación; las IP repetidas se señalan y requieren confirmación explícita. La carga crea otra base SQLite vacía y la completa en una transacción, conservando intacto Catastro y cualquier otra sede. Cada equipo importado deja un evento de historial. Las capacidades de switches generan interfaces provisionales en estado «A verificar» y «Desconocido». El CSV no importa conexiones, ubicación de usuario, asignaciones de usuario ni credenciales; los enlaces se documentan después desde la aplicación. Se muestra una muestra de hasta 25 fichas antes de confirmar.
+
 ## Propósito
 
 Reunir en un inventario navegable los dispositivos, IP, puertos, enlaces, áreas, PCs y usuarios de la red; mostrar su topología por vistas física, switching y red; registrar cambios; y permitir simulaciones locales y exportación imprimible.
