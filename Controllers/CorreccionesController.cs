@@ -359,4 +359,221 @@ public class CorreccionesController : Controller
         return RedirectToAction("Index", "Conexiones");
     }
 
+
+    /// <summary>
+    /// Carga una relación parcial para corregir el destino y sus datos de origen.
+    /// </summary>
+    /// <param name="identificador">ID de la relación; cambiarlo abre otro registro.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla detiene la consulta.</param>
+    /// <returns>Formulario de corrección o respuesta no encontrado.</returns>
+    [HttpGet]
+    public async Task<IActionResult> EditarRelacion(int identificador, CancellationToken cancelacion)
+    {
+        // relacionGuardada conserva la conexión actual; cambiar el ID consulta otra ficha.
+        var relacionGuardada = await contextoInventario.ConexionesDocumentadas.AsNoTracking()
+            .SingleOrDefaultAsync(relacion => relacion.Identificador == identificador, cancelacion);
+        if (relacionGuardada is null) return NotFound();
+
+        // formularioEdicion carga los valores guardados para editar el extremo remoto.
+        var formularioEdicion = new EditarConexionDocumentadaViewModel
+        {
+            Identificador = relacionGuardada.Identificador,
+            IdentificadorPuertoLocal = relacionGuardada.IdentificadorPuertoLocal,
+            EquipoRemoto = relacionGuardada.EquipoRemoto,
+            IpRemota = relacionGuardada.IpRemota,
+            PuertoRemoto = relacionGuardada.PuertoRemoto,
+            Medio = relacionGuardada.Medio,
+            EstadoDatos = relacionGuardada.EstadoDatos,
+            FechaUltimaRevision = relacionGuardada.FechaUltimaRevision,
+            FuentePagina = relacionGuardada.FuentePagina,
+            FuenteLibro = relacionGuardada.FuenteLibro,
+            FuenteFila = relacionGuardada.FuenteFila,
+            Observaciones = relacionGuardada.Observaciones
+        };
+        return View(formularioEdicion);
+    }
+
+    /// <summary>
+    /// Guarda cambios en una conexión parcial sin alterar su puerto local propietario.
+    /// </summary>
+    /// <param name="formulario">Datos corregidos; cambiar los campos remotos modifica la relación documental.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla interrumpe la verificación o escritura.</param>
+    /// <returns>Redirección al frontal del switch que conserva el puerto local.</returns>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditarRelacion(
+        [Bind("Identificador,EquipoRemoto,IpRemota,PuertoRemoto,Medio,EstadoDatos,FechaUltimaRevision,FuentePagina,FuenteLibro,FuenteFila,Observaciones")]
+        EditarConexionDocumentadaViewModel formulario,
+        CancellationToken cancelacion)
+    {
+        // relacionGuardada conserva la ubicación del puerto local y los valores que se auditarán.
+        var relacionGuardada = await contextoInventario.ConexionesDocumentadas
+            .SingleOrDefaultAsync(relacion => relacion.Identificador == formulario.Identificador, cancelacion);
+        if (relacionGuardada is null) return NotFound();
+
+        // equipoLocal atribuye la corrección al switch que contiene el puerto.
+        var equipoLocal = await (
+            from interfaz in contextoInventario.InterfacesEquipo.AsNoTracking()
+            join equipo in contextoInventario.Equipos.AsNoTracking()
+                on interfaz.IdentificadorEquipo equals equipo.Identificador
+            where interfaz.Identificador == relacionGuardada.IdentificadorPuertoLocal
+            select new { equipo.Identificador, equipo.Nombre, equipo.TipoDispositivo })
+            .SingleOrDefaultAsync(cancelacion);
+        if (equipoLocal is null) return NotFound();
+
+        // Se conserva el puerto local original para evitar mover la relación con un ID oculto manipulado.
+        formulario.IdentificadorPuertoLocal = relacionGuardada.IdentificadorPuertoLocal;
+        if (!ModelState.IsValid)
+        {
+            return View(formulario);
+        }
+
+        // usuarioEditor identifica al técnico que ajusta la ficha.
+        var usuarioEditor = User.Identity?.Name ?? "Pruebas sin sesión";
+        // cambiosRelacion guarda solo diferencias y atribuye cada una al equipo local.
+        var cambiosRelacion = new List<EventoModificacion>();
+        UtilidadesConexiones.AgregarCambio(cambiosRelacion, equipoLocal.Identificador, equipoLocal.Nombre, usuarioEditor,
+            "Equipo remoto", relacionGuardada.EquipoRemoto, UtilidadesConexiones.NormalizarTexto(formulario.EquipoRemoto));
+        UtilidadesConexiones.AgregarCambio(cambiosRelacion, equipoLocal.Identificador, equipoLocal.Nombre, usuarioEditor,
+            "IP remota", relacionGuardada.IpRemota, UtilidadesConexiones.NormalizarTexto(formulario.IpRemota));
+        UtilidadesConexiones.AgregarCambio(cambiosRelacion, equipoLocal.Identificador, equipoLocal.Nombre, usuarioEditor,
+            "Puerto remoto", relacionGuardada.PuertoRemoto, UtilidadesConexiones.NormalizarTexto(formulario.PuertoRemoto));
+        UtilidadesConexiones.AgregarCambio(cambiosRelacion, equipoLocal.Identificador, equipoLocal.Nombre, usuarioEditor,
+            "Medio", relacionGuardada.Medio, formulario.Medio);
+        UtilidadesConexiones.AgregarCambio(cambiosRelacion, equipoLocal.Identificador, equipoLocal.Nombre, usuarioEditor,
+            "Estado documental", relacionGuardada.EstadoDatos, formulario.EstadoDatos);
+        UtilidadesConexiones.AgregarCambio(cambiosRelacion, equipoLocal.Identificador, equipoLocal.Nombre, usuarioEditor,
+            "Fuente página", relacionGuardada.FuentePagina, formulario.FuentePagina.Trim());
+        UtilidadesConexiones.AgregarCambio(cambiosRelacion, equipoLocal.Identificador, equipoLocal.Nombre, usuarioEditor,
+            "Fuente libro", relacionGuardada.FuenteLibro, UtilidadesConexiones.NormalizarTexto(formulario.FuenteLibro));
+        UtilidadesConexiones.AgregarCambio(cambiosRelacion, equipoLocal.Identificador, equipoLocal.Nombre, usuarioEditor,
+            "Fuente fila", relacionGuardada.FuenteFila, UtilidadesConexiones.NormalizarTexto(formulario.FuenteFila));
+        UtilidadesConexiones.AgregarCambio(cambiosRelacion, equipoLocal.Identificador, equipoLocal.Nombre, usuarioEditor,
+            "Fecha de revisión", relacionGuardada.FechaUltimaRevision?.ToString("dd/MM/yyyy"),
+            formulario.FechaUltimaRevision?.ToString("dd/MM/yyyy"));
+        UtilidadesConexiones.AgregarCambio(cambiosRelacion, equipoLocal.Identificador, equipoLocal.Nombre, usuarioEditor,
+            "Observaciones", relacionGuardada.Observaciones, UtilidadesConexiones.NormalizarTexto(formulario.Observaciones));
+
+        relacionGuardada.EquipoRemoto = UtilidadesConexiones.NormalizarTexto(formulario.EquipoRemoto);
+        relacionGuardada.IpRemota = UtilidadesConexiones.NormalizarTexto(formulario.IpRemota);
+        relacionGuardada.PuertoRemoto = UtilidadesConexiones.NormalizarTexto(formulario.PuertoRemoto);
+        relacionGuardada.Medio = formulario.Medio;
+        relacionGuardada.EstadoDatos = formulario.EstadoDatos;
+        relacionGuardada.FechaUltimaRevision = formulario.FechaUltimaRevision;
+        relacionGuardada.FuentePagina = formulario.FuentePagina.Trim();
+        relacionGuardada.FuenteLibro = UtilidadesConexiones.NormalizarTexto(formulario.FuenteLibro);
+        relacionGuardada.FuenteFila = UtilidadesConexiones.NormalizarTexto(formulario.FuenteFila);
+        relacionGuardada.Observaciones = UtilidadesConexiones.NormalizarTexto(formulario.Observaciones);
+        await contextoInventario.EventosModificacion.AddRangeAsync(cambiosRelacion, cancelacion);
+        await contextoInventario.SaveChangesAsync(cancelacion);
+
+        TempData["Mensaje"] = cambiosRelacion.Count == 0
+            ? "No se detectaron cambios en la conexión."
+            : $"Se actualizaron {cambiosRelacion.Count} campos de la conexión.";
+        return string.Equals(equipoLocal.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase)
+            ? RedirectToAction("Detalle", "Topologia", new { identificador = equipoLocal.Identificador })
+            : RedirectToAction("Index", "Conexiones");
+    }
+
+    /// <summary>
+    /// Elimina una relación parcial conservando su rastro en el historial.
+    /// </summary>
+    /// <param name="identificador">ID de relación; cambiarlo selecciona otro registro documental.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla detiene la operación.</param>
+    /// <returns>Regresa al frontal del equipo local o al listado de puertos.</returns>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EliminarRelacion(int identificador, CancellationToken cancelacion)
+    {
+        // relacionGuardada es la observación parcial que se intenta retirar.
+        var relacionGuardada = await contextoInventario.ConexionesDocumentadas
+            .SingleOrDefaultAsync(relacion => relacion.Identificador == identificador, cancelacion);
+        if (relacionGuardada is null) return NotFound();
+
+        // equipoLocal permite guardar el evento y volver al mismo frontal.
+        var equipoLocal = await (
+            from interfaz in contextoInventario.InterfacesEquipo.AsNoTracking()
+            join equipo in contextoInventario.Equipos.AsNoTracking()
+                on interfaz.IdentificadorEquipo equals equipo.Identificador
+            where interfaz.Identificador == relacionGuardada.IdentificadorPuertoLocal
+            select new { equipo.Identificador, equipo.Nombre, equipo.TipoDispositivo })
+            .SingleOrDefaultAsync(cancelacion);
+        if (equipoLocal is null) return NotFound();
+
+        // eventoEliminacion deja constancia del destino que se retiró.
+        var eventoEliminacion = new EventoModificacion
+        {
+            IdentificadorEquipo = equipoLocal.Identificador,
+            NombreEquipo = equipoLocal.Nombre,
+            NombreUsuario = User.Identity?.Name ?? "Pruebas sin sesión",
+            FechaUtc = DateTime.UtcNow,
+            Campo = "Conexión documental eliminada",
+            ValorAnterior = $"{relacionGuardada.EquipoRemoto ?? "Equipo no identificado"} · {relacionGuardada.IpRemota ?? "IP no indicada"}",
+            ValorNuevo = null
+        };
+        contextoInventario.ConexionesDocumentadas.Remove(relacionGuardada);
+        await contextoInventario.EventosModificacion.AddAsync(eventoEliminacion, cancelacion);
+        await contextoInventario.SaveChangesAsync(cancelacion);
+
+        TempData["Mensaje"] = "Se eliminó la relación documental; el puerto volvió a estar sin destino asignado.";
+        return string.Equals(equipoLocal.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase)
+            ? RedirectToAction("Detalle", "Topologia", new { identificador = equipoLocal.Identificador })
+            : RedirectToAction("Index", "Conexiones");
+    }
+
+    /// <summary>
+    /// Elimina un enlace físico y registra el cambio en el historial.
+    /// </summary>
+    /// <param name="identificador">ID del enlace; cambiarlo selecciona otra relación física.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla detiene las consultas y escritura.</param>
+    /// <returns>Regresa al frontal de un switch que forme parte del enlace.</returns>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EliminarEnlace(int identificador, CancellationToken cancelacion)
+    {
+        // enlaceGuardado conserva los dos extremos que se van a retirar.
+        var enlaceGuardado = await contextoInventario.EnlacesFisicos
+            .SingleOrDefaultAsync(enlace => enlace.Identificador == identificador, cancelacion);
+        if (enlaceGuardado is null) return NotFound();
+
+        // puertosExtremos permite resolver los equipos y atribuir el cambio.
+        var puertosExtremos = await contextoInventario.InterfacesEquipo.AsNoTracking()
+            .Where(interfaz => interfaz.Identificador == enlaceGuardado.IdentificadorPuertoOrigen
+                || interfaz.Identificador == enlaceGuardado.IdentificadorPuertoDestino)
+            .ToListAsync(cancelacion);
+        if (puertosExtremos.Count != 2) return NotFound();
+
+        // equiposExtremos resuelve ambos puertos a sus fichas propietarias.
+        var identificadoresEquipos = puertosExtremos.Select(interfaz => interfaz.IdentificadorEquipo).Distinct().ToList();
+        var equiposExtremos = await contextoInventario.Equipos.AsNoTracking()
+            .Where(equipo => identificadoresEquipos.Contains(equipo.Identificador))
+            .ToListAsync(cancelacion);
+        if (equiposExtremos.Count == 0) return NotFound();
+
+        // equipoAtribucion usa un switch como destino al regresar si alguno participa en el enlace.
+        var equipoAtribucion = equiposExtremos.FirstOrDefault(equipo =>
+            string.Equals(equipo.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase))
+            ?? equiposExtremos[0];
+        // eventoEliminacion conserva puertos y medio previos en la auditoría.
+        var eventoEliminacion = new EventoModificacion
+        {
+            IdentificadorEquipo = equipoAtribucion.Identificador,
+            NombreEquipo = equipoAtribucion.Nombre,
+            NombreUsuario = User.Identity?.Name ?? "Pruebas sin sesión",
+            FechaUtc = DateTime.UtcNow,
+            Campo = "Enlace físico eliminado",
+            ValorAnterior = $"{enlaceGuardado.IdentificadorPuertoOrigen} ↔ {enlaceGuardado.IdentificadorPuertoDestino} · {enlaceGuardado.Medio}",
+            ValorNuevo = null
+        };
+        contextoInventario.EnlacesFisicos.Remove(enlaceGuardado);
+        await contextoInventario.EventosModificacion.AddAsync(eventoEliminacion, cancelacion);
+        await contextoInventario.SaveChangesAsync(cancelacion);
+
+        TempData["Mensaje"] = "Se eliminó el enlace documentado y sus puertos quedaron disponibles según sus estados guardados.";
+        return string.Equals(equipoAtribucion.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase)
+            ? RedirectToAction("Detalle", "Topologia", new { identificador = equipoAtribucion.Identificador })
+            : RedirectToAction("Index", "Conexiones");
+    }
+
+
 }
