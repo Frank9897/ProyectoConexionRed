@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using ProyectoConexionRed.Web.Data;
+using ProyectoConexionRed.Web.Models;
 
 namespace ProyectoConexionRed.Web.Services;
 
@@ -136,6 +137,100 @@ public sealed class RegistroInventarios
         // identificadorActivo descarta valores de cookie que no correspondan a una base conocida.
         var identificadorActivo = ObtenerIdentificadorActivo(identificadorSolicitado);
         return Listar().Single(inventario => inventario.Identificador == identificadorActivo).Ruta;
+    }
+
+    /// <summary>
+    /// Crea una sede nueva y guarda dentro de ella las fichas CSV ya validadas.
+    /// </summary>
+    /// <param name="nombreSolicitado">Nombre de la sede; cambiarlo define la etiqueta y el archivo SQLite.</param>
+    /// <param name="equiposImportados">Fichas candidatas; cambiar la lista cambia los registros y puertos provisionales creados.</param>
+    /// <param name="usuarioEditor">Autor de la carga; cambiarlo altera la atribución en el historial de la sede.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla cancela la creación o escritura.</param>
+    /// <returns>Base nueva, cantidad de equipos y puertos guardados.</returns>
+    public async Task<(FichaInventario Inventario, int CantidadEquipos, int CantidadInterfaces)> CrearConEquiposAsync(
+        string nombreSolicitado,
+        IReadOnlyCollection<EquipoRed> equiposImportados,
+        string usuarioEditor,
+        CancellationToken cancelacion = default)
+    {
+        if (equiposImportados.Count == 0)
+        {
+            throw new InvalidOperationException("No hay equipos válidos para importar.");
+        }
+
+        // fichaNueva identifica el archivo recién creado; cambiarla dirigiría la carga a otra sede.
+        var fichaNueva = await CrearAsync(nombreSolicitado, cancelacion);
+        var cantidadInterfaces = 0;
+        try
+        {
+            // opcionesImportacion conecta solo el archivo nuevo y mantiene Catastro fuera de esta operación.
+            var opcionesImportacion = new DbContextOptionsBuilder<InventarioDbContext>()
+                .UseSqlite(new SqliteConnectionStringBuilder { DataSource = fichaNueva.Ruta }.ToString())
+                .Options;
+            // contextoImportacion limita la transacción al inventario recién creado.
+            await using var contextoImportacion = new InventarioDbContext(opcionesImportacion);
+            await using var transaccionImportacion = await contextoImportacion.Database.BeginTransactionAsync(cancelacion);
+
+            // normalizarIds impide trasladar identificadores internos de otra base de datos.
+            foreach (var equipoImportado in equiposImportados)
+            {
+                equipoImportado.Identificador = 0;
+            }
+
+            await contextoImportacion.Equipos.AddRangeAsync(equiposImportados, cancelacion);
+            await contextoImportacion.SaveChangesAsync(cancelacion);
+
+            // interfacesGeneradas crea solo las posiciones derivadas de capacidades indicadas en el CSV.
+            var interfacesGeneradas = equiposImportados
+                .SelectMany(equipoImportado => GeneradorInterfacesSwitch.CrearInterfacesFaltantes(equipoImportado, []))
+                .ToList();
+            cantidadInterfaces = interfacesGeneradas.Count;
+            if (interfacesGeneradas.Count > 0)
+            {
+                await contextoImportacion.InterfacesEquipo.AddRangeAsync(interfacesGeneradas, cancelacion);
+            }
+
+            // eventosCarga deja una nota por ficha, sin registrar una línea por cada puerto generado.
+            var eventosCarga = equiposImportados.Select(equipoImportado => new EventoModificacion
+            {
+                IdentificadorEquipo = equipoImportado.Identificador,
+                NombreEquipo = equipoImportado.Nombre,
+                NombreUsuario = usuarioEditor,
+                FechaUtc = DateTime.UtcNow,
+                Campo = "Alta por importación CSV",
+                ValorNuevo = GeneradorInterfacesSwitch.DescribirInterfacesCreadas(
+                    interfacesGeneradas.Where(interfaz => interfaz.IdentificadorEquipo == equipoImportado.Identificador).ToList())
+            }).ToList();
+            foreach (var eventoCarga in eventosCarga.Where(eventoCarga => string.IsNullOrWhiteSpace(eventoCarga.ValorNuevo)))
+            {
+                eventoCarga.ValorNuevo = "Ficha cargada; sin puertos provisionales por capacidad.";
+            }
+
+            await contextoImportacion.EventosModificacion.AddRangeAsync(eventosCarga, cancelacion);
+            await contextoImportacion.SaveChangesAsync(cancelacion);
+            await transaccionImportacion.CommitAsync(cancelacion);
+            return (fichaNueva, equiposImportados.Count, cantidadInterfaces);
+        }
+        catch
+        {
+            // LimpiarBaseParcial retira únicamente el archivo creado por esta llamada si la carga no finaliza.
+            try
+            {
+                File.Delete(fichaNueva.Ruta);
+                File.Delete(fichaNueva.Ruta + "-wal");
+                File.Delete(fichaNueva.Ruta + "-shm");
+            }
+            catch (IOException)
+            {
+                // La excepción original conserva el motivo; el archivo podría requerir limpieza manual.
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // La excepción original se conserva aunque el hosting no permita limpiar la base parcial.
+            }
+
+            throw;
+        }
     }
 
     /// <summary>
