@@ -50,6 +50,11 @@ public class InventarioDbContext : DbContext
     public DbSet<ConexionDocumentada> ConexionesDocumentadas => Set<ConexionDocumentada>();
 
     /// <summary>
+    /// Conjunto de marcas de mantenimiento; cambiar sus filas altera qué tareas idempotentes ya se ejecutaron.
+    /// </summary>
+    public DbSet<MantenimientoEjecutado> MantenimientosEjecutados => Set<MantenimientoEjecutado>();
+
+    /// <summary>
     /// Define nombres y límites de columnas; cambiar estas reglas requiere actualizar el esquema de la base.
     /// </summary>
     /// <param name="constructorModelo">Constructor de metadatos; cambiar su configuración altera el esquema generado.</param>
@@ -85,7 +90,7 @@ public class InventarioDbContext : DbContext
         configuracionUsuario.Property(nameof(UsuarioAplicacion.NombreUsuario)).HasMaxLength(100).IsRequired();
         configuracionUsuario.Property(nameof(UsuarioAplicacion.NombreUsuarioNormalizado)).HasMaxLength(100).IsRequired();
         configuracionUsuario.Property(nameof(UsuarioAplicacion.HashContrasena)).HasMaxLength(500).IsRequired();
-        configuracionUsuario.Property(nameof(UsuarioAplicacion.Rol)).HasMaxLength(30).IsRequired();
+        configuracionUsuario.Property(nameof(UsuarioAplicacion.Rol)).HasMaxLength(30).IsRequired().HasDefaultValue("Administrador");
         configuracionUsuario.HasIndex(nameof(UsuarioAplicacion.NombreUsuarioNormalizado)).IsUnique();
 
         // configuracionEvento reúne el historial de acceso; cambiar sus límites altera los datos que pueden registrarse.
@@ -116,7 +121,7 @@ public class InventarioDbContext : DbContext
         configuracionInterfaz.Property(nameof(InterfazEquipo.EtiquetaPuerto)).HasMaxLength(100).IsRequired();
         configuracionInterfaz.Property(nameof(InterfazEquipo.TipoInterfaz)).HasMaxLength(100).IsRequired();
         configuracionInterfaz.Property(nameof(InterfazEquipo.EstadoDatos)).HasMaxLength(60).IsRequired();
-        configuracionInterfaz.Property(nameof(InterfazEquipo.EstadoUso)).HasMaxLength(40).IsRequired();
+        configuracionInterfaz.Property(nameof(InterfazEquipo.EstadoUso)).HasMaxLength(40).IsRequired().HasDefaultValue("Desconocido");
         configuracionInterfaz.Property(nameof(InterfazEquipo.Observaciones)).HasMaxLength(1000);
         configuracionInterfaz.HasIndex(nameof(InterfazEquipo.IdentificadorEquipo), nameof(InterfazEquipo.EtiquetaPuerto)).IsUnique();
         configuracionInterfaz.HasOne<EquipoRed>()
@@ -151,8 +156,8 @@ public class InventarioDbContext : DbContext
         configuracionConexionDocumentada.Property(nameof(ConexionDocumentada.EquipoRemoto)).HasMaxLength(160);
         configuracionConexionDocumentada.Property(nameof(ConexionDocumentada.IpRemota)).HasMaxLength(45);
         configuracionConexionDocumentada.Property(nameof(ConexionDocumentada.PuertoRemoto)).HasMaxLength(100);
-        configuracionConexionDocumentada.Property(nameof(ConexionDocumentada.Medio)).HasMaxLength(60).IsRequired();
-        configuracionConexionDocumentada.Property(nameof(ConexionDocumentada.EstadoDatos)).HasMaxLength(60).IsRequired();
+        configuracionConexionDocumentada.Property(nameof(ConexionDocumentada.Medio)).HasMaxLength(60).IsRequired().HasDefaultValue("No confirmado");
+        configuracionConexionDocumentada.Property(nameof(ConexionDocumentada.EstadoDatos)).HasMaxLength(60).IsRequired().HasDefaultValue("A verificar");
         configuracionConexionDocumentada.Property(nameof(ConexionDocumentada.FuentePagina)).HasMaxLength(160).IsRequired();
         configuracionConexionDocumentada.Property(nameof(ConexionDocumentada.FuenteLibro)).HasMaxLength(160);
         configuracionConexionDocumentada.Property(nameof(ConexionDocumentada.FuenteFila)).HasMaxLength(100);
@@ -162,5 +167,13 @@ public class InventarioDbContext : DbContext
             .WithMany()
             .HasForeignKey(nameof(ConexionDocumentada.IdentificadorPuertoLocal))
             .OnDelete(DeleteBehavior.Restrict);
+
+        // configuracionMantenimiento integra la tabla de marcas al esquema migrable; cambiarla modifica su persistencia.
+        var configuracionMantenimiento = constructorModelo.Entity<MantenimientoEjecutado>();
+        configuracionMantenimiento.ToTable("MantenimientosEjecutados");
+        configuracionMantenimiento.HasKey(nameof(MantenimientoEjecutado.Codigo));
+        configuracionMantenimiento.Property(nameof(MantenimientoEjecutado.Codigo)).HasMaxLength(120).IsRequired();
+        configuracionMantenimiento.Property(nameof(MantenimientoEjecutado.FechaUtc)).IsRequired();
     }
 }
+

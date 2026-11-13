@@ -1,5 +1,13 @@
 # ProyectoConexionRed
 
+## Evolución a inventarios independientes
+
+La arquitectura se implementará por etapas para conservar el inventario actual `Catastro` y permitir iniciar una sede vacía o cargar un inventario documental. La base prevista es hasta tres inventarios SQLite independientes, seleccionados desde la aplicación; cada uno tendrá equipos, interfaces, conexiones, ubicaciones e historial propios. No se debe duplicar la base copiando archivos mientras la aplicación los tenga abiertos.
+
+Orden acordado: (1) respaldo y preparación de migraciones; (2) migrar `Catastro` sin perder sus datos y retirar la inicialización rígida; (3) crear y seleccionar inventarios, con límite de tres; (4) alta de equipos y switches con interfaces configurables; (5) asignación de equipos a puertos y enlaces switch a switch, reflejados en la topología; (6) carga asistida de inventario y revisión integral. Cada etapa se presenta al usuario y se pausa hasta que responda «continua» antes de empezar la siguiente.
+
+Estado de esta evolución: se creó y verificó una copia local `backup/Catastro.db`. Se agregó `Microsoft.EntityFrameworkCore.Design` 10.0.0 y se generó `Data/Migraciones/EsquemaInicial` a partir del modelo completo, incluidos valores predeterminados y la tabla de mantenimientos. En modo solo lectura se cotejaron sus 8 tablas de aplicación, índices y claves foráneas con el respaldo; `foreign_key_check` no encontró errores. La migración no se aplicó a `Catastro`; no se modificaron sus datos ni esquema. El respaldo está excluido por `.gitignore` y no viaja con un clon del repositorio. El siguiente paso es establecer la línea base de `Catastro` sin ejecutar los `CREATE TABLE` iniciales y retirar la inicialización rígida después de comprobarlo sobre una copia.
+
 Aplicación web en español para documentar y visualizar la infraestructura de red empresarial. El repositorio es público por decisión del usuario.
 
 ## Propósito
@@ -197,3 +205,4 @@ La página distingue los campos que faltan de detalle sin presentar las conexion
 ### Reinicio único del historial de cambios
 
 A petición del usuario, al próximo inicio de cada base SQLite existente se eliminan las filas anteriores de `EventosModificacion`. La tabla `MantenimientosEjecutados` conserva una marca para que los siguientes arranques no repitan el borrado. El historial de accesos no se modifica. La página Cambios muestra un estado vacío hasta que se registre una modificación nueva.
+
