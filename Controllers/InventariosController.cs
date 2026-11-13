@@ -24,9 +24,9 @@ public sealed class InventariosController : Controller
     }
 
     /// <summary>
-    /// Muestra los inventarios registrados y cuál usa el navegador actual.
+    /// Conserva la ruta anterior y dirige a la gestión de inventarios en Inicio.
     /// </summary>
-    /// <returns>Vista con hasta tres inventarios; cambiar sus archivos modifica las opciones visibles.</returns>
+    /// <returns>Redirección a Inicio; cambiar el destino devuelve la gestión a otra página.</returns>
     [HttpGet]
     public IActionResult Index()
     {
