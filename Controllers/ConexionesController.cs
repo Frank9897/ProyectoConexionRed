@@ -259,7 +259,6 @@ public class ConexionesController : Controller
             orderby equipo.Nombre, interfaz.EtiquetaPuerto
             select new { interfaz.Identificador, interfaz.EtiquetaPuerto, equipo.Nombre, equipo.IpAdministracion })
             .ToListAsync(cancelacion);
-        // formularioRelacion conserva los campos de origen y las opciones libres para el selector.
         // identificadorPreseleccionado conserva el puerto recibido solo si sigue disponible.
         var identificadorPreseleccionado = interfacesLibres.Any(interfaz => interfaz.Identificador == identificadorPuertoLocal)
             ? identificadorPuertoLocal.Value
