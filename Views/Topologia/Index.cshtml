@@ -101,8 +101,6 @@
         </div>
         <div class="acciones-topologia">
             <span class="contador-enlaces">@Model.Dispositivos.Count equipos · @Model.Enlaces.Count enlaces</span>
-            <button class="boton boton-secundario" type="button" data-maximizar-mapa aria-pressed="false" title="Maximiza el panel para recorrer todas las tarjetas">Maximizar mapa</button>
-            <button class="boton boton-secundario" type="button" data-imprimir-topologia>Imprimir vista</button>
         </div>
     </div>
 
@@ -152,6 +150,7 @@
                 <button class="boton boton-secundario" type="button" data-restablecer-mapa title="Borra posiciones guardadas y vuelve al esquema jerárquico inicial">Restablecer mapa</button>
                 <button class="boton boton-secundario" type="button" data-ver-todo-mapa title="Encaja todas las tarjetas visibles en el área del mapa">Encajar vista</button>
                 <button class="boton boton-secundario" type="button" data-maximizar-mapa aria-pressed="false" title="Expande el mapa dentro de esta página">Maximizar mapa</button>
+                <button class="boton boton-secundario" type="button" data-imprimir-topologia title="Imprime la topología ajustada al papel">Imprimir mapa</button>
                 <details class="herramientas-avanzadas-mapa">
                     <summary>Más opciones</summary>
                     <div class="contenido-herramientas-mapa">
@@ -342,135 +341,6 @@
     }
 </section>
 
-@if (Model.Enlaces.Count == 0)
-{
-    <section class="vacio-topologia" id="enlaces-fisicos">
-        <div class="icono-vacio" aria-hidden="true">
-            <svg viewBox="0 0 64 64" focusable="false">
-                <rect x="5" y="10" width="20" height="15" rx="3"></rect>
-                <rect x="39" y="39" width="20" height="15" rx="3"></rect>
-                <path d="M25 17h8a8 8 0 0 1 8 8v6a8 8 0 0 0 8 8"></path>
-                <circle cx="15" cy="18" r="1.5"></circle>
-                <circle cx="49" cy="47" r="1.5"></circle>
-            </svg>
-        </div>
-        <p class="sobrelinea">CAPA FÍSICA</p>
-        <h2>No hay enlaces físicos con ambos puertos guardados</h2>
-        <p>Las relaciones con switch o equipo final identificado se muestran en las capas 2 y 3. La vista no inventa el puerto de red de una PC.</p>
-        <a class="boton boton-secundario" asp-controller="Inventario" asp-action="Index">Revisar inventario</a>
-    </section>
-}
-else
-{
-    <section class="panel panel-enlaces" id="enlaces-fisicos">
-        <div class="encabezado-seccion-topologia">
-            <div>
-                <p class="sobrelinea">CAPA 1 · DETALLE DE CONEXIONES</p>
-                <h2>Enlaces físicos documentados</h2>
-            </div>
-            <div class="acciones-topologia">
-                <span class="contador-enlaces">@Model.Enlaces.Count enlaces completos</span>
-                <button class="boton boton-secundario" type="button" data-imprimir-topologia>Imprimir vista</button>
-            </div>
-        </div>
-        <div class="lista-fichas-conexion listado-topologia-enlaces">
-            @* enlace recorre relaciones completas y muestra los datos de los dos extremos existentes. *@
-            @foreach (var enlace in Model.Enlaces)
-            {
-                <article class="ficha-conexion ficha-enlace" data-registro-paginable>
-                    <div class="trayecto-enlace">
-                        <div class="extremo-enlace">
-                            <p class="identificador-secundario">ORIGEN</p>
-                            <h3>@enlace.EquipoOrigen</h3>
-                            <small class="ip-extremo-conexion">@(enlace.IpEquipoOrigen ?? "IP no indicada")</small>
-                            <span class="puerto-extremo-conexion">Puerto @enlace.PuertoOrigen</span>
-                        </div>
-                        <span class="flecha-enlace" aria-hidden="true">→</span>
-                        <div class="extremo-enlace">
-                            <p class="identificador-secundario">DESTINO</p>
-                            <h3>@enlace.EquipoDestino</h3>
-                            <small class="ip-extremo-conexion">@(enlace.IpEquipoDestino ?? "IP no indicada")</small>
-                            <span class="puerto-extremo-conexion">Puerto @enlace.PuertoDestino</span>
-                        </div>
-                        <span class="etiqueta-estado-conexion">@enlace.EstadoDatos</span>
-                    </div>
-                    @if ((enlace.EstadoDatos.Equals("Confirmado", StringComparison.OrdinalIgnoreCase)
-                         || enlace.EstadoDatos.Equals("Vigente", StringComparison.OrdinalIgnoreCase))
-                         && !string.IsNullOrWhiteSpace(enlace.Medio)
-                         && !enlace.Medio.Equals("No confirmado", StringComparison.OrdinalIgnoreCase))
-                    {
-                        <span class="medio-confirmado-conexion">Medio confirmado: @enlace.Medio</span>
-                    }
-                    <details class="detalles-fuente-conexion">
-                        <summary>Ver fecha y respaldo</summary>
-                        <p>Revisión: @(enlace.FechaUltimaRevision?.ToString("dd/MM/yyyy") ?? "Sin fecha confirmada") · Fuente: @(enlace.Fuente ?? "No indicada")</p>
-                    </details>
-                </article>
-            }
-        </div>
-    </section>
-}
-
-@if (Model.RelacionesParciales.Count > 0)
-{
-    <section class="panel panel-enlaces" data-paginador="relaciones-parciales-topologia" aria-labelledby="titulo-conexiones-parciales-topologia">
-        <div class="encabezado-seccion-topologia">
-            <div><p class="sobrelinea">DETALLE DE EXTREMOS POR INTERFAZ</p><h2 id="titulo-conexiones-parciales-topologia">Relaciones registradas desde cada puerto</h2></div>
-            <div class="controles-paginacion">
-                <label for="tamano-relaciones-topologia">Mostrar</label>
-                <select id="tamano-relaciones-topologia" data-tamano-pagina aria-label="Cantidad de relaciones parciales por página">
-                    <option value="10" selected>10</option><option value="20">20</option><option value="30">30</option><option value="0">Todas</option>
-                </select>
-                <span data-resumen-pagina aria-live="polite"></span>
-                <button class="boton-paginacion" type="button" data-pagina-anterior aria-label="Página anterior">← Anterior</button>
-                <button class="boton-paginacion" type="button" data-pagina-siguiente aria-label="Página siguiente">Siguiente →</button>
-            </div>
-        </div>
-        <p class="aclaracion-topologia-grafica">Las relaciones del Visio se consideran confirmadas. En Capa 3 basta identificar el puerto del switch y el equipo final; el puerto de una PC no es un extremo remoto de switch. En Capa 2 solo se deja el puerto remoto vacío cuando las tablas no permiten cotejar una contraparte única.</p>
-        <div class="lista-fichas-conexion listado-topologia-enlaces" data-lista-paginada>
-            @* relacion conserva el puerto local y el extremo remoto parcial tal como aparece en la fuente. *@
-            @foreach (var relacion in Model.RelacionesParciales)
-            {
-                <article class="ficha-conexion ficha-enlace" data-registro-paginable>
-                    <div class="trayecto-enlace">
-                        <div class="extremo-enlace">
-                            <p class="identificador-secundario">@(relacion.CapaRelacional == "switching" ? "SWITCH LOCAL · CAPA 2" : relacion.CapaRelacional == "acceso" ? "SWITCH LOCAL · CAPA 3" : "EXTREMO LOCAL · CAPA 1")</p>
-                            <h3>@relacion.EquipoLocal</h3>
-                            <small class="ip-extremo-conexion">@(relacion.IpLocal ?? "IP no indicada")</small>
-                            <span class="puerto-extremo-conexion">Puerto @relacion.PuertoLocal</span>
-                        </div>
-                        <span class="flecha-enlace flecha-confirmada" aria-hidden="true">→</span>
-                        <div class="extremo-enlace">
-                            <p class="identificador-secundario">@(relacion.CapaRelacional == "switching" ? "SWITCH REMOTO" : "USUARIO / EQUIPO FINAL / SERVICIO")</p>
-                            <h3>@(relacion.EquipoRemoto ?? "No identificado")</h3>
-                            <small class="ip-extremo-conexion">@(relacion.IpRemota ?? "IP no indicada")</small>
-                            @if (relacion.CapaRelacional == "switching")
-                            {
-                                <span class="puerto-extremo-conexion">@(relacion.PuertoRemoto is null ? "Puerto remoto sin par único en las tablas" : $"Puerto {relacion.PuertoRemoto}")</span>
-                            }
-                        </div>
-                        <span class="etiqueta-estado-conexion">@(relacion.CapaRelacional == "switching" ? "Capa 2 · Enlace entre switches" : relacion.CapaRelacional == "acceso" ? "Capa 3 · Equipo final" : "Capa 1 · Relación física") · @relacion.EstadoDatos</span>
-                    </div>
-                    @if ((relacion.EstadoDatos.Equals("Confirmado", StringComparison.OrdinalIgnoreCase)
-                         || relacion.EstadoDatos.Equals("Vigente", StringComparison.OrdinalIgnoreCase))
-                         && !string.IsNullOrWhiteSpace(relacion.Medio)
-                         && !relacion.Medio.Equals("No confirmado", StringComparison.OrdinalIgnoreCase))
-                    {
-                        <span class="medio-confirmado-conexion">Medio confirmado: @relacion.Medio</span>
-                    }
-                    <details class="detalles-fuente-conexion">
-                        <summary>Ver fuente y notas</summary>
-                        <p>@relacion.FuentePagina · @(relacion.FuenteLibro ?? "Sin libro") · fila @(relacion.FuenteFila ?? "sin indicar")</p>
-                        @if (!string.IsNullOrWhiteSpace(relacion.Observaciones))
-                        {
-                            <p>@relacion.Observaciones</p>
-                        }
-                    </details>
-                </article>
-            }
-        </div>
-    </section>
-}
 
 </div>
 </div>
