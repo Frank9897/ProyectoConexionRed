@@ -246,3 +246,12 @@ El cambio se publicó directamente en `main`. Se revisó el código en GitHub, p
 La barra de herramientas dentro del marco del mapa contiene un solo botón **Maximizar mapa** y un solo botón **Imprimir mapa**; se retiraron las copias del encabezado y de los listados inferiores. Al abrir Topología, todas las tarjetas comienzan contraídas para que el mapa muestre primero su estructura y conexiones. **Restablecer mapa** también vuelve a esa presentación contraída, además de recuperar la disposición genérica. Se retiraron de la página general, debajo de Pendientes de detalle, los bloques «CAPA 1 · DETALLE DE CONEXIONES» y «DETALLE DE EXTREMOS POR INTERFAZ». Las relaciones y los datos guardados siguen disponibles en el mapa y en el detalle de cada switch; no se borró información.
 
 El código se revisó en GitHub y quedó publicado en `main`. En esta etapa no se ejecutó compilación ni revisión visual del navegador.
+
+
+### Selector y edición de puertos (paso 7)
+
+La página **Puertos** presenta switches en tarjetas con IP, modelo, cantidad de interfaces inventariadas y conteos de ocupados, libres confirmados y desconocidos. Los conteos se calculan sobre registros de interfaces reales de la base documental, no sobre la capacidad teórica del modelo. Los destinos aparecen solo cuando están documentados. **Editar puertos** abre el mismo detalle visual del switch usado por Topología; desde allí, al seleccionar una interfaz inventariada se activa su edición. Los puertos sintéticos de un perfil que aún no existen como registros no se pueden editar hasta inventariarlos.
+
+Desde el detalle se pueden editar o eliminar enlaces completos y relaciones parciales. Las eliminaciones solicitan confirmación y guardan un evento de auditoría; no afectan el equipo real. Un puerto no se elimina mientras tenga una relación completa o parcial: primero hay que editar o eliminar esa relación. Después de agregar un puerto o guardar una conexión completa, la aplicación regresa al frontal del switch correspondiente. La aplicación sigue sin consultar ni modificar la red de trabajo.
+
+**Alcance de verificación de este paso:** los cambios se publicaron directamente en la rama principal del repositorio. No se ejecutó compilación, pruebas ni recorrido en navegador en este paso.
