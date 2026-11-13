@@ -78,6 +78,14 @@
             </div>
         </form>
     </section>
+    <section class="panel crear-inventario-panel" aria-labelledby="titulo-cargar-inventario">
+        <div>
+            <p class="sobrelinea">CARGA ASISTIDA</p>
+            <h2 id="titulo-cargar-inventario">Cargar fichas desde CSV</h2>
+            <p>Revisa los equipos y capacidades en una vista previa antes de crear una nueva base independiente.</p>
+        </div>
+        <a class="boton" asp-controller="Inventarios" asp-action="ImportarCsv">Preparar carga</a>
+    </section>
 }
 else
 {
