@@ -344,6 +344,7 @@ public class TopologiaController : Controller
                 continue;
             enlacesDelSwitch.Add(new EnlaceTopologiaViewModel
             {
+                Identificador = enlace.Identificador,
                 IdentificadorEquipoOrigen = equipoOrigen.Identificador,
                 IdentificadorPuertoOrigen = puertoOrigen.Identificador,
                 EquipoOrigen = equipoOrigen.Nombre,
