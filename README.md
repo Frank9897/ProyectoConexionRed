@@ -255,3 +255,7 @@ La página **Puertos** presenta switches en tarjetas con IP, modelo, cantidad de
 Desde el detalle se pueden editar o eliminar enlaces completos y relaciones parciales. Las eliminaciones solicitan confirmación y guardan un evento de auditoría; no afectan el equipo real. Un puerto no se elimina mientras tenga una relación completa o parcial: primero hay que editar o eliminar esa relación. Después de agregar un puerto o guardar una conexión completa, la aplicación regresa al frontal del switch correspondiente. La aplicación sigue sin consultar ni modificar la red de trabajo.
 
 **Alcance de verificación de este paso:** los cambios se publicaron directamente en la rama principal del repositorio. No se ejecutó compilación, pruebas ni recorrido en navegador en este paso.
+
+### Búsqueda de switches en Puertos
+
+La sección **Puertos** permite filtrar las tarjetas localmente por texto (nombre, área, modelo, IP o destino visible) y por conexiones registradas, puertos desconocidos, confirmación o ausencia de conexiones. El contador indica cuántos switches coinciden. El filtrado se ejecuta en el navegador sobre la información ya presentada y no genera tráfico hacia la red de trabajo.
