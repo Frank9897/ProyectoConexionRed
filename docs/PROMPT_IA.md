@@ -342,3 +342,13 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 - Flujo HTTP probado con datos ficticios en base temporal aislada: previsualización, confirmación y listado de dos equipos; el puesto recibió rol predeterminado Usuario y las capacidades del switch generaron tres interfaces. No usar estos datos como inventario real ni tocar Catastro.
 - La inspección visual vía Computer Use no se completó porque expiró la aprobación de la aplicación. No afirmar revisión visual.
 - Los fixes se publicaron en `main` con commits breves en español. La copia temporal de validación se eliminó y no se hizo `pull` ni cambios en el checkout local con modificaciones pendientes.
+
+
+## Navegación: gestión de sedes en Inicio (13 de noviembre de 2026)
+
+- La gestión antes presentada por `/Inventarios` está en la página Inicio: elegir la base activa, crear una sede vacía o preparar una carga CSV.
+- No mostrar conteos de bases utilizadas/disponibles ni cuántas quedan. La página puede ocultar la opción de crear cuando se alcanza el límite, sin imprimir el número.
+- El endpoint anterior `/Inventarios` redirige a Inicio para mantener enlaces existentes.
+- Conservar `/Inventario` como la tabla general de equipos. La navegación debe mostrar Inicio y un único enlace Inventario, además de las otras secciones.
+- Próximo paso aprobado por el usuario: dividir Inventario en Switches (Áreas, Datacenter, Reserva, Sin acceso y Servidores), Usuarios (Documentados/Sin documentar según su enlace a switch) y Otros equipos. Derivar categorías de campos persistentes y conexiones documentadas; no basarlas en coincidencias frágiles de nombre.
+- Actualizar README y este prompt con cada cambio. Mantener variables y comentarios en español y commits breves en español.
