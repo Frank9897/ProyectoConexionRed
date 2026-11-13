@@ -75,7 +75,7 @@
         <div class="tabla-contenedor">
             <table>
                 <thead>
-                    <tr><th>Equipo</th><th>Tipo</th><th>IP</th><th>Área</th><th>Modelo</th><th>Vigencia</th></tr>
+                    <tr><th>Equipo</th><th>Tipo / modelo</th><th>Área / piso</th><th>IP / MAC</th><th>Rol</th><th>Capacidad</th><th>Vigencia</th></tr>
                 </thead>
                 <tbody>
                 @* filaImportacion muestra una de las primeras 25 fichas válidas del archivo. *@
@@ -83,10 +83,11 @@
                 {
                     <tr>
                         <td><strong>@filaImportacion.Nombre</strong></td>
-                        <td>@filaImportacion.Tipo</td>
-                        <td>@(filaImportacion.Ip ?? "No indicada")</td>
-                        <td>@(filaImportacion.Area ?? "No indicada")</td>
-                        <td>@(filaImportacion.Modelo ?? "No indicado")</td>
+                        <td>@filaImportacion.Tipo<br /><small>@(filaImportacion.Fabricante ?? "Fabricante no indicado") · @(filaImportacion.Modelo ?? "Modelo no indicado")</small></td>
+                        <td><span class="ip">@(filaImportacion.Ip ?? "No indicada")</span><br /><small>@(filaImportacion.Mac ?? "MAC no indicada")</small></td>
+                        <td>@(filaImportacion.Area ?? "No indicada")<br /><small>@(filaImportacion.Piso ?? "Piso no indicado")</small></td>
+                        <td>@filaImportacion.Rol</td>
+                        <td>@filaImportacion.Capacidad</td>
                         <td>@filaImportacion.EstadoDatos</td>
                     </tr>
                 }
