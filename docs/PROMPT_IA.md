@@ -386,3 +386,5 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 - Tras añadir una interfaz a un switch, editar un enlace completo o editar/eliminar una relación parcial, regresar al detalle del switch correspondiente.
 - Estas acciones solo cambian la base documental; no consultan ni ejecutan cambios en la red real.
 - Este paso quedó escrito en la rama principal; no se ejecutaron pruebas, compilación ni navegador. Mantener README y este prompt actualizados.
+
+- La vista Puertos incluye búsqueda local por el texto visible de cada tarjeta y filtros por conexiones registradas, puertos desconocidos, ausencia de pendientes y falta de conexiones. Actualiza el contador en vivo y muestra un estado vacío al no encontrar coincidencias. No crea solicitudes ni altera el inventario; los contadores se derivan de los datos del servidor.
