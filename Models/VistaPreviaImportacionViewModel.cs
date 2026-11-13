@@ -53,6 +53,9 @@ public sealed class FilaPreviaImportacionViewModel
     /// <summary>Área; cambiarla modifica la agrupación visible de la ficha.</summary>
     public string? Area { get; set; }
 
+    /// <summary>Piso; cambiarlo modifica la ubicación física presentada en la muestra.</summary>
+    public string? Piso { get; set; }
+
     /// <summary>Fabricante; cambiarlo modifica la marca de la ficha que se crearía.</summary>
     public string? Fabricante { get; set; }
 
