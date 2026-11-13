@@ -364,6 +364,7 @@ public sealed class InventariosController : Controller
                     Tipo = equipo.TipoDispositivo,
                     Ip = equipo.IpAdministracion,
                     Area = equipo.Area,
+                    Piso = equipo.Piso,
                     Fabricante = equipo.Fabricante,
                     Modelo = equipo.Modelo,
                     Mac = equipo.DireccionMac,
