@@ -18,6 +18,10 @@ Se agregó la página **Inventarios**. `Catastro` sigue apuntando al archivo SQL
 
 El formulario existente permite crear y editar equipos con IP, área, tipo, rol y otros datos documentales. Para un switch, se pueden indicar cantidades de RJ45, SFP, SFP+, QSFP, QSFP+ y QSFP28. Al guardar, se crean registros editables para las posiciones que falten; las etiquetas secuenciales son provisionales, el estado inicial es «A verificar» y el uso «Desconocido». No se inventan enlaces. Las posiciones se pueden corregir desde **Puertos**; al aumentar una capacidad se agregan las posiciones nuevas que falten. Si se reduce una cantidad, los registros previos se conservan para no borrar documentación o enlaces.
 
+### Asignación contextual desde el frontal (paso 5)
+
+En el detalle de un switch se puede seleccionar un puerto libre o sin estado confirmado y abrir **Documentar conexión del puerto seleccionado**. El formulario preselecciona esa interfaz si continúa disponible; los puertos ocupados no permiten iniciar otra relación desde esa acción. El técnico confirma el destino y guarda explícitamente el registro. Esto documenta un extremo conocido, permite conexiones de acceso a PCs e impresoras sin inventar un puerto remoto y no ejecuta acciones sobre la red real. Los enlaces completos entre switches continúan registrándose con sus dos puertos mediante **Puertos**; solo aparecerán en topología cuando se guarden ambos extremos.
+
 ## Propósito
 
 Reunir en un inventario navegable los dispositivos, IP, puertos, enlaces, áreas, PCs y usuarios de la red; mostrar su topología por vistas física, switching y red; registrar cambios; y permitir simulaciones locales y exportación imprimible.
