@@ -741,19 +741,31 @@ public static class InicializadorInventario
             {
                 // relacionExistente mantiene la nota previa y solo actualiza su confianza según la confirmación del usuario.
                 var relacionExistente = relacionesPorPuerto[interfazLocal.Identificador];
-                var mismaFilaFuente = relacionExistente.FuentePagina == filaPuerto.Pagina
+                // mismaFuenteCompleta exige coincidencia de página, libro y fila para identificar el registro fuente.
+                var mismaFuenteCompleta = relacionExistente.FuentePagina == filaPuerto.Pagina
                     && relacionExistente.FuenteLibro == filaPuerto.Libro
                     && relacionExistente.FuenteFila == filaPuerto.FilaFuente;
+                // mismaHojaYFila permite conservar la identidad local cuando el título de la página fue renombrado.
+                var mismaHojaYFila = relacionExistente.FuenteLibro == filaPuerto.Libro
+                    && relacionExistente.FuenteFila == filaPuerto.FilaFuente;
+                // mismaFilaFuente admite el cambio de título documentado para la misma hoja, puerto y equipo local.
+                var mismaFilaFuente = mismaFuenteCompleta || mismaHojaYFila;
                 if (!mismaFilaFuente)
                     continue;
 
                 // estadoAnteriorRelacion y equipoRemotoAnterior conservan los valores previos para dejar el cambio trazable.
                 var estadoAnteriorRelacion = relacionExistente.EstadoDatos;
+                var paginaFuenteAnterior = relacionExistente.FuentePagina;
                 var equipoRemotoAnterior = relacionExistente.EquipoRemoto;
                 // ipRemotaExistente conserva la IP previa para describir el cambio en el historial.
                 var ipRemotaExistente = relacionExistente.IpRemota;
                 // cambioRelacion indica si la confirmación V3.5 modifica datos de la misma fila fuente.
                 var cambioRelacion = false;
+                if (!string.Equals(relacionExistente.FuentePagina, filaPuerto.Pagina, StringComparison.Ordinal))
+                {
+                    relacionExistente.FuentePagina = filaPuerto.Pagina;
+                    cambioRelacion = true;
+                }
                 // equipoRemotoDocumentado aplica el destino literal más reciente de la hoja enlazada.
                 var equipoRemotoDocumentado = filaPuerto.Destino.Trim();
                 if (!string.Equals(relacionExistente.EquipoRemoto?.Trim(), equipoRemotoDocumentado, StringComparison.Ordinal))
@@ -796,7 +808,7 @@ public static class InicializadorInventario
                         NombreUsuario = usuarioImportacion,
                         FechaUtc = DateTime.UtcNow,
                         Campo = "Actualización de conexión desde Visio V3.5",
-                        ValorAnterior = $"{estadoAnteriorRelacion} · {equipoRemotoAnterior ?? "remoto no indicado"} · {ipRemotaExistente ?? "IP no indicada"}",
+                        ValorAnterior = $"{estadoAnteriorRelacion} · {equipoRemotoAnterior ?? "remoto no indicado"} · {ipRemotaExistente ?? "IP no indicada"} · {paginaFuenteAnterior}",
                         ValorNuevo = $"{relacionExistente.EstadoDatos} · {relacionExistente.EquipoRemoto ?? "remoto no indicado"} · {relacionExistente.IpRemota ?? "IP no indicada"} · {filaPuerto.Pagina}/{filaPuerto.Libro}/fila {filaPuerto.FilaFuente}"
                     });
                 }
