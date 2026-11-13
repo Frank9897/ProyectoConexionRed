@@ -1,0 +1,113 @@
+@model ProyectoConexionRed.Web.Models.VistaPreviaImportacionViewModel
+@{
+    ViewData["Title"] = "Cargar inventario";
+}
+
+<section class="encabezado-pagina">
+    <div>
+        <p class="sobrelinea">NUEVA SEDE · CARGA DOCUMENTAL</p>
+        <h1>Cargar inventario desde CSV</h1>
+        <p>Primero revisa una vista previa; solo al confirmar se creará una base independiente.</p>
+    </div>
+    <a class="boton boton-secundario" asp-controller="Inventarios" asp-action="Index">← Inventarios</a>
+</section>
+
+<section class="panel panel-formulario">
+    <div>
+        <h2>Preparar la carga</h2>
+        <p>Se importarán fichas de equipos y capacidades. Las conexiones, usuarios asignados y datos de acceso no se importan. Los puertos generados desde capacidades comienzan como «A verificar» y «Desconocido».</p>
+    </div>
+    <p><a class="boton boton-secundario" asp-controller="Inventarios" asp-action="DescargarPlantillaCsv">Descargar plantilla CSV</a></p>
+    <form asp-controller="Inventarios" asp-action="PrevisualizarCsv" method="post" enctype="multipart/form-data" class="formulario-crear-inventario">
+        <div class="grupo-formulario">
+            <label for="nombre-inventario">Nombre de la nueva sede</label>
+            <input id="nombre-inventario" name="nombreInventario" value="@Model.NombreInventario" type="text" minlength="2" maxlength="60" required placeholder="Por ejemplo: Edificio Norte" />
+        </div>
+        <div class="grupo-formulario">
+            <label for="archivo-csv">Archivo CSV (hasta 1 MB y 500 equipos)</label>
+            <input id="archivo-csv" name="archivo" type="file" accept=".csv,text/csv" required />
+            <small>Usa «;» como separador y conserva los encabezados de la plantilla. Los puertos que se generen desde capacidades serán provisionales.</small>
+        </div>
+        <button class="boton" type="submit">Analizar y mostrar vista previa</button>
+    </form>
+</section>
+
+@if (Model.Errores.Count > 0)
+{
+    <section class="panel aviso-error" aria-labelledby="titulo-errores-carga">
+        <h2 id="titulo-errores-carga">Corrige estos puntos</h2>
+        <ul>
+            @foreach (var errorCarga in Model.Errores)
+            {
+                <li>@errorCarga</li>
+            }
+        </ul>
+    </section>
+}
+
+@if (Model.TieneVistaPrevia)
+{
+    <section class="panel" aria-labelledby="titulo-vista-previa">
+        <p class="sobrelinea">REVISIÓN ANTES DE CREAR LA BASE</p>
+        <h2 id="titulo-vista-previa">@Model.CantidadEquipos equipos · @Model.CantidadPuertosProvisionales puertos provisionales</h2>
+        <p>Esta carga crea una sede nueva. No reemplaza ni modifica Catastro ni otra sede existente.</p>
+
+        @if (Model.Avisos.Count > 0)
+        {
+            <div class="aviso aviso-error" role="status">
+                <strong>Revisión recomendada</strong>
+                <ul>
+                    @foreach (var avisoCarga in Model.Avisos)
+                    {
+                        <li>@avisoCarga</li>
+                    }
+                </ul>
+            </div>
+        }
+
+        @if (Model.FilasNoMostradas > 0)
+        {
+            <p class="nota-limite-inventarios">Se muestran las primeras 25 filas válidas; @Model.FilasNoMostradas quedan incluidas en el total.</p>
+        }
+
+        <div class="tabla-contenedor">
+            <table>
+                <thead>
+                    <tr><th>Equipo</th><th>Tipo</th><th>IP</th><th>Área</th><th>Modelo</th><th>Vigencia</th></tr>
+                </thead>
+                <tbody>
+                @foreach (var filaImportacion in Model.Filas)
+                {
+                    <tr>
+                        <td><strong>@filaImportacion.Nombre</strong></td>
+                        <td>@filaImportacion.Tipo</td>
+                        <td>@(filaImportacion.Ip ?? "No indicada")</td>
+                        <td>@(filaImportacion.Area ?? "No indicada")</td>
+                        <td>@(filaImportacion.Modelo ?? "No indicado")</td>
+                        <td>@filaImportacion.EstadoDatos</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+
+        <form asp-controller="Inventarios" asp-action="ConfirmarCsv" method="post" class="formulario-crear-inventario">
+            <input type="hidden" name="contenidoCsvCodificado" value="@Model.ContenidoCsvCodificado" />
+            <div class="grupo-formulario">
+                <label for="nombre-confirmado">Nombre de la nueva sede</label>
+                <input id="nombre-confirmado" name="nombreInventario" value="@Model.NombreInventario" type="text" minlength="2" maxlength="60" required />
+            </div>
+            @if (Model.Avisos.Count > 0)
+            {
+                <label class="confirmacion-aviso">
+                    <input type="checkbox" name="confirmarAvisos" value="true" />
+                    Revisé las advertencias y deseo continuar.
+                </label>
+            }
+            <div class="acciones-formulario">
+                <button class="boton" type="submit" disabled="@(Model.Errores.Count > 0 || Model.CantidadEquipos == 0)">Crear sede e importar fichas</button>
+                <a class="boton boton-secundario" asp-controller="Inventarios" asp-action="ImportarCsv">Cancelar carga</a>
+            </div>
+        </form>
+    </section>
+}
