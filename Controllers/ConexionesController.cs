@@ -239,10 +239,11 @@ public class ConexionesController : Controller
     /// <summary>
     /// Presenta un formulario para registrar una conexión cuyo extremo remoto puede faltar.
     /// </summary>
+    /// <param name="identificadorPuertoLocal">Puerto elegido desde el frontal; cambiarlo preselecciona otro extremo local.</param>
     /// <param name="cancelacion">Señal de cancelación; activarla detiene la consulta de puertos disponibles.</param>
     /// <returns>Formulario con interfaces locales libres en la documentación.</returns>
     [HttpGet]
-    public async Task<IActionResult> CrearRelacion(CancellationToken cancelacion)
+    public async Task<IActionResult> CrearRelacion(int? identificadorPuertoLocal, CancellationToken cancelacion)
     {
         // interfacesLibres excluye relaciones existentes para evitar doble asignación documental.
         var interfacesLibres = await (
@@ -259,8 +260,14 @@ public class ConexionesController : Controller
             select new { interfaz.Identificador, interfaz.EtiquetaPuerto, equipo.Nombre, equipo.IpAdministracion })
             .ToListAsync(cancelacion);
         // formularioRelacion conserva los campos de origen y las opciones libres para el selector.
+        // identificadorPreseleccionado conserva el puerto recibido solo si sigue disponible.
+        var identificadorPreseleccionado = interfacesLibres.Any(interfaz => interfaz.Identificador == identificadorPuertoLocal)
+            ? identificadorPuertoLocal.Value
+            : 0;
+        // formularioRelacion conserva el extremo preseleccionado y las opciones libres del selector.
         var formularioRelacion = new NuevaConexionDocumentadaViewModel
         {
+            IdentificadorPuertoLocal = identificadorPreseleccionado,
             InterfacesDisponibles = interfacesLibres.Select(interfaz => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
             {
                 Value = interfaz.Identificador.ToString(),
