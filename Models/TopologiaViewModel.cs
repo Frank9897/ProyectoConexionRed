@@ -78,6 +78,8 @@ public class PuertoTopologiaViewModel
 /// <summary>Presenta los extremos exactos y el estado de un enlace físico.</summary>
 public class EnlaceTopologiaViewModel
 {
+    /// <summary>ID del enlace físico; cambiarlo selecciona otra relación para corregir o retirar.</summary>
+    public int Identificador { get; set; }
     /// <summary>ID del equipo de origen; cambiarlo conecta el dibujo a otro nodo.</summary>
     public int IdentificadorEquipoOrigen { get; set; }
     /// <summary>ID del puerto de origen; cambiarlo señala otra interfaz documentada.</summary>
