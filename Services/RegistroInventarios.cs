@@ -160,6 +160,7 @@ public sealed class RegistroInventarios
 
         // fichaNueva identifica el archivo recién creado; cambiarla dirigiría la carga a otra sede.
         var fichaNueva = await CrearAsync(nombreSolicitado, cancelacion);
+        // cantidadInterfaces resume los puertos provisionales guardados junto a los equipos.
         var cantidadInterfaces = 0;
         try
         {
