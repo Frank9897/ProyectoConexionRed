@@ -1337,3 +1337,12 @@ body.mapa-ampliado-en-pagina::before {
     .campo-crear-inventario { flex-direction: column; }
     .inventario-contador { min-width: 100px; }
 }
+
+
+/* Acción contextual para asignar un puerto desde el frontal del switch. */
+.acciones-puerto-switch { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }
+.acciones-puerto-switch [aria-disabled="true"] { opacity: .48; cursor: not-allowed; pointer-events: auto; }
+.acciones-puerto-switch [aria-disabled="false"] { border-color: #4c91a7; color: #12647c; }
+@media print {
+    .acciones-puerto-switch { display: none !important; }
+}
