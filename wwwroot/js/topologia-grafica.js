@@ -63,6 +63,19 @@
     function seleccionarPuertoTopologia(puerto, desplazarAConexion) {
         // etiquetaSeleccionada conserva la identificación visible que relaciona la boca y la ficha.
         const etiquetaSeleccionada = puerto.dataset.etiquetaPuerto;
+        const accionDocumentarConexion = document.querySelector("[data-documentar-conexion]");
+        if (accionDocumentarConexion) {
+            // identificadorDisponible solo permite iniciar una relación desde un puerto sin vínculo guardado.
+            const identificadorDisponible = Number(puerto.dataset.identificadorInterfaz) > 0
+                && !puerto.classList.contains("puerto-ocupado");
+            // urlDocumentacion conserva la ruta y cambia solo el puerto local preseleccionado.
+            const urlDocumentacion = new URL(accionDocumentarConexion.href, window.location.origin);
+            urlDocumentacion.searchParams.set("identificadorPuertoLocal",
+                identificadorDisponible ? puerto.dataset.identificadorInterfaz : "0");
+            accionDocumentarConexion.href = urlDocumentacion.toString();
+            accionDocumentarConexion.setAttribute("aria-disabled", identificadorDisponible ? "false" : "true");
+            accionDocumentarConexion.classList.toggle("boton-deshabilitado", !identificadorDisponible);
+        }
         // puertoActual recorre las bocas para retirar la selección previa del frontal.
         puertosInteractivos.forEach(puertoActual => {
             // estaSeleccionado indica si la boca recorrida es la que recibió la acción.
@@ -92,6 +105,14 @@
             tarjetaCoincidente?.scrollIntoView({ behavior: "smooth", block: "center" });
         }
     }
+
+    // accionDocumentarConexion bloquea la acción hasta que se elige un puerto disponible.
+    const accionDocumentarConexion = document.querySelector("[data-documentar-conexion]");
+    accionDocumentarConexion?.addEventListener("click", evento => {
+        if (accionDocumentarConexion.getAttribute("aria-disabled") === "true") {
+            evento.preventDefault();
+        }
+    });
 
     // puerto recorre las bocas y vincula sus eventos de ratón y teclado.
     puertosInteractivos.forEach(puerto => {
