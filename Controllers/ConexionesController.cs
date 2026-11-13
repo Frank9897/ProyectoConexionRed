@@ -28,114 +28,120 @@ public class ConexionesController : Controller
     /// </summary>
     /// <param name="cancelacion">Señal de cancelación; activarla detiene las consultas pendientes.</param>
     /// <returns>Listados documentales de puertos y conexiones.</returns>
+    /// <summary>
+    /// Muestra los switches disponibles, sus puertos inventariados y los destinos documentados.
+    /// </summary>
+    /// <param name="cancelacion">Señal de cancelación; activarla detiene la consulta del inventario.</param>
+    /// <returns>Tarjetas de switches con acceso a su frontal editable.</returns>
     [HttpGet]
     public async Task<IActionResult> Index(CancellationToken cancelacion)
     {
-        // interfacesRegistradas combina cada puerto con su equipo propietario; cambiar las tablas consultadas altera el listado.
-        var interfacesRegistradas = await (
-            from interfaz in contextoInventario.InterfacesEquipo.AsNoTracking()
-            join equipo in contextoInventario.Equipos.AsNoTracking()
-                on interfaz.IdentificadorEquipo equals equipo.Identificador
-            orderby equipo.Nombre, interfaz.EtiquetaPuerto
-            select new InterfazListadoViewModel
-            {
-                Identificador = interfaz.Identificador,
-                Equipo = equipo.Nombre,
-                IpAdministracion = equipo.IpAdministracion,
-                Puerto = interfaz.EtiquetaPuerto,
-                Tipo = interfaz.TipoInterfaz,
-                EstadoDatos = interfaz.EstadoDatos,
-                EstadoUso = contextoInventario.EnlacesFisicos.Any(enlace =>
-                    enlace.IdentificadorPuertoOrigen == interfaz.Identificador
-                    || enlace.IdentificadorPuertoDestino == interfaz.Identificador)
-                    || contextoInventario.ConexionesDocumentadas.Any(relacion =>
-                        relacion.IdentificadorPuertoLocal == interfaz.Identificador)
-                    ? "Ocupado · relación documentada"
-                    : interfaz.EstadoUso == "Libre confirmado" && interfaz.EstadoDatos != "Confirmado"
-                        ? "Desconocido · vigencia sin confirmar" : interfaz.EstadoUso,
-                FechaUltimaRevision = interfaz.FechaUltimaRevision,
-                Observaciones = interfaz.Observaciones
-            }).ToListAsync(cancelacion);
-
-        // enlacesRegistrados une los dos extremos con sus equipos; cambiar los joins modifica los enlaces presentados.
-        var enlacesRegistrados = await (
-            from enlace in contextoInventario.EnlacesFisicos.AsNoTracking()
-            join puertoOrigen in contextoInventario.InterfacesEquipo.AsNoTracking()
-                on enlace.IdentificadorPuertoOrigen equals puertoOrigen.Identificador
-            join equipoOrigen in contextoInventario.Equipos.AsNoTracking()
-                on puertoOrigen.IdentificadorEquipo equals equipoOrigen.Identificador
-            join puertoDestino in contextoInventario.InterfacesEquipo.AsNoTracking()
-                on enlace.IdentificadorPuertoDestino equals puertoDestino.Identificador
-            join equipoDestino in contextoInventario.Equipos.AsNoTracking()
-                on puertoDestino.IdentificadorEquipo equals equipoDestino.Identificador
-            orderby equipoOrigen.Nombre, puertoOrigen.EtiquetaPuerto
-            select new EnlaceListadoViewModel
-            {
-                Identificador = enlace.Identificador,
-                EquipoOrigen = equipoOrigen.Nombre,
-                PuertoOrigen = puertoOrigen.EtiquetaPuerto,
-                EquipoDestino = equipoDestino.Nombre,
-                PuertoDestino = puertoDestino.EtiquetaPuerto,
-                Medio = enlace.Medio,
-                EstadoDatos = enlace.EstadoDatos,
-                FechaUltimaRevision = enlace.FechaUltimaRevision,
-                Fuente = enlace.Fuente
-            }).ToListAsync(cancelacion);
-
-        // relacionesParciales muestra el destino opcional y la procedencia sin inventar el otro extremo.
-        var relacionesParciales = await (
-            from relacion in contextoInventario.ConexionesDocumentadas.AsNoTracking()
-            join puertoLocal in contextoInventario.InterfacesEquipo.AsNoTracking()
-                on relacion.IdentificadorPuertoLocal equals puertoLocal.Identificador
-            join equipoLocal in contextoInventario.Equipos.AsNoTracking()
-                on puertoLocal.IdentificadorEquipo equals equipoLocal.Identificador
-            orderby equipoLocal.Nombre, puertoLocal.EtiquetaPuerto
-            select new RelacionParcialListadoViewModel
-            {
-                Identificador = relacion.Identificador,
-                EquipoLocal = equipoLocal.Nombre,
-                PuertoLocal = puertoLocal.EtiquetaPuerto,
-                EquipoRemoto = relacion.EquipoRemoto,
-                IpRemota = relacion.IpRemota,
-                PuertoRemoto = relacion.PuertoRemoto,
-                Medio = relacion.Medio,
-                EstadoDatos = relacion.EstadoDatos,
-                FuentePagina = relacion.FuentePagina,
-                FuenteLibro = relacion.FuenteLibro,
-                FuenteFila = relacion.FuenteFila,
-                Observaciones = relacion.Observaciones
-            }).ToListAsync(cancelacion);
-
-        // fichasEquipo aporta nombres, IP e identificadores para los extremos visuales.
-        var fichasEquipo = await contextoInventario.Equipos.AsNoTracking()
-            .Select(equipo => new { equipo.Identificador, equipo.Nombre, equipo.IpAdministracion, equipo.TipoDispositivo })
+        // equiposRegistrados aporta identidades exactas para resolver propietarios y extremos remotos.
+        var equiposRegistrados = await contextoInventario.Equipos.AsNoTracking()
+            .OrderBy(equipo => equipo.Area).ThenBy(equipo => equipo.Nombre)
             .ToListAsync(cancelacion);
-        // ipsPorEquipo muestra la IP como dato secundario bajo el nombre.
-        var ipsPorEquipo = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
-        // identificadoresPorEquipo enlaza cada equipo con su ficha visual.
-        var identificadoresPorEquipo = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        // identificadoresSwitch restringe el enlace directo a equipos clasificados como switch.
-        var identificadoresSwitch = new HashSet<int>();
-        foreach (var fichaEquipo in fichasEquipo)
+        // interfacesRegistradas conserva los puertos inventariados y sus estados de uso.
+        var interfacesRegistradas = await contextoInventario.InterfacesEquipo.AsNoTracking()
+            .OrderBy(interfaz => interfaz.EtiquetaPuerto)
+            .ToListAsync(cancelacion);
+        // enlacesRegistrados contiene relaciones físicas con dos puertos existentes.
+        var enlacesRegistrados = await contextoInventario.EnlacesFisicos.AsNoTracking().ToListAsync(cancelacion);
+        // relacionesParciales contiene conexiones que solo guardan un puerto local.
+        var relacionesParciales = await contextoInventario.ConexionesDocumentadas.AsNoTracking().ToListAsync(cancelacion);
+        // interfacesPorId resuelve puertos sin comparar etiquetas posiblemente repetidas.
+        var interfacesPorId = interfacesRegistradas.ToDictionary(interfaz => interfaz.Identificador);
+        // equiposPorId convierte el propietario del puerto remoto a una ficha visible.
+        var equiposPorId = equiposRegistrados.ToDictionary(equipo => equipo.Identificador);
+        // identificadoresPuertosOcupados registra extremos con algún enlace o relación parcial.
+        var identificadoresPuertosOcupados = enlacesRegistrados
+            .SelectMany(enlace => new[] { enlace.IdentificadorPuertoOrigen, enlace.IdentificadorPuertoDestino })
+            .ToHashSet();
+        identificadoresPuertosOcupados.UnionWith(relacionesParciales.Select(relacion => relacion.IdentificadorPuertoLocal));
+
+        // switchesDisponibles conserva solo equipos clasificados con el tipo Switch.
+        var switchesDisponibles = new List<SwitchPuertosResumenViewModel>();
+        // equipo recorre los switches y construye sus conteos desde las interfaces persistidas.
+        foreach (var equipo in equiposRegistrados.Where(equipo =>
+            string.Equals(equipo.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase)))
         {
-            // fichaEquipo registra los datos actuales que se consultarán desde las tarjetas.
-            ipsPorEquipo[fichaEquipo.Nombre] = fichaEquipo.IpAdministracion;
-            identificadoresPorEquipo[fichaEquipo.Nombre] = fichaEquipo.Identificador;
-            if (string.Equals(fichaEquipo.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase))
-                identificadoresSwitch.Add(fichaEquipo.Identificador);
+            // puertosDelSwitch contiene las interfaces propiedad de esta ficha.
+            var puertosDelSwitch = interfacesRegistradas
+                .Where(interfaz => interfaz.IdentificadorEquipo == equipo.Identificador)
+                .ToList();
+            // puertosLibres cuenta solo interfaces libres cuya vigencia fue confirmada.
+            var puertosLibres = puertosDelSwitch.Count(interfaz =>
+                !identificadoresPuertosOcupados.Contains(interfaz.Identificador)
+                && string.Equals(interfaz.EstadoUso, "Libre confirmado", StringComparison.OrdinalIgnoreCase)
+                && string.Equals(interfaz.EstadoDatos, "Confirmado", StringComparison.OrdinalIgnoreCase));
+            // puertosOcupados cuenta relaciones completas o parciales guardadas en estos puertos.
+            var puertosOcupados = puertosDelSwitch.Count(interfaz =>
+                identificadoresPuertosOcupados.Contains(interfaz.Identificador));
+            // destinosDocumentados resume los extremos remotos expresos sin completar datos ausentes.
+            var destinosDocumentados = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            // relacion recorre conexiones cuyo puerto local pertenece al switch actual.
+            foreach (var relacion in relacionesParciales)
+            {
+                if (!interfacesPorId.TryGetValue(relacion.IdentificadorPuertoLocal, out var interfazLocal)
+                    || interfazLocal.IdentificadorEquipo != equipo.Identificador)
+                {
+                    continue;
+                }
+
+                // destinoParcial deja explícito cuando no hay nombre ni IP remota registrada.
+                var destinoParcial = string.Join(" · ", new[]
+                {
+                    relacion.EquipoRemoto, relacion.IpRemota
+                }.Where(valor => !string.IsNullOrWhiteSpace(valor)));
+                destinosDocumentados.Add(string.IsNullOrWhiteSpace(destinoParcial)
+                    ? "Equipo remoto no identificado"
+                    : destinoParcial);
+            }
+
+            // enlace recorre pares completos para agregar el extremo opuesto cuando uno pertenece a este switch.
+            foreach (var enlace in enlacesRegistrados)
+            {
+                if (!interfacesPorId.TryGetValue(enlace.IdentificadorPuertoOrigen, out var interfazOrigen)
+                    || !interfacesPorId.TryGetValue(enlace.IdentificadorPuertoDestino, out var interfazDestino))
+                {
+                    continue;
+                }
+
+                if (interfazOrigen.IdentificadorEquipo == equipo.Identificador
+                    && equiposPorId.TryGetValue(interfazDestino.IdentificadorEquipo, out var equipoDestino))
+                {
+                    destinosDocumentados.Add($"{equipoDestino.Nombre} · {equipoDestino.IpAdministracion ?? "IP no indicada"}");
+                }
+                else if (interfazDestino.IdentificadorEquipo == equipo.Identificador
+                    && equiposPorId.TryGetValue(interfazOrigen.IdentificadorEquipo, out var equipoOrigen))
+                {
+                    destinosDocumentados.Add($"{equipoOrigen.Nombre} · {equipoOrigen.IpAdministracion ?? "IP no indicada"}");
+                }
+            }
+
+            // puertosDesconocidos excluye ocupados y libres confirmados del total inventariado.
+            var puertosDesconocidos = puertosDelSwitch.Count - puertosOcupados - puertosLibres;
+            switchesDisponibles.Add(new SwitchPuertosResumenViewModel
+            {
+                Identificador = equipo.Identificador,
+                Nombre = equipo.Nombre,
+                Area = equipo.Area,
+                Modelo = equipo.Modelo,
+                IpAdministracion = equipo.IpAdministracion,
+                TotalPuertos = puertosDelSwitch.Count,
+                PuertosOcupados = puertosOcupados,
+                PuertosLibres = puertosLibres,
+                PuertosDesconocidos = puertosDesconocidos,
+                DestinosDocumentados = destinosDocumentados.OrderBy(destino => destino).ToList()
+            });
         }
 
-        // modeloConexiones agrupa los listados completos y parciales sin confundirlos entre sí.
+        // modeloConexiones entrega la colección de switches a la vista operativa de puertos.
         var modeloConexiones = new ConexionesIndexViewModel
         {
-            Interfaces = interfacesRegistradas,
-            Enlaces = enlacesRegistrados,
-            RelacionesParciales = relacionesParciales
+            Switches = switchesDisponibles
         };
 
-        ViewData["IpsPorEquipo"] = ipsPorEquipo;
-        ViewData["IdentificadoresPorEquipo"] = identificadoresPorEquipo;
-        ViewData["IdentificadoresSwitch"] = identificadoresSwitch;
         return View(modeloConexiones);
     }
 
