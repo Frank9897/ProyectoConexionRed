@@ -118,7 +118,7 @@ public class Program
             name: "default",
             pattern: "{controller=Home}/{action=Index}/{id?}");
 
-        // La inicialización crea el esquema, carga equipos y crea el primer administrador si las variables están configuradas.
+        // La inicialización aplica migraciones validadas, carga equipos y crea el administrador inicial si está configurado.
         await InicializadorInventario.InicializarAsync(aplicacionWeb.Services);
 
         await aplicacionWeb.RunAsync();
