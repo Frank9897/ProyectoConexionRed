@@ -10,6 +10,10 @@ Estado de esta evolución: se creó y verificó una copia local `backup/Catastro
 
 Aplicación web en español para documentar y visualizar la infraestructura de red empresarial. El repositorio es público por decisión del usuario.
 
+### Gestión de inventarios independientes (paso 3)
+
+Se agregó la página **Inventarios**. `Catastro` sigue apuntando al archivo SQLite ya configurado y aparece como base principal; las nuevas sedes se crean como archivos separados en la carpeta definida por `RutaInventarios` (por defecto `inventarios`). El límite de tres incluye Catastro. La selección queda guardada en una cookie propia del navegador y la conexión EF Core se resuelve por solicitud, de modo que inventario, puertos, topología e historial operan sobre la base elegida. Crear una sede aplica las migraciones y la deja vacía: no copia ni importa datos de Catastro y no accede a la red. Los archivos nuevos están excluidos de Git. Para hosting, `RutaInventarios` puede apuntar a una carpeta persistente con permisos de escritura.
+
 ## Propósito
 
 Reunir en un inventario navegable los dispositivos, IP, puertos, enlaces, áreas, PCs y usuarios de la red; mostrar su topología por vistas física, switching y red; registrar cambios; y permitir simulaciones locales y exportación imprimible.
