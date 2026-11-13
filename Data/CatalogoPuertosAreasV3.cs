@@ -3,11 +3,11 @@ using System.Text.Json;
 namespace ProyectoConexionRed.Web.Data;
 
 /// <summary>
-/// Mantiene posiciones de switches de área y rack documentadas en el V3.
+/// Mantiene posiciones de switches de área y rack documentadas en el V3.5.
 /// </summary>
 internal static class CatalogoPuertosAreasV3
 {
-    // datosJson contiene las filas transcritas con su página y hoja; cambiar una fila modifica la importación.
+    // datosJson contiene las filas transcritas desde V3.5 con su página y hoja; cambiar una fila modifica la importación.
     private const string DatosJson = """
 [
   {
@@ -1690,7 +1690,7 @@ internal static class CatalogoPuertosAreasV3
     "Libro": "Excel20",
     "FilaFuente": "20",
     "EtiquetaPuerto": "19",
-    "Destino": "Sistemas06",
+    "Destino": "Regimen10",
     "IpRemota": "192.168.0.197"
   },
   {
@@ -2383,8 +2383,8 @@ internal static class CatalogoPuertosAreasV3
     "Libro": "Excel24",
     "FilaFuente": "25",
     "EtiquetaPuerto": "24",
-    "Destino": "SWITCH AGRIMENSURA",
-    "IpRemota": "192.168.1.24"
+    "Destino": "SWITCH VALUACION R2",
+    "IpRemota": "192.168.1.32"
   },
   {
     "EquipoLocal": "Valuación R1",
@@ -2491,8 +2491,8 @@ internal static class CatalogoPuertosAreasV3
     "Libro": "Excel25",
     "FilaFuente": "13",
     "EtiquetaPuerto": "12",
-    "Destino": "DESCONOCIDO",
-    "IpRemota": null
+    "Destino": "Valuacion37",
+    "IpRemota": "192.168.0.198"
   },
   {
     "EquipoLocal": "Valuación R1",
@@ -3286,7 +3286,7 @@ internal static class CatalogoPuertosAreasV3
     "Libro": "Excel5",
     "FilaFuente": "17",
     "EtiquetaPuerto": "16",
-    "Destino": "Dell R770 P1/iDRAC",
+    "Destino": "IDRAC R770",
     "IpRemota": "192.168.0.247",
     "EsRack": true,
     "EstadoRelacion": "Confirmado",
@@ -4193,7 +4193,7 @@ internal static class CatalogoPuertosAreasV3
     }
 }
 
-/// <summary>Representa una fila literal de una tabla de puertos del V3.</summary>
+/// <summary>Representa una fila literal de una tabla de puertos del V3.5.</summary>
 internal sealed class FilaPuertoAreaV3
 {
     /// <summary>Nombre canónico del switch local; cambiarlo asigna la fila a otra ficha.</summary>
