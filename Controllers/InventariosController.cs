@@ -357,19 +357,40 @@ public sealed class InventariosController : Controller
             CantidadEquipos = resultadoAnalisis.Equipos.Count,
             CantidadPuertosProvisionales = puertosProvisionales,
             FilasNoMostradas = Math.Max(0, resultadoAnalisis.Equipos.Count - cantidadFilasVisibles),
-            Filas = resultadoAnalisis.Equipos.Take(cantidadFilasVisibles).Select((equipo, indice) =>
+            Filas = resultadoAnalisis.Equipos.Take(cantidadFilasVisibles).Select(equipo =>
                 new FilaPreviaImportacionViewModel
                 {
-                    NumeroFila = indice + 2,
                     Nombre = equipo.Nombre,
                     Tipo = equipo.TipoDispositivo,
                     Ip = equipo.IpAdministracion,
                     Area = equipo.Area,
+                    Fabricante = equipo.Fabricante,
                     Modelo = equipo.Modelo,
+                    Mac = equipo.DireccionMac,
+                    Rol = equipo.RolEnArea,
+                    Capacidad = DescribirCapacidad(equipo),
                     EstadoDatos = equipo.EstadoDatos
                 }).ToList()
         };
         return modeloPrevisualizacion;
+    }
+
+    /// <summary>
+    /// Resume las familias de puertos indicadas para que la persona revise qué interfaces se generarían.
+    /// </summary>
+    /// <param name="equipo">Ficha analizada; cambiar sus cantidades modifica el resumen mostrado.</param>
+    /// <returns>Capacidades con cantidad expresa o una indicación de ausencia.</returns>
+    private static string DescribirCapacidad(EquipoRed equipo)
+    {
+        // capacidadesEquipo incluye solo conectores cuya cantidad fue especificada en el archivo.
+        var capacidadesEquipo = new List<string>();
+        if (equipo.CantidadPuertosRj45.HasValue) capacidadesEquipo.Add($"{equipo.CantidadPuertosRj45} RJ45");
+        if (equipo.CantidadPuertosSfp.HasValue) capacidadesEquipo.Add($"{equipo.CantidadPuertosSfp} SFP");
+        if (equipo.CantidadPuertosSfpPlus.HasValue) capacidadesEquipo.Add($"{equipo.CantidadPuertosSfpPlus} SFP+");
+        if (equipo.CantidadPuertosQsfp.HasValue) capacidadesEquipo.Add($"{equipo.CantidadPuertosQsfp} QSFP");
+        if (equipo.CantidadPuertosQsfpPlus.HasValue) capacidadesEquipo.Add($"{equipo.CantidadPuertosQsfpPlus} QSFP+");
+        if (equipo.CantidadPuertosQsfp28.HasValue) capacidadesEquipo.Add($"{equipo.CantidadPuertosQsfp28} QSFP28");
+        return capacidadesEquipo.Count == 0 ? "Sin capacidad indicada" : string.Join(" · ", capacidadesEquipo);
     }
 
     /// <summary>
