@@ -160,6 +160,12 @@ public static class ImportadorInventarioCsv
                 resultadoCsv.Errores.Add($"Fila {numeroFila}: supera el máximo total de {MaximoPuertos} puertos por carga.");
             }
 
+            if (capacidades.Any(cantidad => cantidad.HasValue)
+                && !string.Equals(formularioEquipo.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase))
+            {
+                resultadoCsv.Errores.Add($"Fila {numeroFila}: solo se admiten capacidades de puertos cuando el tipo es Switch.");
+            }
+
             if (!string.IsNullOrWhiteSpace(formularioEquipo.Nombre)
                 && !nombresVistos.Add(formularioEquipo.Nombre.Trim()))
             {
