@@ -26,11 +26,13 @@ public class InventarioController : Controller
     }
 
     /// <summary>
-    /// Lista equipos y aplica una búsqueda opcional por nombre, IP, área, usuario, tipo, modelo o fabricante.
+    /// Lista equipos aplicando búsqueda, familia y categoría seleccionadas.
     /// </summary>
-    /// <param name="busqueda">Texto de búsqueda; cambiarlo filtra qué equipos aparecen por sus datos de inventario.</param>
+    /// <param name="busqueda">Texto opcional; cambiarlo filtra los campos documentales comparados.</param>
+    /// <param name="seccion">Familia activa; cambiarla selecciona switches, usuarios, otros o todos.</param>
+    /// <param name="categoria">Subfiltro activo; cambiarlo limita los resultados a una categoría.</param>
     /// <param name="cancelacion">Señal de cancelación; activarla interrumpe la consulta pendiente.</param>
-    /// <returns>Vista con los equipos coincidentes; modificar la búsqueda cambia el conjunto mostrado.</returns>
+    /// <returns>Vista con los equipos coincidentes; modificar los filtros cambia el conjunto mostrado.</returns>
     [HttpGet]
     public async Task<IActionResult> Index(string? busqueda, string? seccion, string? categoria, CancellationToken cancelacion)
     {
