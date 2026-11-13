@@ -211,6 +211,7 @@ public sealed class InventariosController : Controller
         bool confirmarAvisos,
         CancellationToken cancelacion)
     {
+        // erroresNombre vuelve a validar el nombre justo antes de intentar crear el archivo.
         var erroresNombre = ValidarNombreInventario(nombreInventario);
         if (string.IsNullOrWhiteSpace(contenidoCsvCodificado) || contenidoCsvCodificado.Length > 1_400_000)
         {
@@ -298,7 +299,20 @@ public sealed class InventariosController : Controller
         }
         catch (InvalidOperationException excepcionCarga)
         {
+            // excepcionCarga informa un límite o nombre no disponible; cambiar su texto modifica el aviso mostrado.
             vistaPrevia.Errores.Add(excepcionCarga.Message);
+            return View("~/Views/Home/ImportarCsv.cshtml", vistaPrevia);
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+        {
+            // falloPersistencia evita mostrar detalles técnicos del motor y conserva la vista previa para corregir.
+            vistaPrevia.Errores.Add("No se pudo guardar la carga en la nueva base. Revisa los datos del archivo e inténtalo de nuevo.");
+            return View("~/Views/Home/ImportarCsv.cshtml", vistaPrevia);
+        }
+        catch (Microsoft.Data.Sqlite.SqliteException)
+        {
+            // falloSqlite indica una operación SQLite fallida sin filtrar la consulta ni la ruta del archivo.
+            vistaPrevia.Errores.Add("SQLite no pudo completar la carga. Verifica el espacio disponible y vuelve a intentarlo.");
             return View("~/Views/Home/ImportarCsv.cshtml", vistaPrevia);
         }
         catch (IOException)
