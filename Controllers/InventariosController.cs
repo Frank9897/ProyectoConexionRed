@@ -276,7 +276,7 @@ public sealed class InventariosController : Controller
 
         if (resultadoAnalisis.Avisos.Count > 0 && !confirmarAvisos)
         {
-            vistaPrevia.Errores.Add("Revisa y confirma las advertencias antes de continuar.");
+            vistaPrevia.ConfirmacionAvisosPendiente = true;
         }
 
         if (vistaPrevia.Errores.Count > 0 || resultadoAnalisis.Equipos.Count == 0)
