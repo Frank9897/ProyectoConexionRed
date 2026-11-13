@@ -63,6 +63,18 @@
     function seleccionarPuertoTopologia(puerto, desplazarAConexion) {
         // etiquetaSeleccionada conserva la identificación visible que relaciona la boca y la ficha.
         const etiquetaSeleccionada = puerto.dataset.etiquetaPuerto;
+        const accionEditarPuerto = document.querySelector("[data-editar-puerto]");
+        if (accionEditarPuerto) {
+            // interfazEditable solo habilita edición para una posición real guardada en el inventario.
+            const interfazEditable = Number(puerto.dataset.identificadorInterfaz) > 0;
+            // urlEdicion conserva la acción y cambia el ID del puerto seleccionado.
+            const urlEdicion = new URL(accionEditarPuerto.href, window.location.origin);
+            urlEdicion.searchParams.set("identificador",
+                interfazEditable ? puerto.dataset.identificadorInterfaz : "0");
+            accionEditarPuerto.href = urlEdicion.toString();
+            accionEditarPuerto.setAttribute("aria-disabled", interfazEditable ? "false" : "true");
+            accionEditarPuerto.classList.toggle("boton-deshabilitado", !interfazEditable);
+        }
         const accionDocumentarConexion = document.querySelector("[data-documentar-conexion]");
         if (accionDocumentarConexion) {
             // identificadorDisponible solo permite iniciar una relación desde un puerto sin vínculo guardado.
@@ -105,6 +117,14 @@
             tarjetaCoincidente?.scrollIntoView({ behavior: "smooth", block: "center" });
         }
     }
+
+    // accionEditarPuerto bloquea la corrección hasta seleccionar una interfaz real.
+    const accionEditarPuerto = document.querySelector("[data-editar-puerto]");
+    accionEditarPuerto?.addEventListener("click", evento => {
+        if (accionEditarPuerto.getAttribute("aria-disabled") === "true") {
+            evento.preventDefault();
+        }
+    });
 
     // accionDocumentarConexion bloquea la acción hasta que se elige un puerto disponible.
     const accionDocumentarConexion = document.querySelector("[data-documentar-conexion]");
