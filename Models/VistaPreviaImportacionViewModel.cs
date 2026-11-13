@@ -41,9 +41,6 @@ public sealed class VistaPreviaImportacionViewModel
 /// </summary>
 public sealed class FilaPreviaImportacionViewModel
 {
-    /// <summary>Número lógico de fila; cambiarlo señala otro registro del CSV original.</summary>
-    public int NumeroFila { get; set; }
-
     /// <summary>Nombre del equipo; cambiarlo modifica la ficha que se crearía.</summary>
     public string Nombre { get; set; } = string.Empty;
 
@@ -56,8 +53,20 @@ public sealed class FilaPreviaImportacionViewModel
     /// <summary>Área; cambiarla modifica la agrupación visible de la ficha.</summary>
     public string? Area { get; set; }
 
+    /// <summary>Fabricante; cambiarlo modifica la marca de la ficha que se crearía.</summary>
+    public string? Fabricante { get; set; }
+
     /// <summary>Modelo; cambiarlo modifica la identificación técnica importada.</summary>
     public string? Modelo { get; set; }
+
+    /// <summary>MAC; cambiarla modifica el identificador documentado importado.</summary>
+    public string? Mac { get; set; }
+
+    /// <summary>Rol; cambiarlo modifica la función documental del equipo.</summary>
+    public string Rol { get; set; } = string.Empty;
+
+    /// <summary>Resumen de capacidades; cambiarlo modifica la descripción de puertos derivables.</summary>
+    public string Capacidad { get; set; } = string.Empty;
 
     /// <summary>Estado documental; cambiarlo modifica la etiqueta de vigencia de la ficha.</summary>
     public string EstadoDatos { get; set; } = string.Empty;
