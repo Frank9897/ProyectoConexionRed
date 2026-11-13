@@ -34,11 +34,30 @@
 }
 else
 {
+    <section class="filtros-puertos panel" aria-label="Buscar y filtrar switches">
+        <div class="campo-filtro-puertos">
+            <label for="buscar-switch-puertos">Buscar switch</label>
+            <input id="buscar-switch-puertos" type="search" placeholder="Nombre, área, modelo, IP o destino" autocomplete="off" />
+        </div>
+        <div class="campo-filtro-puertos">
+            <label for="estado-switch-puertos">Filtrar por estado</label>
+            <select id="estado-switch-puertos">
+                <option value="">Todos los switches</option>
+                <option value="con-conexiones">Con conexiones registradas</option>
+                <option value="pendientes">Con puertos sin confirmar</option>
+                <option value="solo-confirmados">Sin puertos pendientes</option>
+                <option value="sin-conexiones">Sin conexiones registradas</option>
+            </select>
+        </div>
+        <p id="contador-switch-puertos" class="contador-switch-puertos" aria-live="polite"></p>
+    </section>
     <section class="switches-puertos-grid" aria-label="Switches disponibles">
         @* switchResumen representa cada switch y los extremos documentados que llegan a sus puertos. *@
         @foreach (var switchResumen in Model.Switches)
         {
-            <article class="panel switch-puertos-card">
+            <article class="panel switch-puertos-card"
+                     data-puertos-ocupados="@switchResumen.PuertosOcupados"
+                     data-puertos-desconocidos="@switchResumen.PuertosDesconocidos">
                 <header>
                     <p class="sobrelinea">@(switchResumen.Area ?? "Área no indicada") · Switch</p>
                     <h2>@switchResumen.Nombre</h2>
@@ -74,5 +93,7 @@ else
             </article>
         }
     </section>
+    <p id="sin-resultados-switch-puertos" class="panel estado-vacio-conexiones" hidden>No hay switches que coincidan con la búsqueda y el filtro seleccionados.</p>
+    <script src="~/js/puertos.js" asp-append-version="true"></script>
 }
 
