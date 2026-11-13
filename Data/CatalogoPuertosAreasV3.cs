@@ -2384,7 +2384,8 @@ internal static class CatalogoPuertosAreasV3
     "FilaFuente": "25",
     "EtiquetaPuerto": "24",
     "Destino": "SWITCH VALUACION R2",
-    "IpRemota": "192.168.1.32"
+    "IpRemota": "192.168.1.20",
+    "ObservacionesImportacion": "Excel24 fila 25 escribe la IP del switch local Valuación R0 (192.168.1.32) junto al nombre Valuación R2. Excel9 identifica Valuación R2 como 192.168.1.20; la tabla recíproca Excel26 fila 24 registra Valuación R2 puerto 23 hacia Valuación R0."
   },
   {
     "EquipoLocal": "Valuación R1",
@@ -4218,4 +4219,6 @@ internal sealed class FilaPuertoAreaV3
     public string? EstadoRelacion { get; set; }
     /// <summary>Puerto remoto explícito; cambiarlo reemplaza la referencia a la boca contraparte.</summary>
     public string? PuertoRemoto { get; set; }
+    /// <summary>Nota de conciliación entre tablas; cambiarla modifica la explicación de la importación.</summary>
+    public string? ObservacionesImportacion { get; set; }
 }
