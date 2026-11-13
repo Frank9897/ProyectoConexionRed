@@ -1429,9 +1429,10 @@
             gruposColapsados[capa].clear();
         });
         tarjetasContraidas.clear();
-        // nodo recorre las tarjetas y retira los estados visuales que alteran el mapa inicial.
+        // nodo recupera estilos neutros; luego se contrae para respetar la vista inicial acordada.
         nodosTopologia.forEach(nodo => {
             nodo.classList.remove("nodo-contraido", "nodo-seleccionado", "nodo-vecino");
+            establecerContraida(nodo, true);
         });
         identificadorSeleccionado = null;
         mapaTopologia.classList.remove("mapa-con-seleccion");
@@ -1813,6 +1814,8 @@
         }
     });
 
+    // tarjeta inicia contraída; cambiar esta regla expande el contenido al abrir el mapa.
+    nodosTopologia.forEach(nodo => establecerContraida(nodo, true));
     leerPosicionesGuardadas();
     actualizarControlMaximizar();
     // Primera disposición: se calcula con las tarjetas ya medidas y luego se encaja la vista completa.
