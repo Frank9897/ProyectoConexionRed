@@ -260,9 +260,10 @@ public class ConexionesController : Controller
             select new { interfaz.Identificador, interfaz.EtiquetaPuerto, equipo.Nombre, equipo.IpAdministracion })
             .ToListAsync(cancelacion);
         // identificadorPreseleccionado conserva el puerto recibido solo si sigue disponible.
-        var identificadorPreseleccionado = interfacesLibres.Any(interfaz => interfaz.Identificador == identificadorPuertoLocal)
-            ? identificadorPuertoLocal.Value
-            : 0;
+        var identificadorPreseleccionado = identificadorPuertoLocal.HasValue
+            && interfacesLibres.Any(interfaz => interfaz.Identificador == identificadorPuertoLocal.Value)
+                ? identificadorPuertoLocal.Value
+                : 0;
         // formularioRelacion conserva el extremo preseleccionado y las opciones libres del selector.
         var formularioRelacion = new NuevaConexionDocumentadaViewModel
         {
