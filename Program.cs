@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Microsoft.Data.Sqlite;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using ProyectoConexionRed.Web.Data;
 using ProyectoConexionRed.Web.Models;
+using ProyectoConexionRed.Web.Services;
 
 namespace ProyectoConexionRed.Web;
 
@@ -23,9 +25,19 @@ public class Program
         // constructorWeb contiene servicios, configuración y opciones de inicio; cambiar su configuración afecta toda la aplicación.
         var constructorWeb = WebApplication.CreateBuilder(args);
 
-        // opcionesSqlite define el proveedor y la conexión; cambiar la cadena apunta la aplicación a otro archivo de base de datos.
-        constructorWeb.Services.AddDbContext<InventarioDbContext>(opcionesSqlite =>
-            opcionesSqlite.UseSqlite(constructorWeb.Configuration.GetConnectionString("ConexionRed")));
+        // accesoHttp permite resolver la selección de inventario guardada en el navegador actual.
+        constructorWeb.Services.AddHttpContextAccessor();
+        // registroInventarios descubre las bases permitidas; cambiar la carpeta cambia las sedes disponibles.
+        constructorWeb.Services.AddSingleton<RegistroInventarios>();
+        // opcionesSqlite conecta cada solicitud con el inventario elegido; cambiar la cookie cambia la base consultada.
+        constructorWeb.Services.AddDbContext<InventarioDbContext>((servicios, opcionesSqlite) =>
+        {
+            var contextoHttp = servicios.GetRequiredService<IHttpContextAccessor>().HttpContext;
+            var identificadorCookie = contextoHttp?.Request.Cookies[RegistroInventarios.NombreCookieInventario];
+            var registroInventarios = servicios.GetRequiredService<RegistroInventarios>();
+            var rutaInventario = registroInventarios.ObtenerRuta(identificadorCookie);
+            opcionesSqlite.UseSqlite(new SqliteConnectionStringBuilder { DataSource = rutaInventario }.ToString());
+        });
 
         // marcaInicioAplicacion cambia al iniciar el proceso y permite invalidar las cookies de ejecuciones anteriores.
         constructorWeb.Services.AddSingleton<IdentificadorInicioAplicacion>();
