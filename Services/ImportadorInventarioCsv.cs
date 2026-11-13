@@ -341,7 +341,7 @@ public static class ImportadorInventarioCsv
     private static string NormalizarEncabezado(string encabezado)
     {
         // encabezadoDescompuesto separa marcas diacríticas para aceptar variaciones de tildes.
-        var encabezadoDescompuesto = encabezado.Trim().Normalize(NormalizationForm.FormD);
+        var encabezadoDescompuesto = encabezado.Trim().Trim('\uFEFF').Normalize(NormalizationForm.FormD);
         // encabezadoNormalizado conserva solo caracteres base y espacios interiores.
         var encabezadoNormalizado = new string(encabezadoDescompuesto
             .Where(caracter => CharUnicodeInfo.GetUnicodeCategory(caracter) != UnicodeCategory.NonSpacingMark)
