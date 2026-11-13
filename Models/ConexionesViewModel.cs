@@ -330,4 +330,7 @@ public class EditarConexionDocumentadaViewModel : NuevaConexionDocumentadaViewMo
     /// <summary>ID de relación; cambiarlo selecciona otro registro documental.</summary>
     [Range(1, int.MaxValue)]
     public int Identificador { get; set; }
+
+    /// <summary>Puerto local legible; cambiarlo altera la identificación contextual mostrada, no su propietario.</summary>
+    public string NombrePuertoLocal { get; set; } = string.Empty;
 }
