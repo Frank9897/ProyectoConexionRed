@@ -332,3 +332,13 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 - El primer cambio de datos debe preservar equipo, puertos, enlaces, cuentas, auditoría y mantenimientos. Nunca aplicar una migración inicial sobre una base existente sin establecer primero un baseline compatible y verificarlo sobre una copia.
 - Mantener README y este prompt sincronizados al cerrar cada paso. Respetar variables, comentarios, funciones y mensajes de commit en español según las reglas del usuario.
 
+
+
+## Validación del importador CSV (paso 7, 13 de noviembre de 2026)
+
+- Corregido: `FilaPreviaImportacionViewModel` incluye Piso y `InventariosController` lo asigna a la vista de previsualización.
+- Corregido: la preselección nullable en `ConexionesController` comprueba `.HasValue` antes de leer `.Value`.
+- `dotnet build` completo en copia limpia finalizó correctamente, con una advertencia NU1900 por no poder acceder al servicio de metadatos de vulnerabilidades de NuGet; no hubo errores de compilación.
+- Flujo HTTP probado con datos ficticios en base temporal aislada: previsualización, confirmación y listado de dos equipos; el puesto recibió rol predeterminado Usuario y las capacidades del switch generaron tres interfaces. No usar estos datos como inventario real ni tocar Catastro.
+- La inspección visual vía Computer Use no se completó porque expiró la aprobación de la aplicación. No afirmar revisión visual.
+- Los fixes se publicaron en `main` con commits breves en español. La copia temporal de validación se eliminó y no se hizo `pull` ni cambios en el checkout local con modificaciones pendientes.
