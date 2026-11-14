@@ -78,23 +78,14 @@
 
         // altoDisponible usa la caja CSS de impresión y un valor alternativo si el navegador aún no aplicó print media.
         const altoDisponible = cajaParaImprimir.clientHeight || 165 * 96 / 25.4;
-        // escalaImpresion reduce únicamente la tabla cuando las filas visibles superan el alto de papel.
-        let escalaImpresion = 1;
+        // altoOriginal mide la tabla a ancho completo antes de calcular la compresión vertical.
+        const altoOriginal = tablaParaImprimir.offsetHeight;
+        // escalaImpresion reduce solo la tabla cuando la página visible excede la altura asignada.
+        const escalaImpresion = altoOriginal > altoDisponible
+            ? altoDisponible / altoOriginal
+            : 1;
 
-        for (let intentoAjuste = 0; intentoAjuste < 4; intentoAjuste++) {
-            tablaParaImprimir.style.width = `${100 / escalaImpresion}%`;
-            // altoMedido refleja las filas visibles después de ampliar el ancho compensatorio de la tabla.
-            const altoMedido = tablaParaImprimir.offsetHeight;
-            const escalaCalculada = altoMedido > altoDisponible
-                ? altoDisponible / altoMedido
-                : 1;
-            if (Math.abs(escalaCalculada - escalaImpresion) < 0.01) {
-                escalaImpresion = escalaCalculada;
-                break;
-            }
-            escalaImpresion = escalaCalculada;
-        }
-
+        // ampliarAncho compensa la escala para conservar el ancho de hoja tras transformar la tabla.
         tablaParaImprimir.style.width = `${100 / escalaImpresion}%`;
         tablaParaImprimir.style.transformOrigin = "top left";
         tablaParaImprimir.style.transform = `scale(${escalaImpresion})`;
