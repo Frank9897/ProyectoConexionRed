@@ -57,7 +57,7 @@ public class TopologiaController : Controller
                 IdentificadorPuertoLocal = relacion.IdentificadorPuertoLocal,
                 EquipoLocal = equipoLocal.Nombre,
                 IpLocal = equipoLocal.IpAdministracion,
-                PuertoLocal = CatalogoVisualesDispositivos.NormalizarEtiquetaPuertoVisual(equipoLocal.Nombre, puertoLocal.EtiquetaPuerto),
+                PuertoLocal = puertoLocal.EtiquetaPuerto,
                 EquipoRemoto = relacion.EquipoRemoto,
                 IpRemota = relacion.IpRemota,
                 PuertoRemoto = relacion.PuertoRemoto,
@@ -68,13 +68,13 @@ public class TopologiaController : Controller
                 FuenteFila = relacion.FuenteFila,
                 Observaciones = relacion.Observaciones
             }).ToListAsync(cancelacion);
+        // ResolverRelacionesParciales compara las filas recíprocas y enlaza solo destinos únicos.
+        ResolverRelacionesParciales(relacionesParciales, equiposRegistrados);
         // Cada interfaz local conserva su ID, pero el HP 1920 muestra SFP 25-28 como SFP 1-4.
         foreach (var relacionParcial in relacionesParciales)
             if (string.Equals(relacionParcial.EquipoLocal, "Switch HP 1920", StringComparison.OrdinalIgnoreCase))
                 relacionParcial.PuertoLocal = CatalogoVisualesDispositivos.NormalizarEtiquetaPuertoVisual(
                     relacionParcial.EquipoLocal, relacionParcial.PuertoLocal);
-        // ResolverRelacionesParciales compara las filas recíprocas y enlaza solo destinos únicos.
-        ResolverRelacionesParciales(relacionesParciales, equiposRegistrados);
 
         // equiposPorId resuelve cada extremo de enlace a su ficha propietaria.
         var equiposPorId = equiposRegistrados.ToDictionary(equipo => equipo.Identificador);
@@ -329,6 +329,11 @@ public class TopologiaController : Controller
         // equiposParaResolver permite cotejar las filas con las fichas almacenadas sin alterar SQLite.
         var equiposParaResolver = equiposPorId.Values.ToList();
         ResolverRelacionesParciales(relacionesParciales, equiposParaResolver);
+        // Cada interfaz local conserva su ID, pero el HP 1920 muestra SFP 25-28 como SFP 1-4.
+        foreach (var relacionParcial in relacionesParciales)
+            if (string.Equals(relacionParcial.EquipoLocal, "Switch HP 1920", StringComparison.OrdinalIgnoreCase))
+                relacionParcial.PuertoLocal = CatalogoVisualesDispositivos.NormalizarEtiquetaPuertoVisual(
+                    relacionParcial.EquipoLocal, relacionParcial.PuertoLocal);
         // conexionesParciales limita el detalle a las relaciones locales del switch actual.
         var conexionesParciales = relacionesParciales
             .Where(relacion => relacion.IdentificadorEquipoLocal == identificador)
