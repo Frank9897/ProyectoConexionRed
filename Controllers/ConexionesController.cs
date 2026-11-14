@@ -265,7 +265,15 @@ public class ConexionesController : Controller
                     relacion.IdentificadorPuertoLocal == interfaz.Identificador)
                 && interfaz.EstadoUso != "Libre confirmado"
             orderby equipo.Nombre, interfaz.EtiquetaPuerto
-            select new { interfaz.Identificador, interfaz.EtiquetaPuerto, equipo.Nombre, equipo.IpAdministracion })
+            select new
+            {
+                interfaz.Identificador,
+                interfaz.EtiquetaPuerto,
+                IdEquipo = equipo.Identificador,
+                equipo.TipoDispositivo,
+                equipo.Nombre,
+                equipo.IpAdministracion
+            })
             .ToListAsync(cancelacion);
         // identificadorPreseleccionado conserva el puerto recibido solo si sigue disponible.
         var identificadorPreseleccionado = identificadorPuertoLocal.HasValue
@@ -276,6 +284,12 @@ public class ConexionesController : Controller
         var formularioRelacion = new NuevaConexionDocumentadaViewModel
         {
             IdentificadorPuertoLocal = identificadorPreseleccionado,
+            IdentificadorEquipoRetorno = interfacesLibres
+                .Where(interfaz => interfaz.Identificador == identificadorPreseleccionado)
+                .Select(interfaz => string.Equals(interfaz.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase)
+                    ? interfaz.IdEquipo
+                    : 0)
+                .FirstOrDefault(),
             InterfacesDisponibles = interfacesLibres.Select(interfaz => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
             {
                 Value = interfaz.Identificador.ToString(),
@@ -295,7 +309,7 @@ public class ConexionesController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CrearRelacion(
-        [Bind("IdentificadorPuertoLocal,EquipoRemoto,IpRemota,PuertoRemoto,Medio,EstadoDatos,FechaUltimaRevision,FuentePagina,FuenteLibro,FuenteFila,Observaciones")]
+        [Bind("IdentificadorPuertoLocal,IdentificadorEquipoRetorno,EquipoRemoto,IpRemota,PuertoRemoto,Medio,EstadoDatos,FechaUltimaRevision,FuentePagina,FuenteLibro,FuenteFila,Observaciones")]
         NuevaConexionDocumentadaViewModel formulario,
         CancellationToken cancelacion)
     {
@@ -305,7 +319,15 @@ public class ConexionesController : Controller
             join equipo in contextoInventario.Equipos.AsNoTracking()
                 on interfaz.IdentificadorEquipo equals equipo.Identificador
             where interfaz.Identificador == formulario.IdentificadorPuertoLocal
-            select new { interfaz.Identificador, interfaz.IdentificadorEquipo, interfaz.EtiquetaPuerto, interfaz.EstadoUso, equipo.Nombre })
+            select new
+            {
+                interfaz.Identificador,
+                interfaz.IdentificadorEquipo,
+                interfaz.EtiquetaPuerto,
+                interfaz.EstadoUso,
+                equipo.Nombre,
+                equipo.TipoDispositivo
+            })
             .SingleOrDefaultAsync(cancelacion);
         if (interfazLocal is null)
             ModelState.AddModelError(nameof(formulario.IdentificadorPuertoLocal), "Selecciona un puerto local existente.");
@@ -325,6 +347,10 @@ public class ConexionesController : Controller
 
         if (!ModelState.IsValid)
         {
+            formulario.IdentificadorEquipoRetorno = interfazLocal is not null
+                && string.Equals(interfazLocal.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase)
+                    ? interfazLocal.IdentificadorEquipo
+                    : 0;
             formulario.InterfacesDisponibles = await ObtenerPuertosSinRelacionAsync(cancelacion);
             return View(formulario);
         }
@@ -365,7 +391,9 @@ public class ConexionesController : Controller
         await contextoInventario.EventosModificacion.AddAsync(eventoCambio, cancelacion);
         await contextoInventario.SaveChangesAsync(cancelacion);
         TempData["Mensaje"] = "Se registró la relación documental con su fuente. El extremo remoto sigue opcional.";
-        return RedirectToAction(nameof(Index));
+        return string.Equals(interfazLocal!.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase)
+            ? RedirectToAction("Detalle", "Topologia", new { identificador = interfazLocal.IdentificadorEquipo })
+            : RedirectToAction(nameof(Index));
     }
 
     /// <summary>
