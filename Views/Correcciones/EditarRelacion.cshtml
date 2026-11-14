@@ -16,8 +16,20 @@
         </div>
         <fieldset class="grupo-formulario">
             <legend>Destino documentado</legend>
-            <label asp-for="EquipoRemoto">Equipo</label><input asp-for="EquipoRemoto" /><span asp-validation-for="EquipoRemoto" class="mensaje-error"></span>
-            <label asp-for="IpRemota">IP</label><input asp-for="IpRemota" /><span asp-validation-for="IpRemota" class="mensaje-error"></span>
+            <label asp-for="IdentificadorEquipoRemoto">Equipo inventariado</label>
+            <select asp-for="IdentificadorEquipoRemoto" asp-items="Model.EquiposRemotosDisponibles">
+                <option value="">Ingresar equipo manualmente</option>
+                <option value="-1">Desconocido / no inventariado</option>
+            </select>
+            <label asp-for="EquipoRemoto">Nombre manual</label><input asp-for="EquipoRemoto" /><span asp-validation-for="EquipoRemoto" class="mensaje-error"></span>
+            <label asp-for="IpRemotaSeleccionada">IP libre disponible</label>
+            <select asp-for="IpRemotaSeleccionada" asp-items="Model.IpsRemotasDisponibles">
+                <option value="">No usar una IP libre</option>
+                <option value="Desconocido">Desconocido</option>
+                <option value="__manual__">Ingresar IP manualmente</option>
+            </select>
+            <label asp-for="IpRemota">IP manual (192.168.0.x o 192.168.1.x)</label><input asp-for="IpRemota" />
+            <span asp-validation-for="IpRemota" class="mensaje-error"></span>
             <label asp-for="PuertoRemoto">Puerto remoto (si aparece en la documentación)</label><input asp-for="PuertoRemoto" /><span asp-validation-for="PuertoRemoto" class="mensaje-error"></span>
         </fieldset>
         <div class="grupo-formulario">
@@ -38,13 +50,6 @@
             <label asp-for="FechaUltimaRevision">Fecha de revisión (solo si se realizó)</label>
             <input asp-for="FechaUltimaRevision" type="date" /><span asp-validation-for="FechaUltimaRevision" class="mensaje-error"></span>
         </div>
-        <fieldset class="grupo-formulario">
-            <legend>Procedencia documental</legend>
-            <label asp-for="FuentePagina">Página o referencia</label><input asp-for="FuentePagina" />
-            <span asp-validation-for="FuentePagina" class="mensaje-error"></span>
-            <label asp-for="FuenteLibro">Libro Excel incrustado (opcional)</label><input asp-for="FuenteLibro" /><span asp-validation-for="FuenteLibro" class="mensaje-error"></span>
-            <label asp-for="FuenteFila">Fila o referencia (opcional)</label><input asp-for="FuenteFila" /><span asp-validation-for="FuenteFila" class="mensaje-error"></span>
-        </fieldset>
         <div class="grupo-formulario">
             <label asp-for="Observaciones">Notas</label>
             <textarea asp-for="Observaciones" rows="3"></textarea><span asp-validation-for="Observaciones" class="mensaje-error"></span>
