@@ -98,7 +98,8 @@ public static class CatalogoVisualesDispositivos
                 var interfazEncontrada = interfacesEquipo.FirstOrDefault(interfaz =>
                     !interfacesUsadas.Contains(interfaz.Identificador)
                     && string.Equals(interfaz.TipoInterfaz, grupo.Tipo, StringComparison.OrdinalIgnoreCase)
-                    && NormalizarEtiqueta(interfaz.EtiquetaPuerto) == NormalizarEtiqueta(etiquetaEsperada));
+                    && NormalizarEtiqueta(NormalizarEtiquetaPuertoVisual(equipo.Nombre, interfaz.EtiquetaPuerto))
+                        == NormalizarEtiqueta(etiquetaEsperada));
 
                 if (interfazEncontrada is not null)
                 {
@@ -111,6 +112,12 @@ public static class CatalogoVisualesDispositivos
         // interfacesSinPosicion ordena números como 2 antes de 10 y conserva después las etiquetas no numéricas.
         var interfacesSinPosicion = interfacesEquipo
             .Where(interfaz => !interfacesUsadas.Contains(interfaz.Identificador))
+            // Las filas SFP adicionales del HP 1920 se conservan en SQLite, pero no se dibujan como jaulas fuera de capacidad.
+            .Where(interfaz => !(string.Equals(equipo.Nombre, "Switch HP 1920", StringComparison.OrdinalIgnoreCase)
+                && string.Equals(interfaz.TipoInterfaz, "SFP", StringComparison.OrdinalIgnoreCase)
+                && interfaz.Observaciones?.Contains("Excel6", StringComparison.OrdinalIgnoreCase) == true
+                && !new[] { "SFP 1", "SFP 2", "SFP 3", "SFP 4", "SFP 25", "SFP 26", "SFP 27", "SFP 28" }
+                    .Contains(interfaz.EtiquetaPuerto, StringComparer.OrdinalIgnoreCase)))
             .OrderBy(interfaz => ObtenerOrdenEtiquetaPuerto(interfaz.EtiquetaPuerto))
             .ThenBy(interfaz => interfaz.EtiquetaPuerto, StringComparer.OrdinalIgnoreCase);
 
@@ -121,6 +128,27 @@ public static class CatalogoVisualesDispositivos
         }
 
         return resultadoPuertos;
+    }
+
+    /// <summary>
+    /// Traduce las etiquetas consecutivas SFP 25-28 del HP 1920 a sus jaulas locales 1-4.
+    /// </summary>
+    /// <param name="nombreEquipo">Equipo propietario; cambiarlo limita la regla al HP 1920.</param>
+    /// <param name="etiqueta">Rótulo registrado; cambiarlo altera la numeración que se muestra.</param>
+    /// <returns>Etiqueta local visible o el texto original para otros puertos.</returns>
+    public static string NormalizarEtiquetaPuertoVisual(string nombreEquipo, string etiqueta)
+    {
+        // etiquetaNormalizada recorta espacios antes de comparar el rótulo SFP.
+        var etiquetaNormalizada = etiqueta.Trim();
+        if (!string.Equals(nombreEquipo, "Switch HP 1920", StringComparison.OrdinalIgnoreCase)
+            || !etiquetaNormalizada.StartsWith("SFP ", StringComparison.OrdinalIgnoreCase)
+            || !int.TryParse(etiquetaNormalizada.Substring(4).Trim(), out var numeroSfp)
+            || numeroSfp < 25 || numeroSfp > 28)
+            return etiquetaNormalizada;
+
+        // puertoSfpLocal muestra 25-28 como las cuatro jaulas separadas de RJ45.
+        var puertoSfpLocal = numeroSfp - 24;
+        return "SFP " + puertoSfpLocal;
     }
 
     /// <summary>
