@@ -417,5 +417,5 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 
 - Mapa y detalle de switch usan una caja A4 horizontal de ancho y alto completos con margen de 5 mm, colocada en el área de página para evitar que el navegador reduzca la vista web como miniatura centrada.
 - El mapa reserva el área restante para el canvas y vuelve a encajar nodos/enlaces al preparar impresión. El detalle conserva frontal, datos y relaciones con columnas compactas; ambos quedan limitados a una hoja.
-- Inventario respeta el límite y página visibles en vez de revelar filas ocultas de toda la búsqueda. La tabla usa densidad compacta para papel; el usuario puede seleccionar 10/30/100/todos antes de imprimir.
+- Inventario respeta el límite y página visibles en vez de revelar filas ocultas de toda la búsqueda. El script mide la tabla e imprime sus filas visibles ajustadas al alto de una hoja, compensando el ancho para aprovechar el papel; el usuario puede elegir 10/30/100/todos antes de imprimir.
 - Corrección revisada estáticamente en CSS/JS; no se ejecutó compilación, pruebas ni vista previa local. Confirmar el resultado al abrir la aplicación.
