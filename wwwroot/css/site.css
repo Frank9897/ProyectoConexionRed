@@ -1660,3 +1660,30 @@ body.mapa-ampliado-en-pagina::before {
         page-break-inside: avoid !important;
     }
 }
+
+/* La tabla de inventario reserva el alto restante de la misma hoja; el script escala solo filas visibles. */
+@media print {
+    body:has([data-registro-inventario]) > .contenedor {
+        box-sizing: border-box !important;
+        width: 100vw !important;
+        height: 200mm !important;
+        max-height: 200mm !important;
+        overflow: hidden !important;
+        break-after: avoid-page !important;
+        page-break-after: avoid !important;
+    }
+
+    body:has([data-registro-inventario]) .tabla-contenedor {
+        box-sizing: border-box !important;
+        width: 100% !important;
+        height: 165mm !important;
+        max-height: 165mm !important;
+        overflow: hidden !important;
+    }
+
+    body:has([data-registro-inventario]) .tabla-contenedor table {
+        transform-origin: top left !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+}
