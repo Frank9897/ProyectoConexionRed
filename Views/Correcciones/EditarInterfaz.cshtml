@@ -6,6 +6,10 @@
     <p class="sobrelinea">DATOS PARA LA TOPOLOGÍA</p>
     <h1>Corregir interfaz</h1>
     <p>Los cambios quedan en el inventario y el historial; no configuran el equipo real.</p>
+    @if (Model.TieneRelacion)
+    {
+        <p class="aviso aviso-error">Este puerto ya tiene una conexión registrada. Su equipo y etiqueta quedan bloqueados hasta resolverla.</p>
+    }
     <form asp-action="EditarInterfaz" method="post">
         <input asp-for="Identificador" type="hidden" />
         <div asp-validation-summary="ModelOnly" class="mensaje-error"></div>
