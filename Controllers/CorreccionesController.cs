@@ -63,7 +63,7 @@ public class CorreccionesController : Controller
     /// </summary>
     /// <param name="formulario">Valores corregidos; cambiarlos solo actualiza el registro documental.</param>
     /// <param name="cancelacion">Señal de cancelación; activarla detiene la escritura.</param>
-    /// <returns>Redirección al listado o formulario con errores.</returns>
+    /// <returns>Redirección al frontal del switch o a Puertos; formulario con errores si la validación falla.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditarInterfaz(
@@ -273,7 +273,7 @@ public class CorreccionesController : Controller
     /// </summary>
     /// <param name="formulario">Datos corregidos; cambiarlos solo actualiza la documentación.</param>
     /// <param name="cancelacion">Señal de cancelación; activarla detiene validaciones o escrituras.</param>
-    /// <returns>Redirección al listado o formulario con errores.</returns>
+    /// <returns>Regresa al switch participante o a Puertos; muestra el formulario si la validación falla.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditarEnlace(
@@ -499,7 +499,7 @@ public class CorreccionesController : Controller
     /// </summary>
     /// <param name="formulario">Datos corregidos; cambiar los campos remotos modifica la relación documental.</param>
     /// <param name="cancelacion">Señal de cancelación; activarla interrumpe la verificación o escritura.</param>
-    /// <returns>Redirección al frontal del switch que conserva el puerto local.</returns>
+    /// <returns>Redirección al switch propietario o a Puertos; formulario con errores si la validación falla.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditarRelacion(
