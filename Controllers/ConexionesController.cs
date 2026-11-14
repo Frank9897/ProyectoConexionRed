@@ -556,12 +556,6 @@ public class ConexionesController : Controller
         {
             ModelState.AddModelError(string.Empty, "Selecciona dos puertos existentes.");
         }
-        else if (puertosExistentes.Any(interfaz => interfaz.EstadoUso == "Libre confirmado"))
-        {
-            ModelState.AddModelError(string.Empty,
-                "Uno de los puertos está marcado libre confirmado. Actualiza primero su uso si realmente forma parte de este enlace.");
-        }
-
         // puertoYaVinculado impide registrar un segundo enlace sobre una interfaz que ya tiene relación física.
         var puertoYaVinculado = await contextoInventario.EnlacesFisicos.AnyAsync(
             enlace => enlace.IdentificadorPuertoOrigen == formulario.IdentificadorPuertoOrigen
@@ -636,8 +630,30 @@ public class ConexionesController : Controller
             ValorNuevo = $"{interfazOrigen.Nombre} · {interfazOrigen.EtiquetaPuerto} → {interfazDestino.Nombre} · {interfazDestino.EtiquetaPuerto} · {nuevoEnlace.Medio} · {nuevoEnlace.EstadoDatos}"
         };
 
+        // eventosEnlace guarda el enlace y los cambios de uso que resultan de ocupar puertos libres.
+        var eventosEnlace = new List<EventoModificacion> { eventoCambio };
+        // puertoLibre recorre extremos libres confirmados elegidos explícitamente para este enlace.
+        foreach (var puertoLibre in puertosExistentes.Where(interfaz => interfaz.EstadoUso == "Libre confirmado"))
+        {
+            // extremoPuerto localiza el equipo para auditar el cambio del estado de uso.
+            var extremoPuerto = extremosEnlace.Single(extremo =>
+                extremo.IdentificadorInterfaz == puertoLibre.Identificador);
+            // estadoUsoAnterior conserva el dato anterior para el historial.
+            var estadoUsoAnterior = puertoLibre.EstadoUso;
+            puertoLibre.EstadoUso = "Desconocido";
+            eventosEnlace.Add(new EventoModificacion
+            {
+                IdentificadorEquipo = extremoPuerto.IdentificadorEquipo,
+                NombreEquipo = extremoPuerto.Nombre,
+                NombreUsuario = ObtenerUsuarioEditor(),
+                FechaUtc = DateTime.UtcNow,
+                Campo = "Uso del puerto",
+                ValorAnterior = estadoUsoAnterior,
+                ValorNuevo = puertoLibre.EstadoUso
+            });
+        }
         await contextoInventario.EnlacesFisicos.AddAsync(nuevoEnlace, cancelacion);
-        await contextoInventario.EventosModificacion.AddAsync(eventoCambio, cancelacion);
+        await contextoInventario.EventosModificacion.AddRangeAsync(eventosEnlace, cancelacion);
         await contextoInventario.SaveChangesAsync(cancelacion);
 
         TempData["Mensaje"] = "Se registró el enlace documental. No se realizó ninguna acción sobre la red.";
