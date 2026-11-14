@@ -172,7 +172,7 @@ public abstract class InterfazFormularioViewModel
     public string EtiquetaPuerto { get; set; } = string.Empty;
     /// <summary>Tipo documentado; cambiarlo modifica la clasificación, no la velocidad real.</summary>
     [Required, StringLength(100)]
-    [RegularExpression(@"^(No confirmado|RJ45|SFP|SFP\+|QSFP|QSFP\+|QSFP28|Otro)$", ErrorMessage = "Selecciona un tipo de interfaz válido.")]
+    [RegularExpression(@"^(No confirmado|RJ45|RJ45 \+ PoE|SFP|SFP\+|QSFP|QSFP\+|QSFP28|Otro)$", ErrorMessage = "Selecciona un tipo de interfaz válido.")]
     public string TipoInterfaz { get; set; } = "No confirmado";
     /// <summary>Uso confirmado del puerto; cambiarlo define si un extremo sin enlace está libre o desconocido.</summary>
     [Required, StringLength(40)]
