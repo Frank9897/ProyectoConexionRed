@@ -295,6 +295,12 @@ public class NuevaConexionDocumentadaViewModel
     /// <summary>Opciones de equipos finales; cambiar la lista altera el selector remoto.</summary>
     public List<SelectListItem> EquiposRemotosDisponibles { get; set; } = [];
 
+    /// <summary>IP elegida en el selector; cambiarla propone una dirección libre o un estado desconocido.</summary>
+    public string? IpRemotaSeleccionada { get; set; }
+
+    /// <summary>Direcciones libres disponibles; cambiar la lista modifica las opciones sugeridas.</summary>
+    public List<SelectListItem> IpsRemotasDisponibles { get; set; } = [];
+
     /// <summary>Switch de retorno; cambiarlo solo se acepta como navegación si es dueño del puerto local.</summary>
     public int IdentificadorEquipoRetorno { get; set; }
 
@@ -320,9 +326,9 @@ public class NuevaConexionDocumentadaViewModel
     public string EstadoDatos { get; set; } = "A verificar";
     /// <summary>Fecha comprobada; cambiarla debe coincidir con una revisión real.</summary>
     public DateOnly? FechaUltimaRevision { get; set; }
-    /// <summary>Página requerida de origen; cambiarla modifica la referencia al Visio.</summary>
-    [Required, StringLength(160)]
-    public string FuentePagina { get; set; } = string.Empty;
+    /// <summary>Página de origen interna; cambiarla modifica el respaldo histórico automático.</summary>
+    [StringLength(160)]
+    public string FuentePagina { get; set; } = "Registro manual desde la aplicación";
     /// <summary>Libro Excel opcional; cambiarlo actualiza el nombre de la tabla incrustada.</summary>
     [StringLength(160)]
     public string? FuenteLibro { get; set; }
