@@ -395,3 +395,5 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 - El modelo EditarConexionDocumentadaViewModel conserva IdentificadorEquipo para enlazar el retorno al detalle del switch desde la edición de una relación parcial.
 
 - Retorno contextual en edición de enlace: Topologia/Detalle envía el ID del switch actual al editar o eliminar. CorreccionesController verifica que el switch solicitado sea extremo real del enlace; si no, elige otro switch participante, o vuelve a Puertos si no hay switch. EditarEnlace conserva el retorno durante validación inválida y después de guardar. No usar sin validación un ID de retorno recibido del formulario.
+
+- Topologia/Detalle presenta TempData de éxito/error al volver tras crear, editar o eliminar interfaces y relaciones. Mantener los mensajes accesibles con role=status/alert; las acciones siguen siendo exclusivamente documentales.
