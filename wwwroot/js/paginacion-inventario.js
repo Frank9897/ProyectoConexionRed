@@ -63,4 +63,53 @@
     });
 
     actualizarTabla();
+
+    // tablaParaImprimir mantiene el ajuste acotado a la tabla de inventario.
+    const tablaParaImprimir = document.querySelector(".tabla-contenedor table");
+    // cajaParaImprimir determina el alto disponible de la tabla en la hoja.
+    const cajaParaImprimir = document.querySelector(".tabla-contenedor");
+
+    /**
+     * Encaja las filas visibles de inventario en una sola hoja sin incluir páginas ocultas.
+     * Cambiar los milímetros disponibles altera cuánto se comprime una selección extensa.
+     */
+    const ajustarImpresionInventario = () => {
+        if (!tablaParaImprimir || !cajaParaImprimir) return;
+
+        // altoDisponible usa la caja CSS de impresión y un valor alternativo si el navegador aún no aplicó print media.
+        const altoDisponible = cajaParaImprimir.clientHeight || 165 * 96 / 25.4;
+        // escalaImpresion reduce únicamente la tabla cuando las filas visibles superan el alto de papel.
+        let escalaImpresion = 1;
+
+        for (let intentoAjuste = 0; intentoAjuste < 4; intentoAjuste++) {
+            tablaParaImprimir.style.width = `${100 / escalaImpresion}%`;
+            // altoMedido refleja las filas visibles después de ampliar el ancho compensatorio de la tabla.
+            const altoMedido = tablaParaImprimir.offsetHeight;
+            const escalaCalculada = altoMedido > altoDisponible
+                ? altoDisponible / altoMedido
+                : 1;
+            if (Math.abs(escalaCalculada - escalaImpresion) < 0.01) {
+                escalaImpresion = escalaCalculada;
+                break;
+            }
+            escalaImpresion = escalaCalculada;
+        }
+
+        tablaParaImprimir.style.width = `${100 / escalaImpresion}%`;
+        tablaParaImprimir.style.transformOrigin = "top left";
+        tablaParaImprimir.style.transform = `scale(${escalaImpresion})`;
+    };
+
+    /**
+     * Quita los estilos temporales de impresión al cerrar la vista previa.
+     * Cambiar la selección de estilos altera la presentación normal de la tabla.
+     */
+    const restaurarImpresionInventario = () => {
+        tablaParaImprimir?.style.removeProperty("width");
+        tablaParaImprimir?.style.removeProperty("transform");
+        tablaParaImprimir?.style.removeProperty("transform-origin");
+    };
+
+    window.addEventListener("beforeprint", ajustarImpresionInventario);
+    window.addEventListener("afterprint", restaurarImpresionInventario);
 })();
