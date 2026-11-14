@@ -423,16 +423,20 @@ public class CorreccionesController : Controller
             enlace.IdentificadorPuertoOrigen,
             enlace.IdentificadorPuertoDestino
         };
-        // identificadoresSwitch identifica solo equipos Switch propietarios de esos extremos.
-        var identificadoresSwitch = await (
+        // equiposDeExtremos recupera el tipo guardado para reconocer Switch sin depender de mayúsculas.
+        var equiposDeExtremos = await (
             from interfaz in contextoInventario.InterfacesEquipo.AsNoTracking()
             join equipo in contextoInventario.Equipos.AsNoTracking()
                 on interfaz.IdentificadorEquipo equals equipo.Identificador
             where identificadoresPuertos.Contains(interfaz.Identificador)
-                && equipo.TipoDispositivo == "Switch"
-            select equipo.Identificador)
+            select new { equipo.Identificador, equipo.TipoDispositivo })
             .Distinct()
             .ToListAsync(cancelacion);
+        // identificadoresSwitch identifica en memoria solo los equipos clasificados como Switch.
+        var identificadoresSwitch = equiposDeExtremos
+            .Where(equipo => string.Equals(equipo.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase))
+            .Select(equipo => equipo.Identificador)
+            .ToList();
 
         if (identificadorPreferido.HasValue && identificadoresSwitch.Contains(identificadorPreferido.Value))
         {
