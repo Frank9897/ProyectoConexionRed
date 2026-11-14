@@ -100,9 +100,10 @@
                         <p>Revisión: @(enlace.FechaUltimaRevision?.ToString("dd/MM/yyyy") ?? "Sin fecha confirmada") · Fuente: @(enlace.Fuente ?? "No indicada")</p>
                     </details>
                     <div class="acciones-conexion-documentada">
-                        <a class="boton boton-secundario" asp-controller="Correcciones" asp-action="EditarEnlace" asp-route-identificador="@enlace.Identificador">Editar conexión</a>
+                        <a class="boton boton-secundario" asp-controller="Correcciones" asp-action="EditarEnlace" asp-route-identificador="@enlace.Identificador" asp-route-identificadorSwitchRetorno="@Model.Dispositivo.Identificador">Editar conexión</a>
                         <form asp-controller="Correcciones" asp-action="EliminarEnlace" method="post" onsubmit="return confirm('¿Eliminar este enlace del inventario? La acción quedará en el historial.');">
                             <input type="hidden" name="identificador" value="@enlace.Identificador" />
+                            <input type="hidden" name="identificadorSwitchRetorno" value="@Model.Dispositivo.Identificador" />
                             <button class="boton boton-secundario" type="submit">Eliminar enlace</button>
                         </form>
                     </div>
