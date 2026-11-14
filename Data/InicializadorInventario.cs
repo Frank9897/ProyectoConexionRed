@@ -380,6 +380,23 @@ public static class InicializadorInventario
 
                 // estadoAnterior y usoAnterior documentan el valor previo si se actualiza la confianza o la ocupación.
                 var estadoAnterior = $"{interfazExistente.EstadoDatos} · {interfazExistente.EstadoUso}";
+                // tipoPuertoAnterior conserva el conector previo para auditar la clasificación confirmada de cobre.
+                var tipoPuertoAnterior = interfazExistente.TipoInterfaz;
+                if (tipoPuertoAnterior == "No confirmado" && EsEtiquetaPuertoCobreNumerica(etiquetaPuertoNormalizada))
+                {
+                    interfazExistente.TipoInterfaz = "RJ45";
+                    cambiosAuditados.Add(new EventoModificacion
+                    {
+                        IdentificadorEquipo = equipoLocal.Identificador,
+                        NombreEquipo = equipoLocal.Nombre,
+                        NombreUsuario = usuarioImportacion,
+                        FechaUtc = DateTime.UtcNow,
+                        Campo = "Tipo de interfaz",
+                        ValorAnterior = tipoPuertoAnterior,
+                        ValorNuevo = interfazExistente.TipoInterfaz
+                    });
+                    hayInterfacesActualizadas = true;
+                }
                 // cambioEstadoInterfaz señala si la confirmación del usuario modifica los datos guardados.
                 var cambioEstadoInterfaz = false;
                 if (interfazExistente.EstadoDatos == "A verificar")
@@ -428,7 +445,8 @@ public static class InicializadorInventario
             {
                 IdentificadorEquipo = equipoLocal.Identificador,
                 EtiquetaPuerto = etiquetaPuertoNormalizada,
-                TipoInterfaz = filaPuerto.TipoInterfaz ?? "No confirmado",
+                TipoInterfaz = filaPuerto.TipoInterfaz
+                    ?? (EsEtiquetaPuertoCobreNumerica(etiquetaPuertoNormalizada) ? "RJ45" : "No confirmado"),
                 EstadoDatos = estadoFuente,
                 EstadoUso = filaLibre ? "Libre confirmado" : "Desconocido",
                 Observaciones = observacionFuente
@@ -798,6 +816,20 @@ public static class InicializadorInventario
     }
 
     /// <summary>
+    /// Reconoce etiquetas numéricas de puertos de cobre cuya familia RJ45 fue confirmada por el usuario.
+    /// </summary>
+    /// <param name="etiquetaPuerto">Etiqueta de interfaz; cambiarla puede hacer que se clasifique como RJ45.</param>
+    /// <returns>Verdadero si la etiqueta contiene solo un número de puerto positivo.</returns>
+    private static bool EsEtiquetaPuertoCobreNumerica(string etiquetaPuerto)
+    {
+        // etiquetaRecortada elimina espacios externos antes de validar el número.
+        var etiquetaRecortada = etiquetaPuerto.Trim();
+        // esNumeroDePuerto limita la regla a etiquetas sin prefijos SFP u otro conector.
+        var esNumeroDePuerto = int.TryParse(etiquetaRecortada, out var numeroPuerto);
+        return esNumeroDePuerto && numeroPuerto > 0;
+    }
+
+    /// <summary>
     /// Identifica rótulos que nombran un switch para dejarlos pendientes de revisión física.
     /// </summary>
     /// <param name="destino">Rótulo remoto; cambiarlo puede clasificar una relación como uplink.</param>
@@ -908,24 +940,43 @@ public static class InicializadorInventario
 
             if (!nombresExistentes.Add(nombreNormalizado))
             {
-                // equipoExistente localiza una ficha previa para corregir solo el rol genérico no personalizado.
+                // equipoExistente localiza una ficha previa para completar solo clasificaciones aún genéricas.
                 var equipoExistente = equiposExistentes.FirstOrDefault(equipo =>
                     string.Equals(equipo.Nombre, nombreNormalizado, StringComparison.OrdinalIgnoreCase));
-                if (equipoExistente is not null
-                    && tipoDispositivo == "Puesto de usuario"
-                    && equipoExistente.RolEnArea == "No indicado")
+                if (equipoExistente is not null)
                 {
-                    // rolAnterior conserva el valor para hacer visible la actualización automática.
+                    // tipoAnterior conserva la clasificación previa antes de aplicar el tipo explícito de la fuente.
+                    var tipoAnterior = equipoExistente.TipoDispositivo;
+                    // tipoFuenteEspecificado evita reemplazar una clasificación manual por un valor genérico del PDF.
+                    var tipoFuenteEspecificado = !string.IsNullOrWhiteSpace(filaPdf.TipoDispositivo)
+                        && (tipoAnterior == "Otro" || tipoAnterior == "No indicado");
+                    if (tipoFuenteEspecificado
+                        && !string.Equals(tipoAnterior, filaPdf.TipoDispositivo, StringComparison.OrdinalIgnoreCase))
+                    {
+                        equipoExistente.TipoDispositivo = filaPdf.TipoDispositivo!;
+                        UtilidadesConexiones.AgregarCambio(
+                            cambiosAuditados, equipoExistente.Identificador, equipoExistente.Nombre, usuarioImportacion,
+                            "Tipo de dispositivo", tipoAnterior, equipoExistente.TipoDispositivo);
+                    }
+
+                    // rolAnterior conserva la función previa para registrar una corrección derivada del documento.
                     var rolAnterior = equipoExistente.RolEnArea;
-                    equipoExistente.RolEnArea = "Usuario";
-                    UtilidadesConexiones.AgregarCambio(
-                        cambiosAuditados,
-                        equipoExistente.Identificador,
-                        equipoExistente.Nombre,
-                        usuarioImportacion,
-                        "Rol del equipo",
-                        rolAnterior,
-                        equipoExistente.RolEnArea);
+                    // rolFuenteEspecificado aplica funciones explícitas solo si el registro aún tiene una función genérica.
+                    var rolFuenteEspecificado = !string.IsNullOrWhiteSpace(filaPdf.RolEnArea)
+                        && (rolAnterior == "No indicado" || rolAnterior == "No aplica");
+                    // rolUsuarioPredeterminado asigna la función confirmada a puestos sin función específica.
+                    var rolUsuarioPredeterminado = tipoDispositivo == "Puesto de usuario"
+                        && (rolAnterior == "No indicado" || rolAnterior == "No aplica");
+                    if (rolFuenteEspecificado || rolUsuarioPredeterminado)
+                    {
+                        equipoExistente.RolEnArea = rolFuenteEspecificado ? filaPdf.RolEnArea! : "Usuario";
+                        if (!string.Equals(rolAnterior, equipoExistente.RolEnArea, StringComparison.OrdinalIgnoreCase))
+                        {
+                            UtilidadesConexiones.AgregarCambio(
+                                cambiosAuditados, equipoExistente.Identificador, equipoExistente.Nombre, usuarioImportacion,
+                                "Rol del equipo", rolAnterior, equipoExistente.RolEnArea);
+                        }
+                    }
                 }
 
                 continue;
