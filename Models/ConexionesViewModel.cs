@@ -249,6 +249,9 @@ public class NuevoEnlaceViewModel : EnlaceFormularioViewModel { }
 /// </summary>
 public class EditarEnlaceViewModel : EnlaceFormularioViewModel
 {
+    /// <summary>Equipo switch de retorno solicitado; cambiarlo solo tiene efecto si participa del enlace.</summary>
+    public int IdentificadorEquipoRetorno { get; set; }
+
     /// <summary>ID del enlace; cambiarlo selecciona otra relación.</summary>
     [Range(1, int.MaxValue)]
     public int Identificador { get; set; }
