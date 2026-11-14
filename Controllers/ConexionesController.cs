@@ -251,7 +251,10 @@ public class ConexionesController : Controller
     /// <param name="cancelacion">Señal de cancelación; activarla detiene la consulta de puertos disponibles.</param>
     /// <returns>Formulario con interfaces locales libres en la documentación.</returns>
     [HttpGet]
-    public async Task<IActionResult> CrearRelacion(int? identificadorPuertoLocal, CancellationToken cancelacion)
+    public async Task<IActionResult> CrearRelacion(
+        int? identificadorPuertoLocal,
+        int? identificadorEquipoRemoto,
+        CancellationToken cancelacion)
     {
         // interfacesLibres excluye relaciones existentes para evitar doble asignación documental.
         var interfacesLibres = await (
@@ -263,7 +266,6 @@ public class ConexionesController : Controller
                     || enlace.IdentificadorPuertoDestino == interfaz.Identificador)
                 && !contextoInventario.ConexionesDocumentadas.Any(relacion =>
                     relacion.IdentificadorPuertoLocal == interfaz.Identificador)
-                && interfaz.EstadoUso != "Libre confirmado"
             orderby equipo.Nombre, interfaz.EtiquetaPuerto
             select new
             {
@@ -275,6 +277,16 @@ public class ConexionesController : Controller
                 equipo.IpAdministracion
             })
             .ToListAsync(cancelacion);
+        // identificadorEquipoLocal permite excluir el equipo del switch de la lista de destinos remotos.
+        var identificadorEquipoLocal = interfacesLibres
+            .Where(interfaz => interfaz.Identificador == identificadorPreseleccionado)
+            .Select(interfaz => (int?)interfaz.IdEquipo)
+            .FirstOrDefault();
+        // equiposRemotos contiene fichas no switch para conectar equipos finales desde ambos sentidos.
+        var equiposRemotos = await ObtenerEquiposRemotosAsync(identificadorEquipoLocal, cancelacion);
+        // equipoRemotoSeleccionado precarga solo el destino pedido si está disponible como equipo final.
+        var equipoRemotoSeleccionado = equiposRemotos.FirstOrDefault(equipo =>
+            equipo.Identificador == identificadorEquipoRemoto);
         // identificadorPreseleccionado conserva el puerto recibido solo si sigue disponible.
         var identificadorPreseleccionado = identificadorPuertoLocal.HasValue
             && interfacesLibres.Any(interfaz => interfaz.Identificador == identificadorPuertoLocal.Value)
@@ -284,6 +296,15 @@ public class ConexionesController : Controller
         var formularioRelacion = new NuevaConexionDocumentadaViewModel
         {
             IdentificadorPuertoLocal = identificadorPreseleccionado,
+            IdentificadorEquipoRemoto = equipoRemotoSeleccionado?.Identificador,
+            EquipoRemoto = equipoRemotoSeleccionado?.Nombre,
+            IpRemota = equipoRemotoSeleccionado?.IpAdministracion,
+            EquiposRemotosDisponibles = equiposRemotos.Select(equipo => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+            {
+                Value = equipo.Identificador.ToString(),
+                Text = string.Join(" · ", new[] { equipo.Nombre, equipo.IpAdministracion, equipo.TipoDispositivo }
+                    .Where(texto => !string.IsNullOrWhiteSpace(texto)))
+            }).ToList(),
             IdentificadorEquipoRetorno = interfacesLibres
                 .Where(interfaz => interfaz.Identificador == identificadorPreseleccionado)
                 .Select(interfaz => string.Equals(interfaz.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase)
@@ -309,7 +330,7 @@ public class ConexionesController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CrearRelacion(
-        [Bind("IdentificadorPuertoLocal,IdentificadorEquipoRetorno,EquipoRemoto,IpRemota,PuertoRemoto,Medio,EstadoDatos,FechaUltimaRevision,FuentePagina,FuenteLibro,FuenteFila,Observaciones")]
+        [Bind("IdentificadorPuertoLocal,IdentificadorEquipoRetorno,IdentificadorEquipoRemoto,EquipoRemoto,IpRemota,PuertoRemoto,Medio,EstadoDatos,FechaUltimaRevision,FuentePagina,FuenteLibro,FuenteFila,Observaciones")]
         NuevaConexionDocumentadaViewModel formulario,
         CancellationToken cancelacion)
     {
@@ -341,9 +362,28 @@ public class ConexionesController : Controller
         if (puertoYaVinculado)
             ModelState.AddModelError(nameof(formulario.IdentificadorPuertoLocal), "Ese puerto ya tiene una relación registrada.");
 
-        if (interfazLocal?.EstadoUso == "Libre confirmado")
-            ModelState.AddModelError(nameof(formulario.IdentificadorPuertoLocal),
-                "El puerto figura libre confirmado. Corrige primero su estado antes de registrar una relación.");
+        // equipoRemotoSeleccionado resuelve la opción por ID y nunca confía en el nombre enviado por el navegador.
+        var equipoRemotoSeleccionado = formulario.IdentificadorEquipoRemoto.HasValue
+            ? await contextoInventario.Equipos.AsNoTracking().SingleOrDefaultAsync(
+                equipo => equipo.Identificador == formulario.IdentificadorEquipoRemoto.Value,
+                cancelacion)
+            : null;
+        if (formulario.IdentificadorEquipoRemoto.HasValue && equipoRemotoSeleccionado is null)
+            ModelState.AddModelError(nameof(formulario.IdentificadorEquipoRemoto), "Selecciona un equipo remoto existente.");
+        if (equipoRemotoSeleccionado is not null
+            && string.Equals(equipoRemotoSeleccionado.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase))
+            ModelState.AddModelError(nameof(formulario.IdentificadorEquipoRemoto), "Para enlazar dos switches registra ambos puertos en la opción de enlace físico.");
+        if (equipoRemotoSeleccionado is not null && interfazLocal is not null
+            && equipoRemotoSeleccionado.Identificador == interfazLocal.IdentificadorEquipo)
+            ModelState.AddModelError(nameof(formulario.IdentificadorEquipoRemoto), "El equipo remoto debe ser distinto del switch local.");
+        if (equipoRemotoSeleccionado is not null
+            && !string.Equals(equipoRemotoSeleccionado.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase))
+        {
+            formulario.EquipoRemoto = equipoRemotoSeleccionado.Nombre;
+            formulario.IpRemota = equipoRemotoSeleccionado.IpAdministracion;
+            ModelState.Remove(nameof(formulario.EquipoRemoto));
+            ModelState.Remove(nameof(formulario.IpRemota));
+        }
 
         if (!ModelState.IsValid)
         {
@@ -352,6 +392,8 @@ public class ConexionesController : Controller
                     ? interfazLocal.IdentificadorEquipo
                     : 0;
             formulario.InterfacesDisponibles = await ObtenerPuertosSinRelacionAsync(cancelacion);
+            formulario.EquiposRemotosDisponibles = await ObtenerEquiposRemotosAsync(
+                interfazLocal?.IdentificadorEquipo, cancelacion);
             return View(formulario);
         }
 
@@ -377,6 +419,28 @@ public class ConexionesController : Controller
         }.Where(texto => !string.IsNullOrWhiteSpace(texto)));
         if (string.IsNullOrWhiteSpace(descripcionDestino))
             descripcionDestino = "Extremo remoto no identificado";
+        // interfazPersistida permite convertir un estado libre anterior en ocupado por la nueva relación.
+        var interfazPersistida = await contextoInventario.InterfacesEquipo
+            .SingleAsync(interfaz => interfaz.Identificador == interfazLocal!.Identificador, cancelacion);
+        // eventosRelacion agrupa la creación y cualquier cambio de estado dentro de la misma escritura.
+        var eventosRelacion = new List<EventoModificacion>();
+        if (interfazPersistida.EstadoUso == "Libre confirmado")
+        {
+            // estadoUsoAnterior conserva el dato de libre que deja de aplicar al registrar una conexión.
+            var estadoUsoAnterior = interfazPersistida.EstadoUso;
+            interfazPersistida.EstadoUso = "Desconocido";
+            // eventoEstadoPuerto audita el cambio automático causado por la relación documental.
+            eventosRelacion.Add(new EventoModificacion
+            {
+                IdentificadorEquipo = interfazLocal!.IdentificadorEquipo,
+                NombreEquipo = interfazLocal.Nombre,
+                NombreUsuario = ObtenerUsuarioEditor(),
+                FechaUtc = DateTime.UtcNow,
+                Campo = "Uso del puerto",
+                ValorAnterior = estadoUsoAnterior,
+                ValorNuevo = interfazPersistida.EstadoUso
+            });
+        }
         // eventoCambio atribuye el alta al equipo local y conserva la referencia que se cargó.
         var eventoCambio = new EventoModificacion
         {
@@ -388,12 +452,33 @@ public class ConexionesController : Controller
             ValorNuevo = $"{interfazLocal.Nombre} · {interfazLocal.EtiquetaPuerto} → {descripcionDestino} · {nuevaRelacion.EstadoDatos} · {nuevaRelacion.FuentePagina}"
         };
         await contextoInventario.ConexionesDocumentadas.AddAsync(nuevaRelacion, cancelacion);
-        await contextoInventario.EventosModificacion.AddAsync(eventoCambio, cancelacion);
+        eventosRelacion.Add(eventoCambio);
+        await contextoInventario.EventosModificacion.AddRangeAsync(eventosRelacion, cancelacion);
         await contextoInventario.SaveChangesAsync(cancelacion);
         TempData["Mensaje"] = "Se registró la relación documental con su fuente. El extremo remoto sigue opcional.";
         return string.Equals(interfazLocal!.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase)
             ? RedirectToAction("Detalle", "Topologia", new { identificador = interfazLocal.IdentificadorEquipo })
             : RedirectToAction(nameof(Index));
+    }
+
+    /// <summary>
+    /// Obtiene equipos finales que pueden elegirse como destino de una conexión de acceso.
+    /// </summary>
+    /// <param name="identificadorEquipoLocal">Equipo local opcional; cambiarlo excluye esa ficha de los destinos.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla detiene la consulta del inventario.</param>
+    /// <returns>Equipos no switch ordenados para el selector remoto.</returns>
+    private async Task<List<EquipoRed>> ObtenerEquiposRemotosAsync(
+        int? identificadorEquipoLocal,
+        CancellationToken cancelacion)
+    {
+        // equiposRemotos contiene fichas de usuario y otros extremos finales sin incluir switches.
+        var equiposRemotos = await contextoInventario.Equipos.AsNoTracking()
+            .OrderBy(equipo => equipo.Nombre)
+            .ToListAsync(cancelacion);
+        return equiposRemotos
+            .Where(equipo => equipo.Identificador != identificadorEquipoLocal
+                && !string.Equals(equipo.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase))
+            .ToList();
     }
 
     /// <summary>
