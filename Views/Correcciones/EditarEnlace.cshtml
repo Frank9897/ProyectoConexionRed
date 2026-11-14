@@ -8,8 +8,16 @@
     <p>Revisa los extremos, el medio y la fuente. La corrección es documental y no actúa sobre la red.</p>
     <form asp-action="EditarEnlace" method="post">
         <input asp-for="Identificador" type="hidden" />
+        <input asp-for="IdentificadorEquipoRetorno" type="hidden" />
         <div asp-validation-summary="ModelOnly" class="mensaje-error"></div>
         <partial name="~/Views/Conexiones/_CamposEnlace.cshtml" model="Model" />
-        <div class="acciones-formulario"><button class="boton" type="submit">Guardar corrección</button><a class="boton boton-secundario" asp-controller="Conexiones" asp-action="Index">Cancelar</a></div>
+        <div class="acciones-formulario"><button class="boton" type="submit">Guardar corrección</button>@if (Model.IdentificadorEquipoRetorno > 0)
+            {
+                <a class="boton boton-secundario" asp-controller="Topologia" asp-action="Detalle" asp-route-identificador="@Model.IdentificadorEquipoRetorno">Volver al switch</a>
+            }
+            else
+            {
+                <a class="boton boton-secundario" asp-controller="Conexiones" asp-action="Index">Cancelar</a>
+            }</div>
     </form>
 </section>
