@@ -266,3 +266,7 @@ La identidad de un puerto (equipo propietario y etiqueta) queda protegida mientr
 
 
 Corrección de compilación: el formulario de edición de relaciones parciales incluye el identificador del equipo propietario para construir el enlace de regreso al detalle del switch.
+
+### Retorno contextual desde el detalle del switch
+
+Al editar o eliminar un enlace desde la ficha de un switch, la acción guarda ese equipo como contexto de navegación. El servidor verifica que el switch indicado sea realmente uno de los extremos del enlace; si no participa, selecciona otro switch del mismo enlace y, si no hay ninguno, regresa a Puertos. Al editar, la opción de regreso se conserva en el formulario y en sus errores de validación.
