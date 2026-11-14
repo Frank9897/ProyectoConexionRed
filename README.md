@@ -272,3 +272,7 @@ Corrección de compilación: el formulario de edición de relaciones parciales i
 Al editar o eliminar un enlace desde la ficha de un switch, la acción guarda ese equipo como contexto de navegación. El servidor verifica que el switch indicado sea realmente uno de los extremos del enlace; si no participa, selecciona otro switch del mismo enlace y, si no hay ninguno, regresa a Puertos. Al editar, la opción de regreso se conserva en el formulario y en sus errores de validación.
 
 El detalle del switch muestra los mensajes de resultado para altas, correcciones y eliminaciones documentales. Los mensajes success/error usan región accesible de estado o alerta y aparecen al regresar al frontal tras una acción.
+
+### Relaciones parciales: errores y retorno contextual
+
+Los formularios de alta y corrección de relaciones parciales presentan errores junto al campo correspondiente para equipo, IP, puerto remoto, estado, medio, fecha, procedencia y observaciones. El extremo local queda asociado a la interfaz seleccionada. Al iniciar desde un switch, cancelar, corregir errores o guardar la relación mantiene el retorno al frontal de ese switch; el identificador de navegación se recalcula a partir del puerto local real. Si el equipo local no es un switch, el destino es la página Puertos.
