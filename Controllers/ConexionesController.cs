@@ -62,7 +62,7 @@ public class ConexionesController : Controller
         var switchesDisponibles = new List<SwitchPuertosResumenViewModel>();
         // equipo recorre los switches y construye sus conteos desde las interfaces persistidas.
         foreach (var equipo in equiposRegistrados.Where(equipo =>
-            string.Equals(equipo.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase)))
+            EsSwitchPorFuncion(equipo.TipoDispositivo, equipo.RolEnArea)))
         {
             // puertosDelSwitch contiene las interfaces propiedad de esta ficha.
             var puertosDelSwitch = interfacesRegistradas
@@ -239,7 +239,7 @@ public class ConexionesController : Controller
         await contextoInventario.SaveChangesAsync(cancelacion);
 
         TempData["Mensaje"] = $"Se registró el puerto {nuevaInterfaz.EtiquetaPuerto} de {equipoPropietario.Nombre}.";
-        return string.Equals(equipoPropietario.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase)
+        return EsSwitchPorFuncion(equipoPropietario.TipoDispositivo, equipoPropietario.RolEnArea)
             ? RedirectToAction("Detalle", "Topologia", new { identificador = equipoPropietario.Identificador })
             : RedirectToAction(nameof(Index));
     }
@@ -273,6 +273,7 @@ public class ConexionesController : Controller
                 interfaz.EtiquetaPuerto,
                 IdEquipo = equipo.Identificador,
                 equipo.TipoDispositivo,
+                equipo.RolEnArea,
                 equipo.Nombre,
                 equipo.IpAdministracion
             })
@@ -307,7 +308,7 @@ public class ConexionesController : Controller
             }).ToList(),
             IdentificadorEquipoRetorno = interfacesLibres
                 .Where(interfaz => interfaz.Identificador == identificadorPreseleccionado)
-                .Select(interfaz => string.Equals(interfaz.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase)
+                .Select(interfaz => EsSwitchPorFuncion(interfaz.TipoDispositivo, interfaz.RolEnArea)
                     ? interfaz.IdEquipo
                     : 0)
                 .FirstOrDefault(),
@@ -347,7 +348,8 @@ public class ConexionesController : Controller
                 interfaz.EtiquetaPuerto,
                 interfaz.EstadoUso,
                 equipo.Nombre,
-                equipo.TipoDispositivo
+                equipo.TipoDispositivo,
+                equipo.RolEnArea
             })
             .SingleOrDefaultAsync(cancelacion);
         if (interfazLocal is null)
@@ -371,13 +373,13 @@ public class ConexionesController : Controller
         if (formulario.IdentificadorEquipoRemoto.HasValue && equipoRemotoSeleccionado is null)
             ModelState.AddModelError(nameof(formulario.IdentificadorEquipoRemoto), "Selecciona un equipo remoto existente.");
         if (equipoRemotoSeleccionado is not null
-            && string.Equals(equipoRemotoSeleccionado.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase))
+            && EsSwitchPorFuncion(equipoRemotoSeleccionado.TipoDispositivo, equipoRemotoSeleccionado.RolEnArea))
             ModelState.AddModelError(nameof(formulario.IdentificadorEquipoRemoto), "Para enlazar dos switches registra ambos puertos en la opción de enlace físico.");
         if (equipoRemotoSeleccionado is not null && interfazLocal is not null
             && equipoRemotoSeleccionado.Identificador == interfazLocal.IdentificadorEquipo)
             ModelState.AddModelError(nameof(formulario.IdentificadorEquipoRemoto), "El equipo remoto debe ser distinto del switch local.");
         if (equipoRemotoSeleccionado is not null
-            && !string.Equals(equipoRemotoSeleccionado.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase))
+            && !EsSwitchPorFuncion(equipoRemotoSeleccionado.TipoDispositivo, equipoRemotoSeleccionado.RolEnArea))
         {
             formulario.EquipoRemoto = equipoRemotoSeleccionado.Nombre;
             formulario.IpRemota = equipoRemotoSeleccionado.IpAdministracion;
@@ -388,7 +390,7 @@ public class ConexionesController : Controller
         if (!ModelState.IsValid)
         {
             formulario.IdentificadorEquipoRetorno = interfazLocal is not null
-                && string.Equals(interfazLocal.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase)
+                && EsSwitchPorFuncion(interfazLocal.TipoDispositivo, interfazLocal.RolEnArea)
                     ? interfazLocal.IdentificadorEquipo
                     : 0;
             formulario.InterfacesDisponibles = await ObtenerPuertosSinRelacionAsync(cancelacion);
@@ -461,7 +463,7 @@ public class ConexionesController : Controller
         await contextoInventario.EventosModificacion.AddRangeAsync(eventosRelacion, cancelacion);
         await contextoInventario.SaveChangesAsync(cancelacion);
         TempData["Mensaje"] = "Se registró la relación documental con su fuente. El extremo remoto sigue opcional.";
-        return string.Equals(interfazLocal!.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase)
+        return EsSwitchPorFuncion(interfazLocal!.TipoDispositivo, interfazLocal.RolEnArea)
             ? RedirectToAction("Detalle", "Topologia", new { identificador = interfazLocal.IdentificadorEquipo })
             : RedirectToAction(nameof(Index));
     }
@@ -472,6 +474,23 @@ public class ConexionesController : Controller
     /// <param name="identificadorEquipoLocal">Equipo local opcional; cambiarlo excluye esa ficha de los destinos.</param>
     /// <param name="cancelacion">Señal de cancelación; activarla detiene la consulta del inventario.</param>
     /// <returns>Equipos no switch ordenados para el selector remoto.</returns>
+    /// <summary>
+    /// Reconoce switches por tipo explícito o función documentada.
+    /// </summary>
+    /// <param name="tipoDispositivo">Tipo registrado; cambiarlo puede clasificar la ficha como switch.</param>
+    /// <param name="rolEnArea">Función del equipo; cambiarla actualiza su clasificación operativa.</param>
+    /// <returns>Verdadero cuando el tipo o la función identifica un switch.</returns>
+    private static bool EsSwitchPorFuncion(string? tipoDispositivo, string? rolEnArea)
+    {
+        // tipoNormalizado reconoce el tipo explícito conservando espacios y mayúsculas normalizados.
+        var tipoNormalizado = (tipoDispositivo ?? string.Empty).Trim();
+        // funcionNormalizada permite detectar equipos registrados con tipo genérico y función switch.
+        var funcionNormalizada = (rolEnArea ?? string.Empty).Trim();
+        return string.Equals(tipoNormalizado, "Switch", StringComparison.OrdinalIgnoreCase)
+            || funcionNormalizada.Contains("Switch", StringComparison.OrdinalIgnoreCase)
+            || funcionNormalizada.Contains("Puente hacia Dell R770", StringComparison.OrdinalIgnoreCase);
+    }
+
     private async Task<List<EquipoRed>> ObtenerEquiposRemotosAsync(
         int? identificadorEquipoLocal,
         CancellationToken cancelacion)
@@ -482,7 +501,7 @@ public class ConexionesController : Controller
             .ToListAsync(cancelacion);
         return equiposRemotos
             .Where(equipo => equipo.Identificador != identificadorEquipoLocal
-                && !string.Equals(equipo.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase))
+                && !EsSwitchPorFuncion(equipo.TipoDispositivo, equipo.RolEnArea))
             .ToList();
     }
 
