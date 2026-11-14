@@ -277,6 +277,11 @@ public class ConexionesController : Controller
                 equipo.IpAdministracion
             })
             .ToListAsync(cancelacion);
+        // identificadorPreseleccionado conserva el puerto recibido solo si sigue disponible.
+        var identificadorPreseleccionado = identificadorPuertoLocal.HasValue
+            && interfacesLibres.Any(interfaz => interfaz.Identificador == identificadorPuertoLocal.Value)
+                ? identificadorPuertoLocal.Value
+                : 0;
         // identificadorEquipoLocal permite excluir el equipo del switch de la lista de destinos remotos.
         var identificadorEquipoLocal = interfacesLibres
             .Where(interfaz => interfaz.Identificador == identificadorPreseleccionado)
@@ -287,11 +292,6 @@ public class ConexionesController : Controller
         // equipoRemotoSeleccionado precarga solo el destino pedido si está disponible como equipo final.
         var equipoRemotoSeleccionado = equiposRemotos.FirstOrDefault(equipo =>
             equipo.Identificador == identificadorEquipoRemoto);
-        // identificadorPreseleccionado conserva el puerto recibido solo si sigue disponible.
-        var identificadorPreseleccionado = identificadorPuertoLocal.HasValue
-            && interfacesLibres.Any(interfaz => interfaz.Identificador == identificadorPuertoLocal.Value)
-                ? identificadorPuertoLocal.Value
-                : 0;
         // formularioRelacion conserva el extremo preseleccionado y las opciones libres del selector.
         var formularioRelacion = new NuevaConexionDocumentadaViewModel
         {
