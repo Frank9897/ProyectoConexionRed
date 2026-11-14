@@ -391,3 +391,5 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 
 - Validación del paso de edición: cuando un puerto tiene enlace físico o relación parcial, el equipo propietario y la etiqueta quedan bloqueados en la vista y en el servidor; primero se debe resolver la relación. Un puerto relacionado no se marca como libre confirmado. Al crear un enlace se rechazan puertos libres confirmados, extremos repetidos/inexistentes, relaciones parciales y extremos ya usados. Al editar enlace, se validan relaciones físicas y parciales, y un extremo nuevo no puede estar marcado libre confirmado; se permite conservar extremos antiguos para corregir metadatos.
 - Las opciones de estado/medio/tipo tienen validación de modelo además de los selectores HTML; los mensajes de ayuda distinguen el estado documental del uso observado y recuerdan que no son métricas en vivo. Los formularios solo editan SQLite y no configuran equipos.
+
+- El modelo EditarConexionDocumentadaViewModel conserva IdentificadorEquipo para enlazar el retorno al detalle del switch desde la edición de una relación parcial.
