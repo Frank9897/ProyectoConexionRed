@@ -297,3 +297,12 @@ Las impresiones del mapa y del detalle individual de switch usan la caja imprimi
 Los formularios de relaciones permiten seleccionar un equipo inventariado o registrar el destino como **Desconocido**. Las IP sugeridas se limitan a direcciones libres en 192.168.0.x y 192.168.1.x; también se puede introducir una IP manual de esos rangos. El formulario no muestra una sección de procedencia: las referencias históricas se conservan y las altas manuales reciben una etiqueta interna automática.
 
 En el HP 1920, las etiquetas consecutivas 25–28 del Visio se presentan como SFP 1–4, separados de los puertos RJ45 1–24. Las filas libres importadas que exceden esas cuatro jaulas se conservan en la base pero no se dibujan como puertos adicionales.
+
+
+## Dell PowerSwitch S4148U-ON
+
+El perfil físico del **Dell S4148U-ON** muestra 48 puertos SFP+, 2 puertos QSFP+ y 4 puertos QSFP28. La vista los agrupa por tipo y numera cada grupo de forma independiente para reflejar las bocas del frontal; no convierte los puertos QSFP en SFP adicionales ni usa la numeración lógica de interfaces de una configuración de software. En este modelo, el perfil físico verificado prevalece sobre una capacidad manual incompatible, mientras que las interfaces excedentes permanecen guardadas y no se dibujan como puertos del equipo.
+
+Las interfaces ocupadas del S4148U se marcan con **Transceptor RJ45** conforme a la confirmación del usuario. La vista muestra las etiquetas de las posiciones registradas y agrega esa indicación al estado/ayuda del puerto. Esto documenta el tipo de transceptor informado, sin inferir velocidad, configuración ni conectividad en vivo.
+
+Referencia técnica: [Dell PowerSwitch S4100-ON Series Installation Guide — características](https://www.dell.com/support/manuals/en-uk/networking-s4148f-on/s4100f_t_u_on_install_pub/features?guid=guid-0de00e36-0afd-4bc1-848f-10243d7075ec&lang=en-us).
