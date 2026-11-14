@@ -419,3 +419,12 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 - El mapa reserva el área restante para el canvas y vuelve a encajar nodos/enlaces al preparar impresión. El detalle conserva frontal, datos y relaciones con columnas compactas; ambos quedan limitados a una hoja.
 - Inventario respeta el límite y página visibles en vez de revelar filas ocultas de toda la búsqueda. El script mide la tabla e imprime sus filas visibles ajustadas al alto de una hoja, compensando el ancho para aprovechar el papel; el usuario puede elegir 10/30/100/todos antes de imprimir.
 - Corrección revisada estáticamente en CSS/JS; no se ejecutó compilación, pruebas ni vista previa local. Confirmar el resultado al abrir la aplicación.
+
+
+## Selector de equipo, IP y corrección de SFP (14 de noviembre de 2026)
+
+- La edición y alta de relaciones ofrecen un selector de equipos existentes, además de destino manual y la opción explícita «Desconocido / no inventariado».
+- Las IP libres se sugieren desde 192.168.0.1–254 y 192.168.1.1–254. Se acepta una IP manual dentro de esos rangos o el valor explícito «Desconocido». El servidor vuelve a validar el formato y el rango.
+- Se retiró la sección visible de procedencia de los formularios de relación y enlace. Al editar, las referencias previamente guardadas se preservan sin cambios; al crear relaciones manuales se establece una referencia interna automática.
+- En el HP 1920, SFP 25–28 se normalizan a SFP 1–4. Las filas SFP adicionales de Excel6 se conservan en SQLite y no se dibujan como jaulas adicionales. No se borran equipos, interfaces ni enlaces.
+- Código publicado por actualización directa en la rama main; no ejecutar build, pruebas ni navegador en esta etapa, siguiendo la preferencia del usuario para validar localmente.
