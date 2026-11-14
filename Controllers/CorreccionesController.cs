@@ -277,7 +277,7 @@ public class CorreccionesController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditarEnlace(
-        [Bind("Identificador,IdentificadorEquipoRetorno,IdentificadorPuertoOrigen,IdentificadorPuertoDestino,Medio,ModuloOrigen,ModuloDestino,EstadoDatos,FechaUltimaRevision,Fuente,Observaciones")]
+        [Bind("Identificador,IdentificadorEquipoRetorno,IdentificadorPuertoOrigen,IdentificadorPuertoDestino,Medio,ModuloOrigen,ModuloDestino,EstadoDatos,FechaUltimaRevision,Observaciones")]
         EditarEnlaceViewModel formulario,
         CancellationToken cancelacion)
     {
@@ -383,8 +383,6 @@ public class CorreccionesController : Controller
             "Fecha revisión", enlaceGuardado.FechaUltimaRevision?.ToString("yyyy-MM-dd"),
             formulario.FechaUltimaRevision?.ToString("yyyy-MM-dd"));
         UtilidadesConexiones.AgregarCambio(cambiosEnlace, origenAnterior.IdEquipo, origenAnterior.Nombre, usuarioEditor,
-            "Fuente", enlaceGuardado.Fuente, formulario.Fuente);
-        UtilidadesConexiones.AgregarCambio(cambiosEnlace, origenAnterior.IdEquipo, origenAnterior.Nombre, usuarioEditor,
             "Observaciones", enlaceGuardado.Observaciones, formulario.Observaciones);
 
         enlaceGuardado.IdentificadorPuertoOrigen = formulario.IdentificadorPuertoOrigen;
@@ -394,7 +392,6 @@ public class CorreccionesController : Controller
         enlaceGuardado.ModuloDestino = UtilidadesConexiones.NormalizarTexto(formulario.ModuloDestino);
         enlaceGuardado.EstadoDatos = formulario.EstadoDatos;
         enlaceGuardado.FechaUltimaRevision = formulario.FechaUltimaRevision;
-        enlaceGuardado.Fuente = UtilidadesConexiones.NormalizarTexto(formulario.Fuente);
         enlaceGuardado.Observaciones = UtilidadesConexiones.NormalizarTexto(formulario.Observaciones);
         await contextoInventario.EventosModificacion.AddRangeAsync(cambiosEnlace, cancelacion);
         await contextoInventario.SaveChangesAsync(cancelacion);
@@ -476,6 +473,11 @@ public class CorreccionesController : Controller
             .SingleOrDefaultAsync(cancelacion);
         if (interfazLocal is null) return NotFound();
 
+        // identificadorEquipoRemotoActual selecciona el equipo si coincide con el inventario.
+        var identificadorEquipoRemotoActual = string.Equals(relacionGuardada.EquipoRemoto, "Desconocido", StringComparison.OrdinalIgnoreCase)
+            ? -1
+            : await contextoInventario.Equipos.AsNoTracking().Where(equipo => equipo.Nombre == relacionGuardada.EquipoRemoto)
+                .Select(equipo => (int?)equipo.Identificador).FirstOrDefaultAsync(cancelacion);
         // formularioEdicion carga los valores guardados para editar el extremo remoto.
         var formularioEdicion = new EditarConexionDocumentadaViewModel
         {
@@ -485,8 +487,12 @@ public class CorreccionesController : Controller
                 ? interfazLocal.Identificador
                 : 0,
             NombrePuertoLocal = $"{interfazLocal.Nombre} · {interfazLocal.IpAdministracion ?? "IP no indicada"} · Puerto {interfazLocal.EtiquetaPuerto}",
+            IdentificadorEquipoRemoto = identificadorEquipoRemotoActual,
             EquipoRemoto = relacionGuardada.EquipoRemoto,
             IpRemota = relacionGuardada.IpRemota,
+            IpRemotaSeleccionada = null,
+            IpsRemotasDisponibles = await UtilidadesConexiones.ObtenerIpsLibresAsync(contextoInventario, relacionGuardada.IpRemota, cancelacion),
+            EquiposRemotosDisponibles = await UtilidadesConexiones.ObtenerEquiposDisponiblesAsync(contextoInventario, identificadorEquipoRemotoActual, cancelacion),
             PuertoRemoto = relacionGuardada.PuertoRemoto,
             Medio = relacionGuardada.Medio,
             EstadoDatos = relacionGuardada.EstadoDatos,
@@ -508,7 +514,7 @@ public class CorreccionesController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditarRelacion(
-        [Bind("Identificador,EquipoRemoto,IpRemota,PuertoRemoto,Medio,EstadoDatos,FechaUltimaRevision,FuentePagina,FuenteLibro,FuenteFila,Observaciones")]
+        [Bind("Identificador,IdentificadorEquipoRemoto,EquipoRemoto,IpRemota,IpRemotaSeleccionada,PuertoRemoto,Medio,EstadoDatos,FechaUltimaRevision,Observaciones")]
         EditarConexionDocumentadaViewModel formulario,
         CancellationToken cancelacion)
     {
@@ -534,8 +540,51 @@ public class CorreccionesController : Controller
             : 0;
         // Se conserva el puerto local original para evitar mover la relación con un ID oculto manipulado.
         formulario.IdentificadorPuertoLocal = relacionGuardada.IdentificadorPuertoLocal;
+        // equipoRemotoSeleccionado valida que el destino elegido exista realmente en este inventario.
+        var equipoRemotoSeleccionado = formulario.IdentificadorEquipoRemoto.GetValueOrDefault() > 0
+            ? await contextoInventario.Equipos.AsNoTracking().SingleOrDefaultAsync(
+                equipo => equipo.Identificador == formulario.IdentificadorEquipoRemoto!.Value, cancelacion)
+            : null;
+        if (formulario.IdentificadorEquipoRemoto.GetValueOrDefault() > 0 && equipoRemotoSeleccionado is null)
+            ModelState.AddModelError(nameof(formulario.IdentificadorEquipoRemoto), "Selecciona un equipo existente.");
+        if (formulario.IdentificadorEquipoRemoto == -1)
+        {
+            formulario.EquipoRemoto = "Desconocido";
+            ModelState.Remove(nameof(formulario.EquipoRemoto));
+        }
+        else if (equipoRemotoSeleccionado is not null)
+        {
+            formulario.EquipoRemoto = equipoRemotoSeleccionado.Nombre;
+            if (formulario.IpRemotaSeleccionada != "__manual__")
+                formulario.IpRemota = equipoRemotoSeleccionado.IpAdministracion;
+            ModelState.Remove(nameof(formulario.EquipoRemoto));
+        }
+        // La IP libre seleccionada prevalece; la opción manual conserva el texto digitado.
+        if (!string.IsNullOrWhiteSpace(formulario.IpRemotaSeleccionada)
+            && formulario.IpRemotaSeleccionada != "__manual__")
+        {
+            formulario.IpRemota = formulario.IpRemotaSeleccionada;
+            ModelState.Remove(nameof(formulario.IpRemota));
+        }
+        if (!UtilidadesConexiones.EsIpPermitida(formulario.IpRemota))
+            ModelState.AddModelError(nameof(formulario.IpRemota), "Usa una IP 192.168.0.x o 192.168.1.x, o selecciona Desconocido.");
+        if (!string.IsNullOrWhiteSpace(formulario.IpRemotaSeleccionada)
+            && formulario.IpRemotaSeleccionada != "__manual__"
+            && formulario.IpRemotaSeleccionada != "Desconocido")
+        {
+            // ipsLibresActuales conserva la IP de esta relación y rechaza una asignación nueva ocupada.
+            var ipsLibresActuales = await UtilidadesConexiones.ObtenerIpsLibresAsync(
+                contextoInventario, relacionGuardada.IpRemota, cancelacion);
+            if (!ipsLibresActuales.Any(opcion => opcion.Value == formulario.IpRemotaSeleccionada))
+                ModelState.AddModelError(nameof(formulario.IpRemotaSeleccionada), "La IP seleccionada ya no está libre; elige otra.");
+        }
         if (!ModelState.IsValid)
         {
+            // opcionesEquipo y opcionesIp restauran los selectores al presentar errores.
+            formulario.EquiposRemotosDisponibles = await UtilidadesConexiones.ObtenerEquiposDisponiblesAsync(
+                contextoInventario, formulario.IdentificadorEquipoRemoto, cancelacion);
+            formulario.IpsRemotasDisponibles = await UtilidadesConexiones.ObtenerIpsLibresAsync(
+                contextoInventario, formulario.IpRemota, cancelacion);
             return View(formulario);
         }
 
@@ -554,12 +603,6 @@ public class CorreccionesController : Controller
         UtilidadesConexiones.AgregarCambio(cambiosRelacion, equipoLocal.Identificador, equipoLocal.Nombre, usuarioEditor,
             "Estado documental", relacionGuardada.EstadoDatos, formulario.EstadoDatos);
         UtilidadesConexiones.AgregarCambio(cambiosRelacion, equipoLocal.Identificador, equipoLocal.Nombre, usuarioEditor,
-            "Fuente página", relacionGuardada.FuentePagina, formulario.FuentePagina.Trim());
-        UtilidadesConexiones.AgregarCambio(cambiosRelacion, equipoLocal.Identificador, equipoLocal.Nombre, usuarioEditor,
-            "Fuente libro", relacionGuardada.FuenteLibro, UtilidadesConexiones.NormalizarTexto(formulario.FuenteLibro));
-        UtilidadesConexiones.AgregarCambio(cambiosRelacion, equipoLocal.Identificador, equipoLocal.Nombre, usuarioEditor,
-            "Fuente fila", relacionGuardada.FuenteFila, UtilidadesConexiones.NormalizarTexto(formulario.FuenteFila));
-        UtilidadesConexiones.AgregarCambio(cambiosRelacion, equipoLocal.Identificador, equipoLocal.Nombre, usuarioEditor,
             "Fecha de revisión", relacionGuardada.FechaUltimaRevision?.ToString("dd/MM/yyyy"),
             formulario.FechaUltimaRevision?.ToString("dd/MM/yyyy"));
         UtilidadesConexiones.AgregarCambio(cambiosRelacion, equipoLocal.Identificador, equipoLocal.Nombre, usuarioEditor,
@@ -571,9 +614,6 @@ public class CorreccionesController : Controller
         relacionGuardada.Medio = formulario.Medio;
         relacionGuardada.EstadoDatos = formulario.EstadoDatos;
         relacionGuardada.FechaUltimaRevision = formulario.FechaUltimaRevision;
-        relacionGuardada.FuentePagina = formulario.FuentePagina.Trim();
-        relacionGuardada.FuenteLibro = UtilidadesConexiones.NormalizarTexto(formulario.FuenteLibro);
-        relacionGuardada.FuenteFila = UtilidadesConexiones.NormalizarTexto(formulario.FuenteFila);
         relacionGuardada.Observaciones = UtilidadesConexiones.NormalizarTexto(formulario.Observaciones);
         await contextoInventario.EventosModificacion.AddRangeAsync(cambiosRelacion, cancelacion);
         await contextoInventario.SaveChangesAsync(cancelacion);
