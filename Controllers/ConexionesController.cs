@@ -392,8 +392,13 @@ public class ConexionesController : Controller
                     ? interfazLocal.IdentificadorEquipo
                     : 0;
             formulario.InterfacesDisponibles = await ObtenerPuertosSinRelacionAsync(cancelacion);
-            formulario.EquiposRemotosDisponibles = await ObtenerEquiposRemotosAsync(
-                interfazLocal?.IdentificadorEquipo, cancelacion);
+            formulario.EquiposRemotosDisponibles = (await ObtenerEquiposRemotosAsync(
+                interfazLocal?.IdentificadorEquipo, cancelacion)).Select(equipo => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+            {
+                Value = equipo.Identificador.ToString(),
+                Text = string.Join(" · ", new[] { equipo.Nombre, equipo.IpAdministracion, equipo.TipoDispositivo }
+                    .Where(texto => !string.IsNullOrWhiteSpace(texto)))
+            }).ToList();
             return View(formulario);
         }
 
