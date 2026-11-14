@@ -120,7 +120,13 @@ else if (seccionActiva == "usuarios")
                 <td><span class="ip">@(equipo.IpAdministracion ?? "No indicada")</span></td>
                 <td>@equipo.RolEnArea</td>
                 <td><span class="estado @(equipo.EstadoDatos.Equals("Vigente", StringComparison.OrdinalIgnoreCase) ? "estado-vigente" : "estado-alerta")">@equipo.EstadoDatos</span></td>
-                <td class="columna-accion"><a class="boton boton-secundario" asp-controller="Inventario" asp-action="Editar" asp-route-id="@equipo.Identificador">Editar</a></td>
+                <td class="columna-accion">
+                    <a class="boton boton-secundario" asp-controller="Inventario" asp-action="Editar" asp-route-id="@equipo.Identificador">Editar</a>
+                    @if (!string.Equals(equipo.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <a class="boton boton-secundario" asp-controller="Conexiones" asp-action="CrearRelacion" asp-route-identificadorEquipoRemoto="@equipo.Identificador">Conectar a un puerto</a>
+                    }
+                </td>
             </tr>
         }
         </tbody>
