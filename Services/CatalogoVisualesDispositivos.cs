@@ -23,8 +23,12 @@ public static class CatalogoVisualesDispositivos
     /// <returns>Perfil verificado o nulo si la combinación no está registrada.</returns>
     public static PerfilSwitchVisual? ObtenerPerfil(string? fabricante, string? modelo)
     {
-        // clavePerfil requiere tanto fabricante como modelo para evitar emparejar variantes parciales.
-        var clavePerfil = $"{fabricante?.Trim()}|{modelo?.Trim()}";
+        // modeloNormalizado admite el identificador comercial con sufijo 48G del mismo Dell S4148U-ON.
+        var modeloNormalizado = string.Equals(fabricante?.Trim(), "Dell", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(modelo?.Trim(), "S4148U-ON 48G", StringComparison.OrdinalIgnoreCase)
+                ? "S4148U-ON" : modelo?.Trim();
+        // clavePerfil requiere fabricante y modelo completo reconocido para no emparejar variantes parciales.
+        var clavePerfil = $"{fabricante?.Trim()}|{modeloNormalizado}";
         return PerfilesPorModelo.TryGetValue(clavePerfil, out var perfil) ? perfil : null;
     }
 
@@ -79,12 +83,12 @@ public static class CatalogoVisualesDispositivos
         // gruposCapacidad distingue conectores de formas distintas sin mezclarlos en un total ambiguo.
         var gruposCapacidad = new[]
         {
-            new GrupoPuertos("RJ45", equipo.CantidadPuertosRj45 ?? perfilExacto?.CantidadRj45, ""),
-            new GrupoPuertos("SFP", equipo.CantidadPuertosSfp ?? perfilExacto?.CantidadSfp, "SFP "),
-            new GrupoPuertos("SFP+", equipo.CantidadPuertosSfpPlus ?? perfilExacto?.CantidadSfpPlus, "SFP+ "),
-            new GrupoPuertos("QSFP", equipo.CantidadPuertosQsfp ?? perfilExacto?.CantidadQsfp, "QSFP "),
-            new GrupoPuertos("QSFP+", equipo.CantidadPuertosQsfpPlus ?? perfilExacto?.CantidadQsfpPlus, "QSFP+ "),
-            new GrupoPuertos("QSFP28", equipo.CantidadPuertosQsfp28 ?? perfilExacto?.CantidadQsfp28, "QSFP28 ")
+            new GrupoPuertos("RJ45", perfilExacto?.CantidadRj45 ?? equipo.CantidadPuertosRj45, ""),
+            new GrupoPuertos("SFP", perfilExacto?.CantidadSfp ?? equipo.CantidadPuertosSfp, "SFP "),
+            new GrupoPuertos("SFP+", perfilExacto?.CantidadSfpPlus ?? equipo.CantidadPuertosSfpPlus, "SFP+ "),
+            new GrupoPuertos("QSFP", perfilExacto?.CantidadQsfp ?? equipo.CantidadPuertosQsfp, "QSFP "),
+            new GrupoPuertos("QSFP+", perfilExacto?.CantidadQsfpPlus ?? equipo.CantidadPuertosQsfpPlus, "QSFP+ "),
+            new GrupoPuertos("QSFP28", perfilExacto?.CantidadQsfp28 ?? equipo.CantidadPuertosQsfp28, "QSFP28 ")
         };
 
         foreach (var grupo in gruposCapacidad)
@@ -92,20 +96,21 @@ public static class CatalogoVisualesDispositivos
             if (grupo.Cantidad is null) continue;
             for (var numeroPuerto = 1; numeroPuerto <= grupo.Cantidad.Value; numeroPuerto++)
             {
-                // etiquetaEsperada representa una posición deducida del perfil exacto o de la capacidad ingresada.
+                // etiquetaEsperada representa la boca física del grupo sin mezclar la numeración de otras jaulas.
                 var etiquetaEsperada = grupo.Prefijo + numeroPuerto;
-                // interfazEncontrada requiere coincidencia exacta normalizada; no adivina alias o formatos de rack.
+                // interfazEncontrada coteja el tipo y número exactos tras normalizar etiquetas abreviadas de la fuente.
                 var interfazEncontrada = interfacesEquipo.FirstOrDefault(interfaz =>
                     !interfacesUsadas.Contains(interfaz.Identificador)
                     && string.Equals(interfaz.TipoInterfaz, grupo.Tipo, StringComparison.OrdinalIgnoreCase)
-                    && NormalizarEtiqueta(NormalizarEtiquetaPuertoVisual(equipo.Nombre, interfaz.EtiquetaPuerto))
+                    && NormalizarEtiqueta(NormalizarEtiquetaPuertoVisual(equipo.Nombre, interfaz.EtiquetaPuerto, interfaz.TipoInterfaz))
                         == NormalizarEtiqueta(etiquetaEsperada));
 
                 if (interfazEncontrada is not null)
                 {
                     interfacesUsadas.Add(interfazEncontrada.Identificador);
                 }
-                resultadoPuertos.Add(CrearPuertoVisual(interfazEncontrada, etiquetaEsperada, grupo.Tipo, identificadoresEnlazados, destinosPorInterfaz));
+                resultadoPuertos.Add(CrearPuertoVisual(equipo, interfazEncontrada, etiquetaEsperada, grupo.Tipo,
+                    identificadoresEnlazados, destinosPorInterfaz));
             }
         }
 
@@ -118,12 +123,16 @@ public static class CatalogoVisualesDispositivos
                 && interfaz.Observaciones?.Contains("Excel6", StringComparison.OrdinalIgnoreCase) == true
                 && !new[] { "SFP 1", "SFP 2", "SFP 3", "SFP 4", "SFP 25", "SFP 26", "SFP 27", "SFP 28" }
                     .Contains(interfaz.EtiquetaPuerto, StringComparer.OrdinalIgnoreCase)))
+            .Where(interfaz => !EsEtiquetaFueraCapacidadS4148(equipo, interfaz))
             .OrderBy(interfaz => ObtenerOrdenEtiquetaPuerto(interfaz.EtiquetaPuerto))
             .ThenBy(interfaz => interfaz.EtiquetaPuerto, StringComparer.OrdinalIgnoreCase);
 
         foreach (var interfazSinPosicion in interfacesSinPosicion)
         {
-            resultadoPuertos.Add(CrearPuertoVisual(interfazSinPosicion, interfazSinPosicion.EtiquetaPuerto,
+            // etiquetaSinPosicion muestra el formato de interfaz conservando la numeración local del conector.
+            var etiquetaSinPosicion = NormalizarEtiquetaPuertoVisual(
+                equipo.Nombre, interfazSinPosicion.EtiquetaPuerto, interfazSinPosicion.TipoInterfaz);
+            resultadoPuertos.Add(CrearPuertoVisual(equipo, interfazSinPosicion, etiquetaSinPosicion,
                 interfazSinPosicion.TipoInterfaz, identificadoresEnlazados, destinosPorInterfaz));
         }
 
@@ -131,24 +140,60 @@ public static class CatalogoVisualesDispositivos
     }
 
     /// <summary>
-    /// Traduce las etiquetas consecutivas SFP 25-28 del HP 1920 a sus jaulas locales 1-4.
+    /// Normaliza etiquetas del HP 1920 y etiquetas numéricas de puertos por tipo de interfaz.
     /// </summary>
-    /// <param name="nombreEquipo">Equipo propietario; cambiarlo limita la regla al HP 1920.</param>
+    /// <param name="nombreEquipo">Equipo propietario; cambiarlo puede activar una regla visual específica.</param>
     /// <param name="etiqueta">Rótulo registrado; cambiarlo altera la numeración que se muestra.</param>
-    /// <returns>Etiqueta local visible o el texto original para otros puertos.</returns>
-    public static string NormalizarEtiquetaPuertoVisual(string nombreEquipo, string etiqueta)
+    /// <returns>Etiqueta de puerto normalizada según la familia de interfaz.</returns>
+    public static string NormalizarEtiquetaPuertoVisual(string nombreEquipo, string etiqueta, string? tipoInterfaz = null)
     {
-        // etiquetaNormalizada recorta espacios antes de comparar el rótulo SFP.
+        // etiquetaNormalizada elimina espacios externos para comparar las etiquetas guardadas.
         var etiquetaNormalizada = etiqueta.Trim();
-        if (!string.Equals(nombreEquipo, "Switch HP 1920", StringComparison.OrdinalIgnoreCase)
-            || !etiquetaNormalizada.StartsWith("SFP ", StringComparison.OrdinalIgnoreCase)
-            || !int.TryParse(etiquetaNormalizada.Substring(4).Trim(), out var numeroSfp)
-            || numeroSfp < 25 || numeroSfp > 28)
-            return etiquetaNormalizada;
+        if (string.Equals(nombreEquipo, "Switch HP 1920", StringComparison.OrdinalIgnoreCase)
+            && etiquetaNormalizada.StartsWith("SFP ", StringComparison.OrdinalIgnoreCase)
+            && int.TryParse(etiquetaNormalizada.Substring(4).Trim(), out var numeroSfp)
+            && numeroSfp is >= 25 and <= 28)
+        {
+            // puertoSfpLocal traduce el conteo consecutivo del Visio a las cuatro jaulas SFP del HP 1920.
+            var puertoSfpLocal = numeroSfp - 24;
+            return "SFP " + puertoSfpLocal;
+        }
 
-        // puertoSfpLocal muestra 25-28 como las cuatro jaulas separadas de RJ45.
-        var puertoSfpLocal = numeroSfp - 24;
-        return "SFP " + puertoSfpLocal;
+        // textoNumero permite comparar una etiqueta "1" con el grupo de conectores SFP+ o QSFP correspondiente.
+        var textoNumero = new string(etiquetaNormalizada.Reverse().TakeWhile(char.IsDigit).Reverse().ToArray());
+        if (!string.IsNullOrWhiteSpace(tipoInterfaz) && int.TryParse(textoNumero, out var numeroInterfaz))
+        {
+            // tipoNormalizado mantiene numeración local independiente para cada familia de jaulas físicas.
+            var tipoNormalizado = tipoInterfaz.Trim().ToUpperInvariant();
+            return tipoNormalizado == "RJ45" ? numeroInterfaz.ToString() : tipoNormalizado + " " + numeroInterfaz;
+        }
+
+        return etiquetaNormalizada;
+    }
+
+    /// <summary>Filtra filas que exceden la capacidad física documentada del Dell S4148U-ON.</summary>
+    /// <param name="equipo">Switch propietario; cambiarlo puede activar o desactivar el filtro.</param>
+    /// <param name="interfaz">Interfaz registrada; cambiarla modifica si queda visible como posición extra.</param>
+    /// <returns>Verdadero cuando la etiqueta supera el máximo físico de su grupo.</returns>
+    private static bool EsEtiquetaFueraCapacidadS4148(EquipoRed equipo, InterfazEquipo interfaz)
+    {
+        if (!equipo.Nombre.Contains("S4148U", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        // textoNumero extrae el sufijo numérico sin confundir el tipo de jaula.
+        var textoNumero = new string(interfaz.EtiquetaPuerto.Reverse().TakeWhile(char.IsDigit).Reverse().ToArray());
+        if (!int.TryParse(textoNumero, out var numeroInterfaz))
+            return false;
+
+        // tipoInterfaz determina el máximo real de puertos que puede presentar esta familia de conectores.
+        var tipoInterfaz = interfaz.TipoInterfaz.Trim().ToUpperInvariant();
+        return tipoInterfaz switch
+        {
+            "SFP+" => numeroInterfaz is < 1 or > 48,
+            "QSFP+" => numeroInterfaz is < 1 or > 2,
+            "QSFP28" => numeroInterfaz is < 1 or > 4,
+            _ => false
+        };
     }
 
     /// <summary>
@@ -173,7 +218,7 @@ public static class CatalogoVisualesDispositivos
     /// <param name="tipo">Tipo de conector; cambiarlo modifica la categoría de la posición.</param>
     /// <param name="identificadoresEnlazados">Conjunto de enlaces; cambiarlo puede marcar ocupado el puerto.</param>
     /// <returns>Modelo de puerto con estado documental y clase de color.</returns>
-    private static PuertoTopologiaViewModel CrearPuertoVisual(InterfazEquipo? interfaz, string etiqueta, string tipo,
+    private static PuertoTopologiaViewModel CrearPuertoVisual(EquipoRed equipo, InterfazEquipo? interfaz, string etiqueta, string tipo,
         ISet<int> identificadoresEnlazados, IReadOnlyDictionary<int, string> destinosPorInterfaz)
     {
         // ocupadoEnDocumento solo significa que existe una relación guardada, no que se midió conectividad actual.
@@ -183,7 +228,11 @@ public static class CatalogoVisualesDispositivos
             && interfaz.EstadoDatos == "Confirmado";
         var claseVisual = ocupadoEnDocumento ? "puerto-ocupado"
             : libreConfirmado ? "puerto-libre" : "puerto-desconocido";
-        var estadoVisual = ocupadoEnDocumento ? "Ocupado · relación documentada"
+        // moduloInstalado refleja la indicación del usuario para cada interfaz ocupada del Dell S4148U.
+        var moduloInstalado = ocupadoEnDocumento && equipo.Nombre.Contains("S4148U", StringComparison.OrdinalIgnoreCase)
+            ? "Transceptor RJ45" : null;
+        var estadoVisual = ocupadoEnDocumento
+            ? moduloInstalado is null ? "Ocupado · relación documentada" : "Ocupado · transceptor RJ45"
             : libreConfirmado ? "Libre confirmado" : "Desconocido";
 
         return new PuertoTopologiaViewModel
@@ -193,6 +242,7 @@ public static class CatalogoVisualesDispositivos
             Tipo = tipo,
             ClaseVisual = claseVisual,
             EstadoVisual = estadoVisual,
+            ModuloInstalado = moduloInstalado,
             DestinoConexion = interfaz is not null && destinosPorInterfaz.TryGetValue(interfaz.Identificador, out var destino)
                 ? destino : null
         };
