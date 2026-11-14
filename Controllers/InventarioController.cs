@@ -628,7 +628,7 @@ public class InventarioController : Controller
             return false;
         }
 
-        return funcionNormalizada == "USUARIO"
+        return funcionNormalizada.Contains("USUARIO", StringComparison.OrdinalIgnoreCase)
             || tipoNormalizado is "PUESTO DE USUARIO" or "EQUIPO DE USUARIO" or "PC"
                 or "COMPUTADORA" or "COMPUTADOR" or "ESTACIÓN DE TRABAJO" or "ESTACION DE TRABAJO" or "USUARIO";
     }
