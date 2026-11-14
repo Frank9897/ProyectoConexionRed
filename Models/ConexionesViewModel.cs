@@ -289,6 +289,12 @@ public class RelacionParcialListadoViewModel
 /// <summary>Datos y opciones para registrar una relación con extremo remoto incompleto.</summary>
 public class NuevaConexionDocumentadaViewModel
 {
+    /// <summary>Equipo registrado remoto opcional; cambiarlo preselecciona otro destino del inventario.</summary>
+    public int? IdentificadorEquipoRemoto { get; set; }
+
+    /// <summary>Opciones de equipos finales; cambiar la lista altera el selector remoto.</summary>
+    public List<SelectListItem> EquiposRemotosDisponibles { get; set; } = [];
+
     /// <summary>Switch de retorno; cambiarlo solo se acepta como navegación si es dueño del puerto local.</summary>
     public int IdentificadorEquipoRetorno { get; set; }
 
