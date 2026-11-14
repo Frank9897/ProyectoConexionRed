@@ -399,3 +399,15 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 - Topologia/Detalle presenta TempData de éxito/error al volver tras crear, editar o eliminar interfaces y relaciones. Mantener los mensajes accesibles con role=status/alert; las acciones siguen siendo exclusivamente documentales.
 
 - Relaciones parciales: CrearRelacion y EditarRelacion presentan validaciones en cada campo opcional (extremo remoto, fecha, fuente y notas), además del resumen general. Crear relación conserva retorno al switch según propietario real del puerto tanto al guardar como al volver con validación; el ID escondido no se usa como autoridad. Si el propietario no es switch, volver a /Conexiones. Edición parcial conserva el owner real y muestra enlace de regreso solo si el propietario es switch. No inventar extremo remoto.
+
+
+## Clasificación funcional, puertos y conexiones (14 de noviembre de 2026)
+
+- El inventario reconoce una ficha de usuario cuando su función contiene «Usuario» o su tipo explícito es computacional. Las funciones periféricas de impresión/escaneo tienen prioridad para mantener impresoras, fotocopiadoras, scanners y plotters en «Otros equipos».
+- La importación del PDF reconcilia tipo y función explícitos de periféricos cuando una ficha existente todavía conserva valores genéricos. El plotter Epson T7200 documentado se clasifica como periférico de impresión; no agregar equipos que no aparezcan en las fuentes entregadas.
+- Los switches se detectan por tipo o por función registrada. Las categorías de switch (áreas, datacenter/rack, reserva, sin acceso y servidores) utilizan la función/ubicación persistida, no coincidencias con el modelo.
+- Los puertos de cobre con etiquetas numéricas importados desde V3 se clasifican RJ45 conforme a la confirmación del usuario. Tipos ópticos solo se asignan cuando la etiqueta de fuente los identifica explícitamente; eso no confirma un módulo SFP instalado ni su medio.
+- «RJ45 + PoE» es una opción válida de interfaz y cuenta contra la capacidad de puertos RJ45 al generar las posiciones faltantes.
+- Crear una relación puede iniciarse desde un puerto libre o desconocido de switch, o desde una ficha de equipo final hacia un puerto libre/desconocido. Se guarda solo el extremo local conocido y el destino explícito; nunca se inventa un puerto remoto. Los enlaces switch a switch requieren ambos extremos registrados.
+- La creación/edición de relaciones sigue siendo documental y no consulta ni cambia la red real. Los cambios automáticos de clasificación de fichas previas se registran en el historial.
+- Cambios de esta etapa publicados directamente en la rama principal. No se ejecutó compilación, pruebas ni navegación local; queda pendiente que el usuario lo verifique en su entorno.
