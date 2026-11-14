@@ -1,7 +1,23 @@
 @model ProyectoConexionRed.Web.Models.InterfazFormularioViewModel
 <div class="rejilla-formulario">
-    <div><label asp-for="IdentificadorEquipo">Equipo propietario</label><select asp-for="IdentificadorEquipo" asp-items="Model.EquiposDisponibles"><option value="0">Selecciona un equipo</option></select><span asp-validation-for="IdentificadorEquipo" class="mensaje-error"></span></div>
-    <div><label asp-for="EtiquetaPuerto">Etiqueta exacta del puerto</label><input asp-for="EtiquetaPuerto" placeholder="Ej.: 1, 24, SFP 1" /><span asp-validation-for="EtiquetaPuerto" class="mensaje-error"></span></div>
+    @if (Model.TieneRelacion)
+    {
+        <div>
+            <label>Equipo propietario</label>
+            <input value="@(Model.EquiposDisponibles.FirstOrDefault(opcion => opcion.Value == Model.IdentificadorEquipo.ToString())?.Text ?? Model.IdentificadorEquipo.ToString())" readonly />
+            <input asp-for="IdentificadorEquipo" type="hidden" />
+        </div>
+        <div>
+            <label asp-for="EtiquetaPuerto">Etiqueta exacta del puerto</label>
+            <input asp-for="EtiquetaPuerto" readonly />
+            <p class="ayuda-formulario">La identidad se mantiene fija mientras haya una conexión asociada.</p>
+        </div>
+    }
+    else
+    {
+        <div><label asp-for="IdentificadorEquipo">Equipo propietario</label><select asp-for="IdentificadorEquipo" asp-items="Model.EquiposDisponibles"><option value="0">Selecciona un equipo</option></select><span asp-validation-for="IdentificadorEquipo" class="mensaje-error"></span></div>
+        <div><label asp-for="EtiquetaPuerto">Etiqueta exacta del puerto</label><input asp-for="EtiquetaPuerto" placeholder="Ej.: 1, 24, SFP 1" /><span asp-validation-for="EtiquetaPuerto" class="mensaje-error"></span></div>
+    }
     <div><label asp-for="TipoInterfaz">Tipo de interfaz</label><select asp-for="TipoInterfaz"><option>No confirmado</option><option>RJ45</option><option>SFP</option><option>SFP+</option><option>QSFP</option><option>QSFP+</option><option>QSFP28</option><option>Otro</option></select><span asp-validation-for="TipoInterfaz" class="mensaje-error"></span></div>
     <div><label asp-for="EstadoDatos">Vigencia del dato</label><select asp-for="EstadoDatos"><option>Pendiente de revisión</option><option>Confirmado</option><option>A verificar</option><option>Desactualizado</option></select><span asp-validation-for="EstadoDatos" class="mensaje-error"></span></div>
     <div><label asp-for="EstadoUso">Uso del puerto si no está enlazado</label><select asp-for="EstadoUso"><option>Desconocido</option><option>Libre confirmado</option></select><span asp-validation-for="EstadoUso" class="mensaje-error"></span></div>
