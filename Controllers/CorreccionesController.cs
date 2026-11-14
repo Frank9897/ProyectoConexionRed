@@ -467,7 +467,7 @@ public class CorreccionesController : Controller
             join equipo in contextoInventario.Equipos.AsNoTracking()
                 on interfaz.IdentificadorEquipo equals equipo.Identificador
             where interfaz.Identificador == relacionGuardada.IdentificadorPuertoLocal
-            select new { equipo.Identificador, equipo.Nombre, equipo.IpAdministracion, interfaz.EtiquetaPuerto })
+            select new { equipo.Identificador, equipo.Nombre, equipo.TipoDispositivo, equipo.IpAdministracion, interfaz.EtiquetaPuerto })
             .SingleOrDefaultAsync(cancelacion);
         if (interfazLocal is null) return NotFound();
 
@@ -476,7 +476,9 @@ public class CorreccionesController : Controller
         {
             Identificador = relacionGuardada.Identificador,
             IdentificadorPuertoLocal = relacionGuardada.IdentificadorPuertoLocal,
-            IdentificadorEquipo = interfazLocal.Identificador,
+            IdentificadorEquipo = string.Equals(interfazLocal.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase)
+                ? interfazLocal.Identificador
+                : 0,
             NombrePuertoLocal = $"{interfazLocal.Nombre} · {interfazLocal.IpAdministracion ?? "IP no indicada"} · Puerto {interfazLocal.EtiquetaPuerto}",
             EquipoRemoto = relacionGuardada.EquipoRemoto,
             IpRemota = relacionGuardada.IpRemota,
@@ -522,7 +524,9 @@ public class CorreccionesController : Controller
 
         // nombrePuertoLocal muestra el extremo local sin permitir cambiar su propietario en este formulario.
         formulario.NombrePuertoLocal = $"{equipoLocal.Nombre} · {equipoLocal.IpAdministracion ?? "IP no indicada"} · Puerto {equipoLocal.EtiquetaPuerto}";
-        formulario.IdentificadorEquipo = equipoLocal.Identificador;
+        formulario.IdentificadorEquipo = string.Equals(equipoLocal.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase)
+            ? equipoLocal.Identificador
+            : 0;
         // Se conserva el puerto local original para evitar mover la relación con un ID oculto manipulado.
         formulario.IdentificadorPuertoLocal = relacionGuardada.IdentificadorPuertoLocal;
         if (!ModelState.IsValid)
