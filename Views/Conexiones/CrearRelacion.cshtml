@@ -22,8 +22,14 @@
             <span asp-validation-for="IdentificadorPuertoLocal" class="mensaje-error"></span>
         </div>
         <fieldset class="grupo-formulario">
-            <legend>Extremo remoto (dejar en blanco si no se conoce)</legend>
-            <label asp-for="EquipoRemoto">Equipo</label><input asp-for="EquipoRemoto" /><span asp-validation-for="EquipoRemoto" class="mensaje-error"></span>
+            <legend>Extremo remoto (opcional)</legend>
+            <label asp-for="IdentificadorEquipoRemoto">Equipo ya inventariado</label>
+            <select asp-for="IdentificadorEquipoRemoto" asp-items="Model.EquiposRemotosDisponibles">
+                <option value="">No seleccionar un equipo inventariado</option>
+            </select>
+            <span asp-validation-for="IdentificadorEquipoRemoto" class="mensaje-error"></span>
+            <small class="ayuda-formulario">Al elegir un equipo registrado, se usarán su nombre e IP guardados. Para un switch a switch, registra ambos puertos como enlace físico.</small>
+            <label asp-for="EquipoRemoto">Nombre manual (si no está inventariado)</label><input asp-for="EquipoRemoto" /><span asp-validation-for="EquipoRemoto" class="mensaje-error"></span>
             <label asp-for="IpRemota">IP</label><input asp-for="IpRemota" /><span asp-validation-for="IpRemota" class="mensaje-error"></span>
             <label asp-for="PuertoRemoto">Puerto</label><input asp-for="PuertoRemoto" /><span asp-validation-for="PuertoRemoto" class="mensaje-error"></span>
         </fieldset>
