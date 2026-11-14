@@ -70,11 +70,16 @@ public class TopologiaController : Controller
             }).ToListAsync(cancelacion);
         // ResolverRelacionesParciales compara las filas recíprocas y enlaza solo destinos únicos.
         ResolverRelacionesParciales(relacionesParciales, equiposRegistrados);
-        // Cada interfaz local conserva su ID, pero el HP 1920 muestra SFP 25-28 como SFP 1-4.
+        // Cada interfaz local conserva su ID; se normalizan etiquetas de HP 1920 y Dell S4148U para presentación.
         foreach (var relacionParcial in relacionesParciales)
-            if (string.Equals(relacionParcial.EquipoLocal, "Switch HP 1920", StringComparison.OrdinalIgnoreCase))
+        {
+            // interfazLocal resuelve el tipo del puerto antes de presentar su numeración física.
+            var interfazLocal = interfacesRegistradas.FirstOrDefault(interfaz =>
+                interfaz.Identificador == relacionParcial.IdentificadorPuertoLocal);
+            if (interfazLocal is not null)
                 relacionParcial.PuertoLocal = CatalogoVisualesDispositivos.NormalizarEtiquetaPuertoVisual(
-                    relacionParcial.EquipoLocal, relacionParcial.PuertoLocal);
+                    relacionParcial.EquipoLocal, relacionParcial.PuertoLocal, interfazLocal.TipoInterfaz);
+        }
 
         // equiposPorId resuelve cada extremo de enlace a su ficha propietaria.
         var equiposPorId = equiposRegistrados.ToDictionary(equipo => equipo.Identificador);
@@ -95,8 +100,8 @@ public class TopologiaController : Controller
                 || !equiposPorId.TryGetValue(interfazOrigen.IdentificadorEquipo, out var equipoOrigen)
                 || !equiposPorId.TryGetValue(interfazDestino.IdentificadorEquipo, out var equipoDestino))
                 continue;
-            destinosPorInterfaz[interfazOrigen.Identificador] = $"{equipoDestino.Nombre} · {equipoDestino.IpAdministracion ?? "IP no indicada"} · {CatalogoVisualesDispositivos.NormalizarEtiquetaPuertoVisual(equipoDestino.Nombre, interfazDestino.EtiquetaPuerto)}";
-            destinosPorInterfaz[interfazDestino.Identificador] = $"{equipoOrigen.Nombre} · {equipoOrigen.IpAdministracion ?? "IP no indicada"} · {CatalogoVisualesDispositivos.NormalizarEtiquetaPuertoVisual(equipoOrigen.Nombre, interfazOrigen.EtiquetaPuerto)}";
+            destinosPorInterfaz[interfazOrigen.Identificador] = $"{equipoDestino.Nombre} · {equipoDestino.IpAdministracion ?? "IP no indicada"} · {CatalogoVisualesDispositivos.NormalizarEtiquetaPuertoVisual(equipoDestino.Nombre, interfazDestino.EtiquetaPuerto, interfazDestino.TipoInterfaz)}";
+            destinosPorInterfaz[interfazDestino.Identificador] = $"{equipoOrigen.Nombre} · {equipoOrigen.IpAdministracion ?? "IP no indicada"} · {CatalogoVisualesDispositivos.NormalizarEtiquetaPuertoVisual(equipoOrigen.Nombre, interfazOrigen.EtiquetaPuerto, interfazOrigen.TipoInterfaz)}";
         }
         foreach (var relacion in relacionesParciales)
         {
@@ -220,12 +225,12 @@ public class TopologiaController : Controller
                 IdentificadorPuertoOrigen = puertoOrigen.Identificador,
                 EquipoOrigen = equipoOrigen.Nombre,
                 IpEquipoOrigen = equipoOrigen.IpAdministracion,
-                PuertoOrigen = CatalogoVisualesDispositivos.NormalizarEtiquetaPuertoVisual(equipoOrigen.Nombre, puertoOrigen.EtiquetaPuerto),
+                PuertoOrigen = CatalogoVisualesDispositivos.NormalizarEtiquetaPuertoVisual(equipoOrigen.Nombre, puertoOrigen.EtiquetaPuerto, puertoOrigen.TipoInterfaz),
                 IdentificadorEquipoDestino = equipoDestino.Identificador,
                 IdentificadorPuertoDestino = puertoDestino.Identificador,
                 EquipoDestino = equipoDestino.Nombre,
                 IpEquipoDestino = equipoDestino.IpAdministracion,
-                PuertoDestino = CatalogoVisualesDispositivos.NormalizarEtiquetaPuertoVisual(equipoDestino.Nombre, puertoDestino.EtiquetaPuerto),
+                PuertoDestino = CatalogoVisualesDispositivos.NormalizarEtiquetaPuertoVisual(equipoDestino.Nombre, puertoDestino.EtiquetaPuerto, puertoDestino.TipoInterfaz),
                 Medio = enlace.Medio,
                 EstadoDatos = string.IsNullOrWhiteSpace(enlace.Fuente) ? enlace.EstadoDatos : "Confirmado",
                 Confirmado = string.IsNullOrWhiteSpace(enlace.Fuente)
@@ -331,9 +336,13 @@ public class TopologiaController : Controller
         ResolverRelacionesParciales(relacionesParciales, equiposParaResolver);
         // Cada interfaz local conserva su ID, pero el HP 1920 muestra SFP 25-28 como SFP 1-4.
         foreach (var relacionParcial in relacionesParciales)
-            if (string.Equals(relacionParcial.EquipoLocal, "Switch HP 1920", StringComparison.OrdinalIgnoreCase))
+        {
+            // interfazLocal resuelve el tipo del puerto antes de presentar su numeración física.
+            var interfazLocal = interfacesPorId.GetValueOrDefault(relacionParcial.IdentificadorPuertoLocal);
+            if (interfazLocal is not null)
                 relacionParcial.PuertoLocal = CatalogoVisualesDispositivos.NormalizarEtiquetaPuertoVisual(
-                    relacionParcial.EquipoLocal, relacionParcial.PuertoLocal);
+                    relacionParcial.EquipoLocal, relacionParcial.PuertoLocal, interfazLocal.TipoInterfaz);
+        }
         // conexionesParciales limita el detalle a las relaciones locales del switch actual.
         var conexionesParciales = relacionesParciales
             .Where(relacion => relacion.IdentificadorEquipoLocal == identificador)
