@@ -598,7 +598,12 @@ public class InventarioController : Controller
     /// <returns>Verdadero solo para el tipo Switch.</returns>
     private static bool EsSwitch(EquipoRed equipo)
     {
-        return string.Equals(NormalizarClaveComparacion(equipo.TipoDispositivo), "Switch", StringComparison.OrdinalIgnoreCase);
+        // tipoNormalizado conserva el tipo explícito y funcionNormalizada reconoce switches por su función documentada.
+        var tipoNormalizado = NormalizarClaveComparacion(equipo.TipoDispositivo);
+        var funcionNormalizada = NormalizarClaveComparacion(equipo.RolEnArea);
+        return tipoNormalizado == "SWITCH"
+            || funcionNormalizada.Contains("SWITCH", StringComparison.OrdinalIgnoreCase)
+            || funcionNormalizada.Contains("PUENTE HACIA DELL R770", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
