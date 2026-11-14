@@ -296,12 +296,6 @@ public class CorreccionesController : Controller
             .ToListAsync(cancelacion);
         if (puertosNuevos.Count != 2)
             ModelState.AddModelError(string.Empty, "Selecciona dos puertos existentes.");
-        else if (puertosNuevos.Any(interfaz => interfaz.EstadoUso == "Libre confirmado"
-            && interfaz.Identificador != enlaceGuardado.IdentificadorPuertoOrigen
-            && interfaz.Identificador != enlaceGuardado.IdentificadorPuertoDestino))
-            ModelState.AddModelError(string.Empty,
-                "Un puerto nuevo está marcado libre confirmado. Actualiza primero su uso antes de asignarlo al enlace.");
-
         // extremoOcupado evita usar un puerto que pertenezca a otro enlace.
         var extremoOcupado = await contextoInventario.EnlacesFisicos.AnyAsync(enlace =>
             enlace.Identificador != formulario.Identificador
@@ -359,6 +353,17 @@ public class CorreccionesController : Controller
         var usuarioEditor = User.Identity?.Name ?? "Pruebas sin sesión";
         // cambiosEnlace agrupa una entrada de historial por campo modificado.
         var cambiosEnlace = new List<EventoModificacion>();
+        // puertoNuevo recorre extremos seleccionados; los libres confirmados pasan a desconocido al quedar enlazados.
+        foreach (var puertoNuevo in puertosNuevos.Where(interfaz => interfaz.EstadoUso == "Libre confirmado"))
+        {
+            // extremoNuevo atribuye el cambio de estado al equipo que posee esa interfaz.
+            var extremoNuevo = extremos.Single(extremo => extremo.IdInterfaz == puertoNuevo.Identificador);
+            // estadoUsoAnterior mantiene el valor anterior para dejar auditoría de la ocupación.
+            var estadoUsoAnterior = puertoNuevo.EstadoUso;
+            puertoNuevo.EstadoUso = "Desconocido";
+            UtilidadesConexiones.AgregarCambio(cambiosEnlace, extremoNuevo.IdEquipo, extremoNuevo.Nombre, usuarioEditor,
+                "Uso del puerto", estadoUsoAnterior, puertoNuevo.EstadoUso);
+        }
 
         UtilidadesConexiones.AgregarCambio(cambiosEnlace, origenAnterior.IdEquipo, origenAnterior.Nombre, usuarioEditor,
             "Puerto de origen", $"[{origenAnterior.IdInterfaz}] {origenAnterior.Nombre} · {origenAnterior.EtiquetaPuerto}",
