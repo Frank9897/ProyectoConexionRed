@@ -1,5 +1,6 @@
 @model ProyectoConexionRed.Web.Models.EnlaceFormularioViewModel
 <div class="rejilla-formulario">
+    <p class="ayuda-formulario campo-ancho">Los dos puertos deben ser distintos y no pueden tener otra relación registrada. El medio y los módulos solo se completan si están documentados.</p>
     <div><label asp-for="IdentificadorPuertoOrigen">Puerto de origen</label><select asp-for="IdentificadorPuertoOrigen" asp-items="Model.InterfacesDisponibles"><option value="0">Selecciona un puerto</option></select><span asp-validation-for="IdentificadorPuertoOrigen" class="mensaje-error"></span></div>
     <div><label asp-for="IdentificadorPuertoDestino">Puerto de destino</label><select asp-for="IdentificadorPuertoDestino" asp-items="Model.InterfacesDisponibles"><option value="0">Selecciona un puerto</option></select><span asp-validation-for="IdentificadorPuertoDestino" class="mensaje-error"></span></div>
     <div><label asp-for="Medio">Medio físico</label><select asp-for="Medio"><option>No confirmado</option><option>Cobre RJ45</option><option>Fibra</option><option>DAC</option><option>Otro</option></select><span asp-validation-for="Medio" class="mensaje-error"></span></div>
