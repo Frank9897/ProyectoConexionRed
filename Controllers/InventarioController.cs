@@ -712,12 +712,12 @@ public class InventarioController : Controller
     /// Normaliza espacios externos e internos para cotejar etiquetas documentales exactas.
     /// </summary>
     /// <param name="valor">Texto de fuente; cambiarlo cambia la clave exacta usada en las comparaciones.</param>
-    /// <returns>Texto con espacios consecutivos reducidos y sin espacios externos.</returns>
+    /// <returns>Texto con espacios compactados, sin extremos y en mayúsculas invariantes.</returns>
     private static string NormalizarClaveComparacion(string? valor)
     {
-        // claveNormalizada conserva todo el dato salvo espacios redundantes para evitar coincidencias parciales.
+        // claveNormalizada compacta espacios antes de comparar; cambiarlo altera los cotejos funcionales exactos.
         var claveNormalizada = string.Join(" ", (valor ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries));
-        return claveNormalizada.Trim();
+        return claveNormalizada.Trim().ToUpperInvariant();
     }
 
     /// <summary>
