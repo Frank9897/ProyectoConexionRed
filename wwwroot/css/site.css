@@ -1472,3 +1472,191 @@ body.mapa-ampliado-en-pagina::before {
     .filtros-puertos { grid-template-columns: 1fr; }
     .contador-switch-puertos { white-space: normal; }
 }
+
+
+/* ImpresionA4 fuerza las fichas imprimibles a ocupar la caja real del papel y evita la reduccion automatica del navegador. */
+@media print {
+    @page hoja-switch-a4 { size: A4 landscape; margin: 5mm; }
+    @page hoja-mapa-a4 { size: A4 landscape; margin: 5mm; }
+
+    html,
+    body {
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        background: #fff !important;
+    }
+
+    body:has(.hoja-impresion) > .contenedor {
+        position: static !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+
+    .hoja-impresion {
+        position: fixed !important;
+        inset: 0 !important;
+        display: block !important;
+        box-sizing: border-box !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: none !important;
+        max-height: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        break-after: avoid-page !important;
+        page-break-after: avoid !important;
+        break-inside: avoid-page !important;
+        page-break-inside: avoid !important;
+        transform: none !important;
+        zoom: 1 !important;
+    }
+
+    .contenido-hoja-impresion {
+        position: relative !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        transform: none !important;
+        zoom: 1 !important;
+    }
+
+    .hoja-impresion-switch .contenido-hoja-impresion {
+        display: block !important;
+    }
+
+    .hoja-impresion-switch .detalle-topologia-switch {
+        width: 100% !important;
+        grid-template-columns: minmax(0, 1.7fr) minmax(0, .8fr) !important;
+        gap: 3mm !important;
+    }
+
+    .hoja-impresion-switch .lista-fichas-conexion {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        align-content: start !important;
+        gap: 1.5mm !important;
+    }
+
+    .hoja-impresion-switch .panel-enlaces,
+    .hoja-impresion-switch .ficha-conexion {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .hoja-impresion-topologia .contenido-hoja-impresion {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    .hoja-impresion-topologia .panel-grafico-topologia {
+        display: flex !important;
+        flex: 1 1 auto !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        border: 0 !important;
+        box-shadow: none !important;
+    }
+
+    .hoja-impresion-topologia .encabezado-seccion-topologia {
+        flex: 0 0 auto !important;
+        margin: 0 0 2mm !important;
+        padding: 0 !important;
+    }
+
+    .hoja-impresion-topologia .leyenda-topologia {
+        flex: 0 0 auto !important;
+        margin: 0 0 2mm !important;
+    }
+
+    .hoja-impresion-topologia .selector-capas-topologia,
+    .hoja-impresion-topologia .barra-herramientas-mapa,
+    .hoja-impresion-topologia .filtros-topologia-grafica,
+    .hoja-impresion-topologia .controles-capa-topologia,
+    .hoja-impresion-topologia .acciones-topologia,
+    .hoja-impresion-topologia .aclaracion-topologia-grafica,
+    .hoja-impresion-topologia .lista-fichas-conexion {
+        display: none !important;
+    }
+
+    .hoja-impresion-topologia .marco-mapa-topologia {
+        display: flex !important;
+        flex: 1 1 auto !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        border: 0 !important;
+        box-shadow: none !important;
+    }
+
+    .hoja-impresion-topologia .mapa-topologia {
+        flex: 1 1 auto !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        border: 1px solid #c8d7de !important;
+        background: #fff !important;
+    }
+
+    .hoja-impresion-topologia .lienzo-topologia {
+        min-height: 0 !important;
+        padding: 0 !important;
+    }
+
+    .contenedor:has([data-registro-inventario]) {
+        break-after: avoid-page !important;
+        page-break-after: avoid !important;
+    }
+
+    .tabla-contenedor {
+        max-width: 100% !important;
+        overflow: visible !important;
+    }
+
+    tbody tr[data-registro-inventario][hidden] {
+        display: none !important;
+    }
+
+    .tabla-contenedor table {
+        width: 100% !important;
+        font-size: 6pt !important;
+        table-layout: fixed !important;
+    }
+
+    .tabla-contenedor th,
+    .tabla-contenedor td {
+        padding: 1mm !important;
+        line-height: 1.05 !important;
+        overflow-wrap: anywhere !important;
+    }
+
+    .tabla-contenedor tr {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+}
