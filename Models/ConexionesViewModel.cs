@@ -289,6 +289,9 @@ public class RelacionParcialListadoViewModel
 /// <summary>Datos y opciones para registrar una relación con extremo remoto incompleto.</summary>
 public class NuevaConexionDocumentadaViewModel
 {
+    /// <summary>Switch de retorno; cambiarlo solo se acepta como navegación si es dueño del puerto local.</summary>
+    public int IdentificadorEquipoRetorno { get; set; }
+
     /// <summary>Puerto local real; cambiarlo vincula la observación a otra interfaz.</summary>
     [Range(1, int.MaxValue, ErrorMessage = "Selecciona el puerto local conocido.")]
     public int IdentificadorPuertoLocal { get; set; }
@@ -336,7 +339,7 @@ public class EditarConexionDocumentadaViewModel : NuevaConexionDocumentadaViewMo
     [Range(1, int.MaxValue)]
     public int Identificador { get; set; }
 
-    /// <summary>ID del equipo propietario del puerto; cambiarlo altera el destino de regreso del formulario.</summary>
+    /// <summary>ID del switch local; cambiarlo solo permite volver si corresponde al propietario real.</summary>
     public int IdentificadorEquipo { get; set; }
 
     /// <summary>Puerto local legible; cambiarlo altera la identificación contextual mostrada, no su propietario.</summary>
