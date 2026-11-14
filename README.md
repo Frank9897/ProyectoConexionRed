@@ -264,3 +264,5 @@ La sección **Puertos** permite filtrar las tarjetas localmente por texto (nombr
 
 La identidad de un puerto (equipo propietario y etiqueta) queda protegida mientras tenga un enlace completo o una relación parcial. Para moverlo o renombrarlo, primero se debe resolver la conexión correspondiente. Tampoco se puede marcar como «Libre confirmado» un puerto que tenga una relación. Al crear un enlace, los dos extremos deben ser distintos, existir en la base, no estar enlazados ni tener una relación parcial, y no estar marcados como libres confirmados. Al corregir enlaces, se valida también que un extremo nuevo no esté ocupado por otra conexión ni tenga una relación parcial; los extremos existentes se pueden conservar para editar sus metadatos.
 
+
+Corrección de compilación: el formulario de edición de relaciones parciales incluye el identificador del equipo propietario para construir el enlace de regreso al detalle del switch.
