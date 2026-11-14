@@ -86,7 +86,7 @@
             : 1;
 
         // ampliarAncho compensa la escala para conservar el ancho de hoja tras transformar la tabla.
-        tablaParaImprimir.style.width = `${100 / escalaImpresion}%`;
+        tablaParaImprimir.style.setProperty("width", `${100 / escalaImpresion}%`, "important");
         tablaParaImprimir.style.transformOrigin = "top left";
         tablaParaImprimir.style.transform = `scale(${escalaImpresion})`;
     };
