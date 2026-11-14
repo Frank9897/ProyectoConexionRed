@@ -333,6 +333,9 @@ public class EditarConexionDocumentadaViewModel : NuevaConexionDocumentadaViewMo
     [Range(1, int.MaxValue)]
     public int Identificador { get; set; }
 
+    /// <summary>ID del equipo propietario del puerto; cambiarlo altera el destino de regreso del formulario.</summary>
+    public int IdentificadorEquipo { get; set; }
+
     /// <summary>Puerto local legible; cambiarlo altera la identificación contextual mostrada, no su propietario.</summary>
     public string NombrePuertoLocal { get; set; } = string.Empty;
 }
