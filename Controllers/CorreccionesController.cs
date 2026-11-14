@@ -239,7 +239,10 @@ public class CorreccionesController : Controller
     /// <param name="cancelacion">Señal de cancelación; activarla detiene la consulta.</param>
     /// <returns>Formulario actual o respuesta no encontrado.</returns>
     [HttpGet]
-    public async Task<IActionResult> EditarEnlace(int identificador, CancellationToken cancelacion)
+    public async Task<IActionResult> EditarEnlace(
+        int identificador,
+        int? identificadorSwitchRetorno,
+        CancellationToken cancelacion)
     {
         // enlaceGuardado conserva los datos actuales; cambiar el ID carga otra relación.
         var enlaceGuardado = await contextoInventario.EnlacesFisicos.AsNoTracking()
@@ -250,6 +253,7 @@ public class CorreccionesController : Controller
         var formularioEdicion = new EditarEnlaceViewModel
         {
             Identificador = enlaceGuardado.Identificador,
+            IdentificadorEquipoRetorno = await ObtenerSwitchRetornoAsync(enlaceGuardado, identificadorSwitchRetorno, cancelacion) ?? 0,
             IdentificadorPuertoOrigen = enlaceGuardado.IdentificadorPuertoOrigen,
             IdentificadorPuertoDestino = enlaceGuardado.IdentificadorPuertoDestino,
             Medio = enlaceGuardado.Medio,
@@ -273,7 +277,7 @@ public class CorreccionesController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditarEnlace(
-        [Bind("Identificador,IdentificadorPuertoOrigen,IdentificadorPuertoDestino,Medio,ModuloOrigen,ModuloDestino,EstadoDatos,FechaUltimaRevision,Fuente,Observaciones")]
+        [Bind("Identificador,IdentificadorEquipoRetorno,IdentificadorPuertoOrigen,IdentificadorPuertoDestino,Medio,ModuloOrigen,ModuloDestino,EstadoDatos,FechaUltimaRevision,Fuente,Observaciones")]
         EditarEnlaceViewModel formulario,
         CancellationToken cancelacion)
     {
@@ -317,6 +321,9 @@ public class CorreccionesController : Controller
 
         if (!ModelState.IsValid)
         {
+            // Se valida el destino de retorno contra los switches que realmente participan en este enlace.
+            formulario.IdentificadorEquipoRetorno = await ObtenerSwitchRetornoAsync(
+                enlaceGuardado, formulario.IdentificadorEquipoRetorno, cancelacion) ?? 0;
             formulario.InterfacesDisponibles = await UtilidadesConexiones.ObtenerInterfacesDisponiblesAsync(contextoInventario, formulario.IdentificadorPuertoOrigen, cancelacion);
             return View(formulario);
         }
@@ -390,13 +397,51 @@ public class CorreccionesController : Controller
         TempData["Mensaje"] = cambiosEnlace.Count == 0
             ? "No se detectaron cambios en el enlace."
             : $"Se actualizaron {cambiosEnlace.Count} campos del enlace.";
-        var equipoSwitch = new[] { origenNuevo, destinoNuevo }.FirstOrDefault(extremo =>
-            string.Equals(extremo.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase));
-        return equipoSwitch is not null
-            ? RedirectToAction("Detalle", "Topologia", new { identificador = equipoSwitch.IdEquipo })
+        var identificadorSwitchRegreso = await ObtenerSwitchRetornoAsync(
+            enlaceGuardado, formulario.IdentificadorEquipoRetorno, cancelacion);
+        return identificadorSwitchRegreso.HasValue
+            ? RedirectToAction("Detalle", "Topologia", new { identificador = identificadorSwitchRegreso.Value })
             : RedirectToAction("Index", "Conexiones");
     }
 
+
+    /// <summary>
+    /// Verifica que el switch solicitado participe en el enlace y determina el destino de regreso.
+    /// </summary>
+    /// <param name="enlace">Enlace vigente; cambiarlo cambia los extremos que se validan.</param>
+    /// <param name="identificadorPreferido">Switch de origen; cambiarlo se acepta solo si es uno de los extremos.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla detiene la consulta.</param>
+    /// <returns>ID de un switch participante o null si el enlace no conecta switches.</returns>
+    private async Task<int?> ObtenerSwitchRetornoAsync(
+        EnlaceFisico enlace,
+        int? identificadorPreferido,
+        CancellationToken cancelacion)
+    {
+        // identificadoresPuertos contiene los dos extremos documentados del enlace.
+        var identificadoresPuertos = new[]
+        {
+            enlace.IdentificadorPuertoOrigen,
+            enlace.IdentificadorPuertoDestino
+        };
+        // identificadoresSwitch identifica solo equipos Switch propietarios de esos extremos.
+        var identificadoresSwitch = await (
+            from interfaz in contextoInventario.InterfacesEquipo.AsNoTracking()
+            join equipo in contextoInventario.Equipos.AsNoTracking()
+                on interfaz.IdentificadorEquipo equals equipo.Identificador
+            where identificadoresPuertos.Contains(interfaz.Identificador)
+                && equipo.TipoDispositivo == "Switch"
+            select equipo.Identificador)
+            .Distinct()
+            .ToListAsync(cancelacion);
+
+        if (identificadorPreferido.HasValue && identificadoresSwitch.Contains(identificadorPreferido.Value))
+        {
+            return identificadorPreferido.Value;
+        }
+
+        // identificadorAlternativo usa un switch del enlace si el preferido no corresponde o no llegó.
+        return identificadoresSwitch.Select(identificador => (int?)identificador).FirstOrDefault();
+    }
 
     /// <summary>
     /// Carga una relación parcial para corregir el destino y sus datos de origen.
@@ -582,12 +627,19 @@ public class CorreccionesController : Controller
     /// <returns>Regresa al frontal de un switch que forme parte del enlace.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EliminarEnlace(int identificador, CancellationToken cancelacion)
+    public async Task<IActionResult> EliminarEnlace(
+        int identificador,
+        int? identificadorSwitchRetorno,
+        CancellationToken cancelacion)
     {
         // enlaceGuardado conserva los dos extremos que se van a retirar.
         var enlaceGuardado = await contextoInventario.EnlacesFisicos
             .SingleOrDefaultAsync(enlace => enlace.Identificador == identificador, cancelacion);
         if (enlaceGuardado is null) return NotFound();
+
+        // identificadorSwitchRegreso conserva el switch de origen solo si realmente participa del enlace.
+        var identificadorSwitchRegreso = await ObtenerSwitchRetornoAsync(
+            enlaceGuardado, identificadorSwitchRetorno, cancelacion);
 
         // puertosExtremos permite resolver los equipos y atribuir el cambio.
         var puertosExtremos = await contextoInventario.InterfacesEquipo.AsNoTracking()
@@ -623,8 +675,8 @@ public class CorreccionesController : Controller
         await contextoInventario.SaveChangesAsync(cancelacion);
 
         TempData["Mensaje"] = "Se eliminó el enlace documentado y sus puertos quedaron disponibles según sus estados guardados.";
-        return string.Equals(equipoAtribucion.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase)
-            ? RedirectToAction("Detalle", "Topologia", new { identificador = equipoAtribucion.Identificador })
+        return identificadorSwitchRegreso.HasValue
+            ? RedirectToAction("Detalle", "Topologia", new { identificador = identificadorSwitchRegreso.Value })
             : RedirectToAction("Index", "Conexiones");
     }
 
