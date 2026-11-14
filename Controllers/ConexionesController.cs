@@ -469,12 +469,6 @@ public class ConexionesController : Controller
     }
 
     /// <summary>
-    /// Obtiene equipos finales que pueden elegirse como destino de una conexión de acceso.
-    /// </summary>
-    /// <param name="identificadorEquipoLocal">Equipo local opcional; cambiarlo excluye esa ficha de los destinos.</param>
-    /// <param name="cancelacion">Señal de cancelación; activarla detiene la consulta del inventario.</param>
-    /// <returns>Equipos no switch ordenados para el selector remoto.</returns>
-    /// <summary>
     /// Reconoce switches por tipo explícito o función documentada.
     /// </summary>
     /// <param name="tipoDispositivo">Tipo registrado; cambiarlo puede clasificar la ficha como switch.</param>
@@ -491,6 +485,12 @@ public class ConexionesController : Controller
             || funcionNormalizada.Contains("Puente hacia Dell R770", StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Obtiene equipos finales que pueden elegirse como destino de una conexión de acceso.
+    /// </summary>
+    /// <param name="identificadorEquipoLocal">Equipo local opcional; cambiarlo excluye esa ficha de los destinos.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla detiene la consulta del inventario.</param>
+    /// <returns>Equipos que no son switch, ordenados para el selector remoto.</returns>
     private async Task<List<EquipoRed>> ObtenerEquiposRemotosAsync(
         int? identificadorEquipoLocal,
         CancellationToken cancelacion)
@@ -523,7 +523,6 @@ public class ConexionesController : Controller
                     || enlace.IdentificadorPuertoDestino == interfaz.Identificador)
                 && !contextoInventario.ConexionesDocumentadas.Any(relacion =>
                     relacion.IdentificadorPuertoLocal == interfaz.Identificador)
-                && interfaz.EstadoUso != "Libre confirmado"
             orderby equipo.Nombre, interfaz.EtiquetaPuerto
             select new { interfaz.Identificador, interfaz.EtiquetaPuerto, equipo.Nombre, equipo.IpAdministracion })
             .ToListAsync(cancelacion);
