@@ -24,6 +24,15 @@
     </div>
 </section>
 
+@if (TempData["Mensaje"] is string mensajeDetalleSwitch)
+{
+    <p class="mensaje-exito" role="status">@mensajeDetalleSwitch</p>
+}
+@if (TempData["Error"] is string errorDetalleSwitch)
+{
+    <p class="mensaje-error" role="alert">@errorDetalleSwitch</p>
+}
+
 <section class="resumen-puertos-switch" aria-label="Estado documental de puertos">
     <article><span class="indicador-estado-puerto ocupado" aria-hidden="true"></span><strong>@cantidadOcupados</strong><span>Ocupados en registros</span></article>
     <article><span class="indicador-estado-puerto libre" aria-hidden="true"></span><strong>@cantidadLibres</strong><span>Libres confirmados</span></article>
