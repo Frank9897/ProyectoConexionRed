@@ -197,6 +197,9 @@ public class NuevaInterfazViewModel : InterfazFormularioViewModel { }
 /// </summary>
 public class EditarInterfazViewModel : InterfazFormularioViewModel
 {
+    /// <summary>Indica si hay una relación guardada; cambiarlo altera la edición de la identidad del puerto.</summary>
+    public bool TieneRelacion { get; set; }
+
     /// <summary>ID de la interfaz; cambiarlo selecciona otro puerto para editar.</summary>
     [Range(1, int.MaxValue)]
     public int Identificador { get; set; }
