@@ -428,3 +428,13 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 - Se retiró la sección visible de procedencia de los formularios de relación y enlace. Al editar, las referencias previamente guardadas se preservan sin cambios; al crear relaciones manuales se establece una referencia interna automática.
 - En el HP 1920, SFP 25–28 se normalizan a SFP 1–4. Las filas SFP adicionales de Excel6 se conservan en SQLite y no se dibujan como jaulas adicionales. No se borran equipos, interfaces ni enlaces.
 - Código publicado por actualización directa en la rama main; no ejecutar build, pruebas ni navegador en esta etapa, siguiendo la preferencia del usuario para validar localmente.
+
+
+## Perfil Dell S4148U-ON y módulos RJ45 (14 de noviembre de 2026)
+
+- El frontal físico verificado del Dell PowerSwitch S4148U-ON tiene 48 jaulas SFP+, 2 QSFP+ y 4 QSFP28. La vista numera los puertos localmente por grupo de conectores (SFP+ 1–48, QSFP+ 1–2 y QSFP28 1–4); no los concatena en una única secuencia ni presenta puertos QSFP como bocas SFP adicionales.
+- Si el inventario declara otra capacidad para el modelo Dell reconocido, el perfil físico verificado tiene prioridad visual. Las filas de interfaz excedentes se conservan en SQLite y no aparecen como puertos físicos fuera de capacidad. Esta regla no cambia las capacidades de otros modelos.
+- Los registros ocupados del S4148U muestran «Transceptor RJ45» según la confirmación del usuario. La nota del frontal enumera las etiquetas ocupadas y cada puerto incluye esa indicación en su estado emergente. No inferir velocidad, módulo exacto ni enlace en vivo a partir de esa nota.
+- «SFP+», «QSFP+» y «QSFP28» conservan numeración independiente por grupo en el frontal. Las numeraciones lógicas de OS10 pueden variar por perfil de puertos y no reemplazan las etiquetas físicas ni la documentación del inventario.
+- Referencia oficial para el conteo: https://www.dell.com/support/manuals/en-uk/networking-s4148f-on/s4100f_t_u_on_install_pub/features?guid=guid-0de00e36-0afd-4bc1-848f-10243d7075ec&lang=en-us. Referencia de perfiles lógicos OS10: https://www.dell.com/support/manuals/en-uk/dell-emc-smartfabric-os10/smartfabric-os-user-guide-10-5-3/s4148u-on-port-profiles?guid=guid-83c20b2e-66ad-4708-8f0f-67625143ed77&lang=en-us.
+- Mantener comentarios, variables y commits en español; actualizar este archivo y README al modificar el perfil o la presentación del S4148U.
