@@ -9,6 +9,8 @@
     var puertosLibres = Model.Puertos.Count(puerto => puerto.ClaseVisual == "puerto-libre");
     // puertosDesconocidos evita interpretar ausencia de registro como puerto libre.
     var puertosDesconocidos = Model.Puertos.Count(puerto => puerto.ClaseVisual == "puerto-desconocido");
+    // puertosConTransceptorRj45 lista solo las bocas ocupadas cuyo módulo se documentó en el S4148U.
+    var puertosConTransceptorRj45 = Model.Puertos.Where(puerto => puerto.ModuloInstalado == "Transceptor RJ45").ToList();
 }
 
 <div class="panel-frontal-switch">
@@ -17,6 +19,10 @@
         <span class="resumen-puerto"><i class="indicador-estado-puerto libre" aria-hidden="true"></i><b>@puertosLibres</b> libres confirmados</span>
         <span class="resumen-puerto"><i class="indicador-estado-puerto desconocido" aria-hidden="true"></i><b>@puertosDesconocidos</b> desconocidos</span>
     </div>
+    @if (puertosConTransceptorRj45.Count > 0)
+    {
+        <p class="nota-transceptores-rj45"><strong>Transceptores RJ45 documentados:</strong> @string.Join(", ", puertosConTransceptorRj45.Select(puerto => puerto.Etiqueta)).</p>
+    }
     <p class="estado-seleccion-puerto" data-mensaje-puerto role="status" aria-live="polite">Selecciona un puerto para consultar su destino documentado.</p>
     <div class="frontal-switch-scroll">
         <div class="frontal-switch-panel" role="group" aria-label="Frontal de puertos de @Model.Nombre">
@@ -50,7 +56,7 @@
                                       role="button"
                                       aria-pressed="false"
                                       aria-label="@puertoSuperior.Etiqueta · @puertoSuperior.EstadoVisual · @(puertoSuperior.DestinoConexion ?? "Sin destino documentado")"
-                                      title="@puertoSuperior.Etiqueta · @puertoSuperior.EstadoVisual · @puertoSuperior.Tipo@(puertoSuperior.DestinoConexion is null ? "" : " · " + puertoSuperior.DestinoConexion)">
+                                      title="@puertoSuperior.Etiqueta · @puertoSuperior.EstadoVisual · @puertoSuperior.Tipo@(puertoSuperior.ModuloInstalado is null ? "" : " · " + puertoSuperior.ModuloInstalado)@(puertoSuperior.DestinoConexion is null ? "" : " · " + puertoSuperior.DestinoConexion)">
                                     <span class="numero-puerto-frontal">@puertoSuperior.Etiqueta</span>
                                     <span class="solo-lectores-pantalla">@puertoSuperior.EstadoVisual@(puertoSuperior.DestinoConexion is null ? "" : " · " + puertoSuperior.DestinoConexion)</span>
                                 </span>
@@ -71,7 +77,7 @@
                                       role="button"
                                       aria-pressed="false"
                                       aria-label="@puertoInferior.Etiqueta · @puertoInferior.EstadoVisual · @(puertoInferior.DestinoConexion ?? "Sin destino documentado")"
-                                      title="@puertoInferior.Etiqueta · @puertoInferior.EstadoVisual · @puertoInferior.Tipo@(puertoInferior.DestinoConexion is null ? "" : " · " + puertoInferior.DestinoConexion)">
+                                      title="@puertoInferior.Etiqueta · @puertoInferior.EstadoVisual · @puertoInferior.Tipo@(puertoInferior.ModuloInstalado is null ? "" : " · " + puertoInferior.ModuloInstalado)@(puertoInferior.DestinoConexion is null ? "" : " · " + puertoInferior.DestinoConexion)">
                                     <span class="numero-puerto-frontal">@puertoInferior.Etiqueta</span>
                                     <span class="solo-lectores-pantalla">@puertoInferior.EstadoVisual@(puertoInferior.DestinoConexion is null ? "" : " · " + puertoInferior.DestinoConexion)</span>
                                 </span>
