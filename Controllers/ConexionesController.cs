@@ -443,6 +443,11 @@ public class ConexionesController : Controller
         {
             ModelState.AddModelError(string.Empty, "Selecciona dos puertos existentes.");
         }
+        else if (puertosExistentes.Any(interfaz => interfaz.EstadoUso == "Libre confirmado"))
+        {
+            ModelState.AddModelError(string.Empty,
+                "Uno de los puertos está marcado libre confirmado. Actualiza primero su uso si realmente forma parte de este enlace.");
+        }
 
         // puertoYaVinculado impide registrar un segundo enlace sobre una interfaz que ya tiene relación física.
         var puertoYaVinculado = await contextoInventario.EnlacesFisicos.AnyAsync(
