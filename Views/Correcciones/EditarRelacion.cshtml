@@ -16,9 +16,9 @@
         </div>
         <fieldset class="grupo-formulario">
             <legend>Destino documentado</legend>
-            <label asp-for="EquipoRemoto">Equipo</label><input asp-for="EquipoRemoto" />
-            <label asp-for="IpRemota">IP</label><input asp-for="IpRemota" />
-            <label asp-for="PuertoRemoto">Puerto remoto (si aparece en la documentación)</label><input asp-for="PuertoRemoto" />
+            <label asp-for="EquipoRemoto">Equipo</label><input asp-for="EquipoRemoto" /><span asp-validation-for="EquipoRemoto" class="mensaje-error"></span>
+            <label asp-for="IpRemota">IP</label><input asp-for="IpRemota" /><span asp-validation-for="IpRemota" class="mensaje-error"></span>
+            <label asp-for="PuertoRemoto">Puerto remoto (si aparece en la documentación)</label><input asp-for="PuertoRemoto" /><span asp-validation-for="PuertoRemoto" class="mensaje-error"></span>
         </fieldset>
         <div class="grupo-formulario">
             <label asp-for="Medio">Medio</label>
@@ -36,22 +36,29 @@
         </div>
         <div class="grupo-formulario">
             <label asp-for="FechaUltimaRevision">Fecha de revisión (solo si se realizó)</label>
-            <input asp-for="FechaUltimaRevision" type="date" />
+            <input asp-for="FechaUltimaRevision" type="date" /><span asp-validation-for="FechaUltimaRevision" class="mensaje-error"></span>
         </div>
         <fieldset class="grupo-formulario">
             <legend>Procedencia documental</legend>
             <label asp-for="FuentePagina">Página o referencia</label><input asp-for="FuentePagina" />
             <span asp-validation-for="FuentePagina" class="mensaje-error"></span>
-            <label asp-for="FuenteLibro">Libro Excel incrustado (opcional)</label><input asp-for="FuenteLibro" />
-            <label asp-for="FuenteFila">Fila o referencia (opcional)</label><input asp-for="FuenteFila" />
+            <label asp-for="FuenteLibro">Libro Excel incrustado (opcional)</label><input asp-for="FuenteLibro" /><span asp-validation-for="FuenteLibro" class="mensaje-error"></span>
+            <label asp-for="FuenteFila">Fila o referencia (opcional)</label><input asp-for="FuenteFila" /><span asp-validation-for="FuenteFila" class="mensaje-error"></span>
         </fieldset>
         <div class="grupo-formulario">
             <label asp-for="Observaciones">Notas</label>
-            <textarea asp-for="Observaciones" rows="3"></textarea>
+            <textarea asp-for="Observaciones" rows="3"></textarea><span asp-validation-for="Observaciones" class="mensaje-error"></span>
         </div>
         <div class="acciones-formulario">
             <button class="boton" type="submit">Guardar corrección</button>
-            <a class="boton boton-secundario" asp-controller="Topologia" asp-action="Detalle" asp-route-identificador="@Model.IdentificadorEquipo">Volver al switch</a>
+            @if (Model.IdentificadorEquipo > 0)
+            {
+                <a class="boton boton-secundario" asp-controller="Topologia" asp-action="Detalle" asp-route-identificador="@Model.IdentificadorEquipo">Volver al switch</a>
+            }
+            else
+            {
+                <a class="boton boton-secundario" asp-controller="Conexiones" asp-action="Index">Volver a Puertos</a>
+            }
         </div>
     </form>
     <form asp-controller="Correcciones" asp-action="EliminarRelacion" method="post" onsubmit="return confirm('¿Eliminar esta conexión del inventario documental? La acción quedará en el historial.');">
