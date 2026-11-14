@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Sockets;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ProyectoConexionRed.Web.Data;
@@ -98,5 +100,92 @@ public static class UtilidadesConexiones
                 .Where(texto => !string.IsNullOrWhiteSpace(texto))),
             Selected = identificadorSeleccionado == interfaz.Identificador
         }).ToList();
+    }
+    /// <summary>
+    /// Obtiene direcciones libres de las redes 192.168.0.x y 192.168.1.x, conservando la dirección actual.
+    /// </summary>
+    /// <param name="contextoInventario">Base documental; cambiarla altera las direcciones que se consideran ocupadas.</param>
+    /// <param name="ipActual">IP vigente; cambiarla conserva la opción elegida aunque ya esté asignada.</param>
+    /// <param name="cancelacion">Señal de cancelación; activarla detiene la consulta.</param>
+    /// <returns>Opciones de IP libres ordenadas por subred.</returns>
+    public static async Task<List<SelectListItem>> ObtenerIpsLibresAsync(InventarioDbContext contextoInventario,
+        string? ipActual, CancellationToken cancelacion)
+    {
+        // ipsRegistradas reúne direcciones ya usadas por equipos y relaciones documentales.
+        var ipsRegistradas = await contextoInventario.Equipos.AsNoTracking()
+            .Where(equipo => equipo.IpAdministracion != null)
+            .Select(equipo => equipo.IpAdministracion!)
+            .ToListAsync(cancelacion);
+        // ipsRemotas registra IP remotas ya usadas por otras relaciones parciales.
+        var ipsRemotas = await contextoInventario.ConexionesDocumentadas.AsNoTracking()
+            .Where(relacion => relacion.IpRemota != null)
+            .Select(relacion => relacion.IpRemota!)
+            .ToListAsync(cancelacion);
+        // ipsOcupadas permite verificar direcciones sin repetir búsquedas en SQLite.
+        var ipsOcupadas = ipsRegistradas.Concat(ipsRemotas).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        // ipsDisponibles agrupa las direcciones libres de las dos subredes permitidas.
+        var ipsDisponibles = new List<SelectListItem>();
+        // segundoOcteto recorre los segmentos de usuario que se pueden asignar desde el formulario.
+        foreach (var segundoOcteto in new[] { 0, 1 })
+        {
+            // ultimoOcteto recorre hosts utilizables, sin proponer la dirección de red ni broadcast.
+            for (var ultimoOcteto = 1; ultimoOcteto <= 254; ultimoOcteto++)
+            {
+                // ipCandidata forma la dirección que se contrasta con el inventario vigente.
+                var ipCandidata = $"192.168.{segundoOcteto}.{ultimoOcteto}";
+                if (!ipsOcupadas.Contains(ipCandidata)
+                    || string.Equals(ipCandidata, ipActual, StringComparison.OrdinalIgnoreCase))
+                {
+                    ipsDisponibles.Add(new SelectListItem
+                    {
+                        Value = ipCandidata,
+                        Text = ipCandidata + (ipsOcupadas.Contains(ipCandidata) ? " · actual" : " · libre"),
+                        Selected = false
+                    });
+                }
+            }
+        }
+
+        // ipActualEsPersonalizada conserva el dato actual en caso de que no pertenezca a las opciones sugeridas.
+        var ipActualEsPersonalizada = !string.IsNullOrWhiteSpace(ipActual)
+            && !string.Equals(ipActual, "Desconocido", StringComparison.OrdinalIgnoreCase)
+            && !ipsDisponibles.Any(opcion => string.Equals(opcion.Value, ipActual, StringComparison.OrdinalIgnoreCase));
+        if (ipActualEsPersonalizada)
+        {
+            ipsDisponibles.Insert(0, new SelectListItem
+            {
+                Value = ipActual!,
+                Text = ipActual + " · actual",
+                Selected = false
+            });
+        }
+
+        return ipsDisponibles;
+    }
+
+    /// <summary>
+    /// Acepta solo las direcciones IPv4 privadas indicadas por el usuario o el estado explícito Desconocido.
+    /// </summary>
+    /// <param name="ip">Dirección enviada; cambiarla altera el destino guardado.</param>
+    /// <returns>Verdadero para vacío, Desconocido o una IP 192.168.0.1-254/192.168.1.1-254.</returns>
+    public static bool EsIpPermitida(string? ip)
+    {
+        // ipNormalizada elimina espacios antes de validar el valor manual.
+        var ipNormalizada = ip?.Trim();
+        if (string.IsNullOrEmpty(ipNormalizada)
+            || string.Equals(ipNormalizada, "Desconocido", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        // ipAnalizada representa la IPv4 en bytes para aplicar el rango permitido.
+        if (!IPAddress.TryParse(ipNormalizada, out var ipAnalizada)
+            || ipAnalizada.AddressFamily != AddressFamily.InterNetwork)
+            return false;
+
+        // octetosIP permite comprobar las dos redes privadas y evitar hosts reservados.
+        var octetosIP = ipAnalizada.GetAddressBytes();
+        return octetosIP[0] == 192
+            && octetosIP[1] == 168
+            && octetosIP[2] is 0 or 1
+            && octetosIP[3] is >= 1 and <= 254;
     }
 }
