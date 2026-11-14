@@ -41,6 +41,11 @@ public class CorreccionesController : Controller
         var formularioEdicion = new EditarInterfazViewModel
         {
             Identificador = interfazGuardada.Identificador,
+            TieneRelacion = await contextoInventario.EnlacesFisicos.AnyAsync(enlace =>
+                enlace.IdentificadorPuertoOrigen == interfazGuardada.Identificador
+                || enlace.IdentificadorPuertoDestino == interfazGuardada.Identificador, cancelacion)
+                || await contextoInventario.ConexionesDocumentadas.AnyAsync(
+                    relacion => relacion.IdentificadorPuertoLocal == interfazGuardada.Identificador, cancelacion),
             IdentificadorEquipo = interfazGuardada.IdentificadorEquipo,
             EtiquetaPuerto = interfazGuardada.EtiquetaPuerto,
             TipoInterfaz = interfazGuardada.TipoInterfaz,
@@ -87,6 +92,13 @@ public class CorreccionesController : Controller
             ModelState.AddModelError(nameof(formulario.EstadoUso),
                 "No se puede marcar libre un puerto que tiene una relación registrada.");
 
+        // identidadAlterada detecta cambios de equipo o etiqueta que desplazarían un extremo conectado.
+        var identidadAlterada = interfazGuardada.IdentificadorEquipo != formulario.IdentificadorEquipo
+            || !string.Equals(interfazGuardada.EtiquetaPuerto, etiquetaNueva, StringComparison.Ordinal);
+        if (puertoTieneRelacion && identidadAlterada)
+            ModelState.AddModelError(string.Empty,
+                "Este puerto tiene conexiones registradas. Primero resuelve esas conexiones antes de cambiar su equipo o etiqueta.");
+
         if (!await contextoInventario.Equipos.AnyAsync(
                 equipo => equipo.Identificador == formulario.IdentificadorEquipo, cancelacion))
             ModelState.AddModelError(nameof(formulario.IdentificadorEquipo), "Selecciona un equipo existente.");
@@ -102,6 +114,7 @@ public class CorreccionesController : Controller
 
         if (!ModelState.IsValid)
         {
+            formulario.TieneRelacion = puertoTieneRelacion;
             formulario.EquiposDisponibles = await UtilidadesConexiones.ObtenerEquiposDisponiblesAsync(contextoInventario, formulario.IdentificadorEquipo, cancelacion);
             return View(formulario);
         }
