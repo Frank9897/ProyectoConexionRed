@@ -76,6 +76,15 @@ Se centralizaron la normalización de textos opcionales, el registro de cambios 
 
 La revisión se hizo sobre la rama publicada. En esta sesión no hay un checkout local de .NET para ejecutar la compilación; el resultado requiere esa comprobación en el entorno del proyecto.
 
+
+### Clasificación funcional y conexiones desde ambos extremos
+
+Los filtros del inventario reconocen switches por su función registrada, puestos por la función que contiene «Usuario» y periféricos por su tipo/función. La ficha documentada del plotter Epson T7200 del PDF ahora completa tipo y función si una ficha previa tenía valores genéricos; esos cambios quedan en el historial. No se crean impresoras que no estén en la documentación.
+
+Desde el frontal del switch se puede iniciar una relación para puertos libres o desconocidos y seleccionar un equipo inventariado. Desde un equipo final también se puede iniciar la conexión y elegir un puerto de switch disponible. La ficha solo guarda el extremo realmente conocido; no inventa el puerto remoto. Los enlaces entre switches continúan requiriendo los dos puertos.
+
+Los puertos numéricos de cobre importados del Visio se clasifican como RJ45 conforme a la indicación del usuario. Las etiquetas SFP/SFP+ explícitas conservan ese tipo, pero la presencia y el medio del transceptor siguen pendientes de confirmación. Se admite «RJ45 + PoE» al editar y se cuenta dentro de la capacidad RJ45.
+
 ## Próximas etapas
 
 1. Completar la revisión de hojas Excel del V3 cuyo switch propietario o conexión de rack siga ambiguo; no convertir notas parciales en enlaces.
