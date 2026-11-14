@@ -259,3 +259,8 @@ Desde el detalle se pueden editar o eliminar enlaces completos y relaciones parc
 ### Búsqueda de switches en Puertos
 
 La sección **Puertos** permite filtrar las tarjetas localmente por texto (nombre, área, modelo, IP o destino visible) y por conexiones registradas, puertos desconocidos, confirmación o ausencia de conexiones. El contador indica cuántos switches coinciden. El filtrado se ejecuta en el navegador sobre la información ya presentada y no genera tráfico hacia la red de trabajo.
+
+### Validaciones al editar puertos y enlaces
+
+La identidad de un puerto (equipo propietario y etiqueta) queda protegida mientras tenga un enlace completo o una relación parcial. Para moverlo o renombrarlo, primero se debe resolver la conexión correspondiente. Tampoco se puede marcar como «Libre confirmado» un puerto que tenga una relación. Al crear un enlace, los dos extremos deben ser distintos, existir en la base, no estar enlazados ni tener una relación parcial, y no estar marcados como libres confirmados. Al corregir enlaces, se valida también que un extremo nuevo no esté ocupado por otra conexión ni tenga una relación parcial; los extremos existentes se pueden conservar para editar sus metadatos.
+
