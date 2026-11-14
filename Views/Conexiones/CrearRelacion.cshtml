@@ -4,7 +4,7 @@
 }
 
 <section class="panel-formulario panel-formulario-ancho">
-    <p class="sobrelinea">FUENTE VISIO · EXTREMO REMOTO OPCIONAL</p>
+    <p class="sobrelinea">EXTREMO REMOTO OPCIONAL</p>
     <h1>Registrar una relación documentada</h1>
     <p>Usa esta opción cuando la fuente identifique el puerto local pero no permita confirmar el puerto remoto. Los datos faltantes quedan vacíos y el medio inicia como «No confirmado».</p>
     <form asp-action="CrearRelacion" method="post">
@@ -25,12 +25,20 @@
             <legend>Extremo remoto (opcional)</legend>
             <label asp-for="IdentificadorEquipoRemoto">Equipo ya inventariado</label>
             <select asp-for="IdentificadorEquipoRemoto" asp-items="Model.EquiposRemotosDisponibles">
-                <option value="">No seleccionar un equipo inventariado</option>
+                <option value="">Ingresar equipo manualmente</option>
+                <option value="-1">Desconocido / no inventariado</option>
             </select>
             <span asp-validation-for="IdentificadorEquipoRemoto" class="mensaje-error"></span>
             <small class="ayuda-formulario">Al elegir un equipo registrado, se usarán su nombre e IP guardados. Para un switch a switch, registra ambos puertos como enlace físico.</small>
             <label asp-for="EquipoRemoto">Nombre manual (si no está inventariado)</label><input asp-for="EquipoRemoto" /><span asp-validation-for="EquipoRemoto" class="mensaje-error"></span>
-            <label asp-for="IpRemota">IP</label><input asp-for="IpRemota" /><span asp-validation-for="IpRemota" class="mensaje-error"></span>
+            <label asp-for="IpRemotaSeleccionada">IP libre disponible</label>
+            <select asp-for="IpRemotaSeleccionada" asp-items="Model.IpsRemotasDisponibles">
+                <option value="">No usar una IP libre</option>
+                <option value="Desconocido">Desconocido</option>
+                <option value="__manual__">Ingresar IP manualmente</option>
+            </select>
+            <label asp-for="IpRemota">IP manual (192.168.0.x o 192.168.1.x)</label><input asp-for="IpRemota" />
+            <span asp-validation-for="IpRemota" class="mensaje-error"></span>
             <label asp-for="PuertoRemoto">Puerto</label><input asp-for="PuertoRemoto" /><span asp-validation-for="PuertoRemoto" class="mensaje-error"></span>
         </fieldset>
         <div class="grupo-formulario">
@@ -51,13 +59,6 @@
             <label asp-for="FechaUltimaRevision">Fecha de revisión (solo si se realizó)</label>
             <input asp-for="FechaUltimaRevision" type="date" /><span asp-validation-for="FechaUltimaRevision" class="mensaje-error"></span>
         </div>
-        <fieldset class="grupo-formulario">
-            <legend>Procedencia</legend>
-            <label asp-for="FuentePagina">Página del Visio</label><input asp-for="FuentePagina" required />
-            <span asp-validation-for="FuentePagina" class="mensaje-error"></span>
-            <label asp-for="FuenteLibro">Libro Excel incrustado (opcional)</label><input asp-for="FuenteLibro" /><span asp-validation-for="FuenteLibro" class="mensaje-error"></span>
-            <label asp-for="FuenteFila">Fila o referencia (opcional)</label><input asp-for="FuenteFila" /><span asp-validation-for="FuenteFila" class="mensaje-error"></span>
-        </fieldset>
         <div class="grupo-formulario">
             <label asp-for="Observaciones">Notas</label>
             <textarea asp-for="Observaciones" rows="3"></textarea><span asp-validation-for="Observaciones" class="mensaje-error"></span>
