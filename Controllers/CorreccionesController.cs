@@ -292,6 +292,11 @@ public class CorreccionesController : Controller
             .ToListAsync(cancelacion);
         if (puertosNuevos.Count != 2)
             ModelState.AddModelError(string.Empty, "Selecciona dos puertos existentes.");
+        else if (puertosNuevos.Any(interfaz => interfaz.EstadoUso == "Libre confirmado"
+            && interfaz.Identificador != enlaceGuardado.IdentificadorPuertoOrigen
+            && interfaz.Identificador != enlaceGuardado.IdentificadorPuertoDestino))
+            ModelState.AddModelError(string.Empty,
+                "Un puerto nuevo está marcado libre confirmado. Actualiza primero su uso antes de asignarlo al enlace.");
 
         // extremoOcupado evita usar un puerto que pertenezca a otro enlace.
         var extremoOcupado = await contextoInventario.EnlacesFisicos.AnyAsync(enlace =>
