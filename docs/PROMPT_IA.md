@@ -393,3 +393,5 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 - Las opciones de estado/medio/tipo tienen validación de modelo además de los selectores HTML; los mensajes de ayuda distinguen el estado documental del uso observado y recuerdan que no son métricas en vivo. Los formularios solo editan SQLite y no configuran equipos.
 
 - El modelo EditarConexionDocumentadaViewModel conserva IdentificadorEquipo para enlazar el retorno al detalle del switch desde la edición de una relación parcial.
+
+- Retorno contextual en edición de enlace: Topologia/Detalle envía el ID del switch actual al editar o eliminar. CorreccionesController verifica que el switch solicitado sea extremo real del enlace; si no, elige otro switch participante, o vuelve a Puertos si no hay switch. EditarEnlace conserva el retorno durante validación inválida y después de guardar. No usar sin validación un ID de retorno recibido del formulario.
