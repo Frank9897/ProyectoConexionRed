@@ -115,6 +115,14 @@ public class CorreccionesController : Controller
         if (!ModelState.IsValid)
         {
             formulario.TieneRelacion = puertoTieneRelacion;
+            if (puertoTieneRelacion)
+            {
+                // Se restaura la identidad real para que una petición alterada no confunda la vista bloqueada.
+                formulario.IdentificadorEquipo = interfazGuardada.IdentificadorEquipo;
+                formulario.EtiquetaPuerto = interfazGuardada.EtiquetaPuerto;
+                ModelState.Remove(nameof(formulario.IdentificadorEquipo));
+                ModelState.Remove(nameof(formulario.EtiquetaPuerto));
+            }
             formulario.EquiposDisponibles = await UtilidadesConexiones.ObtenerEquiposDisponiblesAsync(contextoInventario, formulario.IdentificadorEquipo, cancelacion);
             return View(formulario);
         }
@@ -294,6 +302,13 @@ public class CorreccionesController : Controller
                 || enlace.IdentificadorPuertoDestino == formulario.IdentificadorPuertoDestino), cancelacion);
         if (extremoOcupado)
             ModelState.AddModelError(string.Empty, "Uno de los puertos ya participa en otro enlace.");
+
+        // extremoParcial impide reutilizar un puerto que tenga una relación documental de un solo extremo.
+        var extremoParcial = await contextoInventario.ConexionesDocumentadas.AnyAsync(relacion =>
+            relacion.IdentificadorPuertoLocal == formulario.IdentificadorPuertoOrigen
+            || relacion.IdentificadorPuertoLocal == formulario.IdentificadorPuertoDestino, cancelacion);
+        if (extremoParcial)
+            ModelState.AddModelError(string.Empty, "Uno de los puertos ya tiene una relación documental parcial. Resuélvela antes de asignarlo a este enlace.");
 
         if (!ModelState.IsValid)
         {
