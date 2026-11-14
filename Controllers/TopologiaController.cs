@@ -57,7 +57,7 @@ public class TopologiaController : Controller
                 IdentificadorPuertoLocal = relacion.IdentificadorPuertoLocal,
                 EquipoLocal = equipoLocal.Nombre,
                 IpLocal = equipoLocal.IpAdministracion,
-                PuertoLocal = puertoLocal.EtiquetaPuerto,
+                PuertoLocal = CatalogoVisualesDispositivos.NormalizarEtiquetaPuertoVisual(equipoLocal.Nombre, puertoLocal.EtiquetaPuerto),
                 EquipoRemoto = relacion.EquipoRemoto,
                 IpRemota = relacion.IpRemota,
                 PuertoRemoto = relacion.PuertoRemoto,
@@ -68,6 +68,11 @@ public class TopologiaController : Controller
                 FuenteFila = relacion.FuenteFila,
                 Observaciones = relacion.Observaciones
             }).ToListAsync(cancelacion);
+        // Cada interfaz local conserva su ID, pero el HP 1920 muestra SFP 25-28 como SFP 1-4.
+        foreach (var relacionParcial in relacionesParciales)
+            if (string.Equals(relacionParcial.EquipoLocal, "Switch HP 1920", StringComparison.OrdinalIgnoreCase))
+                relacionParcial.PuertoLocal = CatalogoVisualesDispositivos.NormalizarEtiquetaPuertoVisual(
+                    relacionParcial.EquipoLocal, relacionParcial.PuertoLocal);
         // ResolverRelacionesParciales compara las filas recíprocas y enlaza solo destinos únicos.
         ResolverRelacionesParciales(relacionesParciales, equiposRegistrados);
 
@@ -90,8 +95,8 @@ public class TopologiaController : Controller
                 || !equiposPorId.TryGetValue(interfazOrigen.IdentificadorEquipo, out var equipoOrigen)
                 || !equiposPorId.TryGetValue(interfazDestino.IdentificadorEquipo, out var equipoDestino))
                 continue;
-            destinosPorInterfaz[interfazOrigen.Identificador] = $"{equipoDestino.Nombre} · {equipoDestino.IpAdministracion ?? "IP no indicada"} · {interfazDestino.EtiquetaPuerto}";
-            destinosPorInterfaz[interfazDestino.Identificador] = $"{equipoOrigen.Nombre} · {equipoOrigen.IpAdministracion ?? "IP no indicada"} · {interfazOrigen.EtiquetaPuerto}";
+            destinosPorInterfaz[interfazOrigen.Identificador] = $"{equipoDestino.Nombre} · {equipoDestino.IpAdministracion ?? "IP no indicada"} · {CatalogoVisualesDispositivos.NormalizarEtiquetaPuertoVisual(equipoDestino.Nombre, interfazDestino.EtiquetaPuerto)}";
+            destinosPorInterfaz[interfazDestino.Identificador] = $"{equipoOrigen.Nombre} · {equipoOrigen.IpAdministracion ?? "IP no indicada"} · {CatalogoVisualesDispositivos.NormalizarEtiquetaPuertoVisual(equipoOrigen.Nombre, interfazOrigen.EtiquetaPuerto)}";
         }
         foreach (var relacion in relacionesParciales)
         {
@@ -215,12 +220,12 @@ public class TopologiaController : Controller
                 IdentificadorPuertoOrigen = puertoOrigen.Identificador,
                 EquipoOrigen = equipoOrigen.Nombre,
                 IpEquipoOrigen = equipoOrigen.IpAdministracion,
-                PuertoOrigen = puertoOrigen.EtiquetaPuerto,
+                PuertoOrigen = CatalogoVisualesDispositivos.NormalizarEtiquetaPuertoVisual(equipoOrigen.Nombre, puertoOrigen.EtiquetaPuerto),
                 IdentificadorEquipoDestino = equipoDestino.Identificador,
                 IdentificadorPuertoDestino = puertoDestino.Identificador,
                 EquipoDestino = equipoDestino.Nombre,
                 IpEquipoDestino = equipoDestino.IpAdministracion,
-                PuertoDestino = puertoDestino.EtiquetaPuerto,
+                PuertoDestino = CatalogoVisualesDispositivos.NormalizarEtiquetaPuertoVisual(equipoDestino.Nombre, puertoDestino.EtiquetaPuerto),
                 Medio = enlace.Medio,
                 EstadoDatos = string.IsNullOrWhiteSpace(enlace.Fuente) ? enlace.EstadoDatos : "Confirmado",
                 Confirmado = string.IsNullOrWhiteSpace(enlace.Fuente)
