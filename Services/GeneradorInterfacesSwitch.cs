@@ -46,7 +46,7 @@ public static class GeneradorInterfacesSwitch
             // interfacesDelGrupo cuenta posiciones ya guardadas para no superar la capacidad indicada.
             var interfacesDelGrupo = interfacesExistentes.Concat(interfacesNuevas)
                 .Where(interfaz => interfaz.IdentificadorEquipo == equipo.Identificador
-                    && string.Equals(interfaz.TipoInterfaz, grupoCapacidad.Tipo, StringComparison.OrdinalIgnoreCase))
+                    && CoincideTipoCapacidad(interfaz.TipoInterfaz, grupoCapacidad.Tipo))
                 .ToList();
             // cantidadFaltante conserva los puertos existentes aunque sus etiquetas físicas sean distintas al orden genérico.
             var cantidadFaltante = Math.Max(0, grupoCapacidad.Cantidad.Value - interfacesDelGrupo.Count);
@@ -58,7 +58,7 @@ public static class GeneradorInterfacesSwitch
                 // yaExiste compara equipo, tipo y etiqueta para que ejecutar el generador más de una vez sea seguro.
                 var yaExiste = interfacesExistentes.Concat(interfacesNuevas).Any(interfaz =>
                     interfaz.IdentificadorEquipo == equipo.Identificador
-                    && string.Equals(interfaz.TipoInterfaz, grupoCapacidad.Tipo, StringComparison.OrdinalIgnoreCase)
+                    && CoincideTipoCapacidad(interfaz.TipoInterfaz, grupoCapacidad.Tipo)
                     && string.Equals(interfaz.EtiquetaPuerto.Trim(), etiquetaEsperada, StringComparison.OrdinalIgnoreCase));
                 if (yaExiste)
                 {
@@ -80,6 +80,25 @@ public static class GeneradorInterfacesSwitch
         }
 
         return interfacesNuevas;
+    }
+
+    /// <summary>
+    /// Cuenta RJ45 y RJ45 con PoE como conectores de cobre de la misma capacidad.
+    /// </summary>
+    /// <param name="tipoInterfaz">Tipo guardado; cambiarlo puede hacer que el puerto compute dentro de otra capacidad.</param>
+    /// <param name="tipoCapacidad">Capacidad declarada; cambiarla selecciona otra familia de conectores.</param>
+    /// <returns>Verdadero si el tipo de interfaz pertenece a la capacidad consultada.</returns>
+    private static bool CoincideTipoCapacidad(string tipoInterfaz, string tipoCapacidad)
+    {
+        // tipoNormalizado evita diferencias de espacios y mayúsculas en las clases manuales.
+        var tipoNormalizado = tipoInterfaz.Trim();
+        if (string.Equals(tipoCapacidad, "RJ45", StringComparison.OrdinalIgnoreCase))
+        {
+            return string.Equals(tipoNormalizado, "RJ45", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(tipoNormalizado, "RJ45 + PoE", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return string.Equals(tipoNormalizado, tipoCapacidad, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
