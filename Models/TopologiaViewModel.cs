@@ -71,6 +71,8 @@ public class PuertoTopologiaViewModel
     public string ClaseVisual { get; set; } = "puerto-desconocido";
     /// <summary>Texto de estado; cambiarlo modifica el significado accesible del color.</summary>
     public string EstadoVisual { get; set; } = "Desconocido";
+    /// <summary>Módulo documentado; cambiarlo modifica la información de transceptor instalado.</summary>
+    public string? ModuloInstalado { get; set; }
     /// <summary>Destino documentado; cambiarlo modifica la referencia emergente del puerto.</summary>
     public string? DestinoConexion { get; set; }
 }
