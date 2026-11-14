@@ -290,3 +290,10 @@ Los formularios de alta y corrección de relaciones parciales presentan errores 
 ### Ajuste de impresión para A4
 
 Las impresiones del mapa y del detalle individual de switch usan la caja imprimible completa del papel apaisado, con margen, y quedan acotadas a una sola página. El mapa vuelve a calcular el encuadre con el área imprimible; el detalle distribuye frontal, datos y conexiones en el espacio disponible. Inventario imprime la página y cantidad seleccionadas en la tabla; las filas visibles se ajustan al alto de una hoja sin mostrar páginas ocultas. La revisión de esta corrección fue estática sobre CSS y JavaScript; no se abrió el diálogo de impresión ni se verificó una vista previa local.
+
+
+## Asignación documental de conexiones
+
+Los formularios de relaciones permiten seleccionar un equipo inventariado o registrar el destino como **Desconocido**. Las IP sugeridas se limitan a direcciones libres en 192.168.0.x y 192.168.1.x; también se puede introducir una IP manual de esos rangos. El formulario no muestra una sección de procedencia: las referencias históricas se conservan y las altas manuales reciben una etiqueta interna automática.
+
+En el HP 1920, las etiquetas consecutivas 25–28 del Visio se presentan como SFP 1–4, separados de los puertos RJ45 1–24. Las filas libres importadas que exceden esas cuatro jaulas se conservan en la base pero no se dibujan como puertos adicionales.
