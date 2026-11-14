@@ -608,10 +608,24 @@ public class InventarioController : Controller
     /// <returns>Verdadero para los tipos explícitos de puesto o computadora.</returns>
     private static bool EsEquipoUsuario(EquipoRed equipo)
     {
-        // tipoNormalizado permite comparar variantes conocidas sin depender del nombre del PC.
+        // tipoNormalizado coteja clases de equipo y funcionNormalizada toma el propósito operativo documentado.
         var tipoNormalizado = NormalizarClaveComparacion(equipo.TipoDispositivo);
-        return tipoNormalizado is "PUESTO DE USUARIO" or "EQUIPO DE USUARIO" or "PC"
-            or "COMPUTADORA" or "COMPUTADOR" or "ESTACIÓN DE TRABAJO" or "ESTACION DE TRABAJO" or "USUARIO";
+        var funcionNormalizada = NormalizarClaveComparacion(equipo.RolEnArea);
+        // esPeriferico evita que una función de impresión quede dentro de Usuarios por un tipo genérico anterior.
+        var esPeriferico = funcionNormalizada.Contains("IMPRES", StringComparison.OrdinalIgnoreCase)
+            || funcionNormalizada.Contains("FOTOCOPI", StringComparison.OrdinalIgnoreCase)
+            || funcionNormalizada.Contains("SCANNER", StringComparison.OrdinalIgnoreCase)
+            || funcionNormalizada.Contains("ESCANER", StringComparison.OrdinalIgnoreCase)
+            || funcionNormalizada.Contains("PLOTTER", StringComparison.OrdinalIgnoreCase)
+            || tipoNormalizado is "IMPRESORA" or "FOTOCOPIADORA" or "SCANNER" or "ESCÁNER" or "ESCANER" or "PLOTTER";
+        if (esPeriferico)
+        {
+            return false;
+        }
+
+        return funcionNormalizada == "USUARIO"
+            || tipoNormalizado is "PUESTO DE USUARIO" or "EQUIPO DE USUARIO" or "PC"
+                or "COMPUTADORA" or "COMPUTADOR" or "ESTACIÓN DE TRABAJO" or "ESTACION DE TRABAJO" or "USUARIO";
     }
 
     /// <summary>
@@ -623,7 +637,8 @@ public class InventarioController : Controller
     {
         // rolNormalizado conserva el significado funcional separado del modelo.
         var rolNormalizado = NormalizarClaveComparacion(equipo.RolEnArea);
-        return (rolNormalizado is "SWITCH DE ÁREA" or "SWITCH DE AREA")
+        return rolNormalizado.Contains("SWITCH DE ÁREA", StringComparison.OrdinalIgnoreCase)
+            || rolNormalizado.Contains("SWITCH DE AREA", StringComparison.OrdinalIgnoreCase)
             || (!string.IsNullOrWhiteSpace(equipo.Area)
                 && !EsEquipoDeDatacenter(equipo)
                 && !EsEquipoDeReserva(equipo)
@@ -637,9 +652,18 @@ public class InventarioController : Controller
     /// <returns>Verdadero para áreas documentadas como rack o centro de datos.</returns>
     private static bool EsEquipoDeDatacenter(EquipoRed equipo)
     {
-        // areaNormalizada usa la ubicación persistida y no supone datacenter por el modelo del switch.
+        // areaNormalizada permite que Rack, Rack 1 y otras ubicaciones de rack entren al datacenter.
         var areaNormalizada = NormalizarClaveComparacion(equipo.Area);
-        return areaNormalizada is "RACK" or "DATACENTER" or "DATA CENTER" or "CENTRO DE DATOS";
+        // funcionNormalizada reconoce una función de infraestructura central aun con otro rótulo de área.
+        var funcionNormalizada = NormalizarClaveComparacion(equipo.RolEnArea);
+        return areaNormalizada.Contains("RACK", StringComparison.OrdinalIgnoreCase)
+            || areaNormalizada.Contains("DATACENTER", StringComparison.OrdinalIgnoreCase)
+            || areaNormalizada.Contains("DATA CENTER", StringComparison.OrdinalIgnoreCase)
+            || areaNormalizada.Contains("CENTRO DE DATOS", StringComparison.OrdinalIgnoreCase)
+            || funcionNormalizada.Contains("RACK", StringComparison.OrdinalIgnoreCase)
+            || funcionNormalizada.Contains("DATACENTER", StringComparison.OrdinalIgnoreCase)
+            || funcionNormalizada.Contains("DATA CENTER", StringComparison.OrdinalIgnoreCase)
+            || funcionNormalizada.Contains("CENTRO DE DATOS", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -649,8 +673,11 @@ public class InventarioController : Controller
     /// <returns>Verdadero para equipos asignados a reserva.</returns>
     private static bool EsEquipoDeReserva(EquipoRed equipo)
     {
-        return string.Equals(NormalizarClaveComparacion(equipo.Area), "Reserva", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(NormalizarClaveComparacion(equipo.RolEnArea), "Reserva", StringComparison.OrdinalIgnoreCase);
+        // areaNormalizada y funcionNormalizada usan datos persistidos y admiten etiquetas como Reserva de switches.
+        var areaNormalizada = NormalizarClaveComparacion(equipo.Area);
+        var funcionNormalizada = NormalizarClaveComparacion(equipo.RolEnArea);
+        return areaNormalizada.Contains("RESERVA", StringComparison.OrdinalIgnoreCase)
+            || funcionNormalizada.Contains("RESERVA", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
