@@ -19,8 +19,18 @@
         <div><label asp-for="EtiquetaPuerto">Etiqueta exacta del puerto</label><input asp-for="EtiquetaPuerto" placeholder="Ej.: 1, 24, SFP 1" /><span asp-validation-for="EtiquetaPuerto" class="mensaje-error"></span></div>
     }
     <div><label asp-for="TipoInterfaz">Tipo de interfaz</label><select asp-for="TipoInterfaz"><option>No confirmado</option><option>RJ45</option><option>SFP</option><option>SFP+</option><option>QSFP</option><option>QSFP+</option><option>QSFP28</option><option>Otro</option></select><span asp-validation-for="TipoInterfaz" class="mensaje-error"></span></div>
-    <div><label asp-for="EstadoDatos">Vigencia del dato</label><select asp-for="EstadoDatos"><option>Pendiente de revisión</option><option>Confirmado</option><option>A verificar</option><option>Desactualizado</option></select><span asp-validation-for="EstadoDatos" class="mensaje-error"></span></div>
-    <div><label asp-for="EstadoUso">Uso del puerto si no está enlazado</label><select asp-for="EstadoUso"><option>Desconocido</option><option>Libre confirmado</option></select><span asp-validation-for="EstadoUso" class="mensaje-error"></span></div>
+    <div>
+        <label asp-for="EstadoDatos">Confirmación de los datos del puerto</label>
+        <select asp-for="EstadoDatos"><option>Pendiente de revisión</option><option>Confirmado</option><option>A verificar</option><option>Desactualizado</option></select>
+        <span asp-validation-for="EstadoDatos" class="mensaje-error"></span>
+        <small class="ayuda-formulario">Indica si la información del inventario fue revisada; no representa un estado en vivo.</small>
+    </div>
+    <div>
+        <label asp-for="EstadoUso">Uso documentado cuando no hay conexión</label>
+        <select asp-for="EstadoUso"><option>Desconocido</option><option>Libre confirmado</option></select>
+        <span asp-validation-for="EstadoUso" class="mensaje-error"></span>
+        <small class="ayuda-formulario">Una conexión guardada hace que el puerto figure ocupado. «Libre confirmado» exige datos confirmados.</small>
+    </div>
     <div><label asp-for="FechaUltimaRevision">Fecha de última revisión</label><input asp-for="FechaUltimaRevision" type="date" /><span asp-validation-for="FechaUltimaRevision" class="mensaje-error"></span></div>
     <div class="campo-ancho"><label asp-for="Observaciones">Observaciones</label><textarea asp-for="Observaciones" rows="3"></textarea><span asp-validation-for="Observaciones" class="mensaje-error"></span></div>
 </div>
