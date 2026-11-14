@@ -169,7 +169,7 @@ public class ConexionesController : Controller
     /// </summary>
     /// <param name="formulario">Datos del puerto; cambiarlos modifica solo la ficha documental guardada.</param>
     /// <param name="cancelacion">Señal de cancelación; activarla detiene la validación o escritura.</param>
-    /// <returns>Redirección al listado o formulario con errores de validación.</returns>
+    /// <returns>Redirección al frontal del switch propietario o a Puertos; formulario con errores si la validación falla.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CrearInterfaz(
@@ -305,7 +305,7 @@ public class ConexionesController : Controller
     /// </summary>
     /// <param name="formulario">Puerto local, destino opcional y fuente; cambiarlos modifica el registro documental.</param>
     /// <param name="cancelacion">Señal de cancelación; activarla detiene las validaciones y escrituras.</param>
-    /// <returns>Redirección a puertos y enlaces o formulario con errores.</returns>
+    /// <returns>Redirección al frontal del switch propietario o a Puertos; formulario con errores si la validación falla.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CrearRelacion(
