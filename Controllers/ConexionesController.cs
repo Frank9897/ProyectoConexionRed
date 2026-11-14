@@ -300,6 +300,8 @@ public class ConexionesController : Controller
             IdentificadorEquipoRemoto = equipoRemotoSeleccionado?.Identificador,
             EquipoRemoto = equipoRemotoSeleccionado?.Nombre,
             IpRemota = equipoRemotoSeleccionado?.IpAdministracion,
+            IpRemotaSeleccionada = null,
+            IpsRemotasDisponibles = await UtilidadesConexiones.ObtenerIpsLibresAsync(contextoInventario, equipoRemotoSeleccionado?.IpAdministracion, cancelacion),
             EquiposRemotosDisponibles = equiposRemotos.Select(equipo => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
             {
                 Value = equipo.Identificador.ToString(),
@@ -331,7 +333,7 @@ public class ConexionesController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CrearRelacion(
-        [Bind("IdentificadorPuertoLocal,IdentificadorEquipoRetorno,IdentificadorEquipoRemoto,EquipoRemoto,IpRemota,PuertoRemoto,Medio,EstadoDatos,FechaUltimaRevision,FuentePagina,FuenteLibro,FuenteFila,Observaciones")]
+        [Bind("IdentificadorPuertoLocal,IdentificadorEquipoRetorno,IdentificadorEquipoRemoto,EquipoRemoto,IpRemota,IpRemotaSeleccionada,PuertoRemoto,Medio,EstadoDatos,FechaUltimaRevision,Observaciones")]
         NuevaConexionDocumentadaViewModel formulario,
         CancellationToken cancelacion)
     {
@@ -364,14 +366,38 @@ public class ConexionesController : Controller
         if (puertoYaVinculado)
             ModelState.AddModelError(nameof(formulario.IdentificadorPuertoLocal), "Ese puerto ya tiene una relación registrada.");
 
-        // equipoRemotoSeleccionado resuelve la opción por ID y nunca confía en el nombre enviado por el navegador.
-        var equipoRemotoSeleccionado = formulario.IdentificadorEquipoRemoto.HasValue
+        // formulario.FuentePagina conserva una referencia automática sin mostrar procedencia en el formulario.
+        formulario.FuentePagina = "Registro manual desde la aplicación";
+        // equipoRemotoSeleccionado se resuelve por ID; el valor -1 representa el destino desconocido.
+        var equipoRemotoSeleccionado = formulario.IdentificadorEquipoRemoto.GetValueOrDefault() > 0
             ? await contextoInventario.Equipos.AsNoTracking().SingleOrDefaultAsync(
-                equipo => equipo.Identificador == formulario.IdentificadorEquipoRemoto.Value,
+                equipo => equipo.Identificador == formulario.IdentificadorEquipoRemoto!.Value,
                 cancelacion)
             : null;
-        if (formulario.IdentificadorEquipoRemoto.HasValue && equipoRemotoSeleccionado is null)
+        if (formulario.IdentificadorEquipoRemoto.GetValueOrDefault() > 0 && equipoRemotoSeleccionado is null)
             ModelState.AddModelError(nameof(formulario.IdentificadorEquipoRemoto), "Selecciona un equipo remoto existente.");
+        if (formulario.IdentificadorEquipoRemoto == -1)
+        {
+            formulario.EquipoRemoto = "Desconocido";
+            ModelState.Remove(nameof(formulario.EquipoRemoto));
+        }
+        // La selección de IP libre prevalece sobre el texto manual.
+        if (!string.IsNullOrWhiteSpace(formulario.IpRemotaSeleccionada)
+            && formulario.IpRemotaSeleccionada != "__manual__")
+        {
+            formulario.IpRemota = formulario.IpRemotaSeleccionada;
+            ModelState.Remove(nameof(formulario.IpRemota));
+        }
+        if (!string.IsNullOrWhiteSpace(formulario.IpRemotaSeleccionada)
+            && formulario.IpRemotaSeleccionada != "__manual__"
+            && formulario.IpRemotaSeleccionada != "Desconocido")
+        {
+            // ipsLibresActuales evita asignar una dirección que se ocupó después de abrir el formulario.
+            var ipsLibresActuales = await UtilidadesConexiones.ObtenerIpsLibresAsync(
+                contextoInventario, null, cancelacion);
+            if (!ipsLibresActuales.Any(opcion => opcion.Value == formulario.IpRemotaSeleccionada))
+                ModelState.AddModelError(nameof(formulario.IpRemotaSeleccionada), "La IP seleccionada ya no está libre; elige otra.");
+        }
         if (equipoRemotoSeleccionado is not null
             && EsSwitchPorFuncion(equipoRemotoSeleccionado.TipoDispositivo, equipoRemotoSeleccionado.RolEnArea))
             ModelState.AddModelError(nameof(formulario.IdentificadorEquipoRemoto), "Para enlazar dos switches registra ambos puertos en la opción de enlace físico.");
@@ -382,10 +408,13 @@ public class ConexionesController : Controller
             && !EsSwitchPorFuncion(equipoRemotoSeleccionado.TipoDispositivo, equipoRemotoSeleccionado.RolEnArea))
         {
             formulario.EquipoRemoto = equipoRemotoSeleccionado.Nombre;
-            formulario.IpRemota = equipoRemotoSeleccionado.IpAdministracion;
+            if (string.IsNullOrWhiteSpace(formulario.IpRemotaSeleccionada))
+                formulario.IpRemota = equipoRemotoSeleccionado.IpAdministracion;
             ModelState.Remove(nameof(formulario.EquipoRemoto));
             ModelState.Remove(nameof(formulario.IpRemota));
         }
+        if (!UtilidadesConexiones.EsIpPermitida(formulario.IpRemota))
+            ModelState.AddModelError(nameof(formulario.IpRemota), "Usa una IP 192.168.0.x o 192.168.1.x, o selecciona Desconocido.");
 
         if (!ModelState.IsValid)
         {
@@ -401,10 +430,18 @@ public class ConexionesController : Controller
                 Text = string.Join(" · ", new[] { equipo.Nombre, equipo.IpAdministracion, equipo.TipoDispositivo }
                     .Where(texto => !string.IsNullOrWhiteSpace(texto)))
             }).ToList();
+            formulario.EquiposRemotosDisponibles.Insert(0, new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+            {
+                Value = "-1",
+                Text = "Desconocido / no inventariado",
+                Selected = formulario.IdentificadorEquipoRemoto == -1
+            });
+            formulario.IpsRemotasDisponibles = await UtilidadesConexiones.ObtenerIpsLibresAsync(
+                contextoInventario, formulario.IpRemota, cancelacion);
             return View(formulario);
         }
 
-        // nuevaRelacion mantiene opcionales los datos del extremo remoto y registra la fuente por separado.
+        // nuevaRelacion mantiene opcionales los datos del extremo remoto y la referencia automática de origen.
         var nuevaRelacion = new ConexionDocumentada
         {
             IdentificadorPuertoLocal = formulario.IdentificadorPuertoLocal,
