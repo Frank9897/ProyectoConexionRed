@@ -452,3 +452,55 @@ La clasificación vigente que prevalece sobre reglas anteriores de “relación 
 - Hay un desacuerdo dentro de V4: el frontal/tabla del HP 1920 conserva un destino a Secretaría en SFP 26, pero la tabla de Secretaría muestra libres sus cuatro SFP. No dibujar ese enlace ni marcarlo libre en el lado HP 1920; dejar ese extremo desconocido/a verificar y explicar la discrepancia.
 - Mantener las aclaraciones previas del usuario ante filas cruzadas: el S4148U puerto 21 corresponde a R770 LAN P2 `192.168.0.246`; iDRAC `192.168.0.247` está en HP 1920; Valuación R0 es `192.168.1.32` y R2 `192.168.1.20`. Registrar las contradicciones del libro, sin reemplazar estas confirmaciones.
 - No exponer credenciales que aparezcan dentro de páginas Visio. No publicar banners de servicios del escaneo. Al cambiar inicializadores, tener presente que se ejecutan en cada arranque y deben ser idempotentes para no reponer relaciones reemplazadas por V4.
+
+## Plan de desarrollo: mapa interactivo y formularios guiados (18 de noviembre de 2026)
+
+Este bloque permite continuar el trabajo con otra IA. Está basado en la lectura del repo en el commit posterior a «v4»; no se compiló ni ejecutó nada.
+
+### Objetivo del usuario
+1. Mapa gráfico **interactivo tipo draw.io**: crear conexiones dibujando líneas en vivo (switch a switch, switch a equipo), usando solo lo que hay en el inventario, con **validación topológica** de cada conexión.
+2. Inventario y formularios **muy guiados** (muchos selects, IP libres o reservadas, SFP/SFP+ en switches, velocidad de los RJ45, reconocimiento del tipo de equipo: switch administrable o no, PC, impresora IP, etc.), con validaciones y avisos de error, sin volverlos rígidos: la página debe ayudar a organizar y ahorrar tiempo.
+3. Fin último: documentación visual para un análisis técnico rápido.
+
+### Decisiones confirmadas por el usuario
+- **Librería del mapa: Cytoscape.js.**
+- **Roles:** los técnicos pueden editar el mapa y el inventario. **Solo el Administrador** (cuenta `Frank9897`) puede borrar la base de datos o sus sedes. Ningún técnico puede hacerlo. Reutilizar `[Authorize(Roles = "Administrador")]` ya presente en `UsuariosController`.
+- **VLAN:** dejar implementada solo la **base de datos** (campo de VLAN por puerto, valor por defecto **1**), sin mostrarla todavía en pantallas, formularios ni mapa. El usuario aún estudia el tema; no inventar reglas de VLAN.
+- **Bucles y STP:** se asume que los switches tienen STP o RSTP activo. La detección de un ciclo en el grafo **no es un error**: se muestra como **aviso informativo** que pide documentar cuál es la topología activa (qué enlaces reenvían y cuáles quedan bloqueados) para evitar bucles reales. Debe poder marcarse un enlace como redundante o bloqueado a propósito.
+
+### Estado actual del código (resumen del análisis)
+- **Mapa** (`wwwroot/js/topologia-grafica.js`, 1844 líneas, `Controllers/TopologiaController.cs`, `Views/Topologia/Index.cshtml`): el servidor genera los nodos como HTML y el JS traza líneas SVG. Hay arrastre de nodos, pan, zoom, capas (física, switching, acceso), filtros, agrupación e impresión. **Es de solo lectura** y las posiciones se guardan en `localStorage`, no en la base.
+- **Modelo:** `EquipoRed`, `InterfazEquipo`, `EnlaceFisico` (puerto a puerto) y `ConexionDocumentada` (un puerto apunta a un equipo remoto como texto: nombre e IP). La mayoría de PC e impresoras no tienen interfaces, por eso la conexión switch a PC es una nota y no una línea editable.
+- **No existen:** velocidad o medio de puerto, VLAN, bandera de switch administrable, categoría estructurada del equipo, tabla de IP, posiciones del mapa en base.
+- **Validaciones actuales** (`Controllers/ConexionesController.cs`, `Services/UtilidadesConexiones.cs`): puerto ya enlazado, origen igual a destino, relación parcial existente, IP libre (`ObtenerIpsLibresAsync`) y rango 192.168.0.x o 192.168.1.x. Faltan reglas de topología.
+- **Formularios:** `Models/EditarEquipoViewModel.cs`, `wwwroot/js/capacidades-switch.js` (muestra contadores si el tipo es Switch). Los contadores de SFP y SFP+ son numéricos libres.
+- **Migraciones:** `Data/Migraciones/` tiene solo `EsquemaInicial`; el arranque pasa por `Data/PreparadorMigraciones.cs` y `Data/InicializadorInventario.cs`. Los catálogos del Visio y del escaneo (`CatalogoPuertosAreasV3.cs`, `ActualizacionV4.cs`, `CatalogoEscaneoLan.cs`) se aplican al iniciar y son idempotentes.
+
+### Cambios propuestos al modelo
+1. **Conexión unificada:** que todo equipo pueda ser extremo de una línea. Los equipos sin puertos propios (PC, impresora, cámara) reciben una interfaz de red implícita creada automáticamente, así el mapa dibuja y valida siempre sobre `EnlaceFisico`. Migrar `ConexionDocumentada` sin perder fuente, libro, fila ni estado de datos.
+2. **Diseño persistido:** tabla de posiciones de nodos y trazado de líneas por sede, compartida entre técnicos; `localStorage` solo como caché.
+3. **Categoría del equipo** (estructurada, no texto libre): switch administrable, switch no administrable, router o firewall, servidor, PC, impresora IP, cámara, UPS, otro. Decide el formulario y las reglas. Agregar la bandera de administrable para switches.
+4. **Interfaz:** velocidad (10M, 100M, 1G, 2.5G, 5G, 10G, 25G, 40G, 100G), medio (UTP, fibra, DAC), modo (acceso o troncal) y **VLAN con valor 1 por defecto, sin exponerla en la interfaz**.
+5. **IP como tabla propia** con estado (libre, reservada, asignada, en conflicto), red de origen y equipo asociado, en lugar de calcular libres al vuelo. Debe poder compararse con el escaneo de la LAN.
+6. **Enlace:** marca de redundante o bloqueado por STP, para documentar la topología activa.
+
+### Reglas de validación a implementar (servicio único reutilizable)
+- **Error** (no guarda): puerto ya ocupado por otro equipo, salvo que haya un switch no administrable en medio; origen igual a destino; IP duplicada o fuera de red; SFP conectado a un puerto RJ45; velocidades incompatibles entre extremos; interfaz que no pertenece al equipo.
+- **Aviso** (guarda y notifica): ciclo en el grafo entre switches (pedir documentar topología activa por STP o RSTP), uplink único sin redundancia, switch no administrable con dos uplinks, puerto documentado sin equipo, MAC repetida en dos fichas, equipo del escaneo sin ficha.
+- Tres niveles de severidad (error, aviso, información) y mensajes en español, claros y accionables. El usuario no quiere un sistema rígido: ante duda, avisar y no bloquear.
+
+### Fases
+**Fase 1. Base de datos y reglas (sin cambios visibles).** Migraciones de EF Core (categoría, administrable, velocidad, medio, modo, VLAN con valor 1, tabla de IP, posiciones del mapa, marca STP del enlace). Servicio central de validación topológica. Migración de `ConexionDocumentada` al modelo unificado, probada contra una copia de la base real. Pruebas unitarias del servicio de validación.
+
+**Fase 2. Formularios guiados.** Alta de equipo en dos pasos: primero la categoría, después solo los campos que corresponden. Selects de IP libre o reservada con sugerencia y aviso inmediato si está tomada. Selects de SFP, SFP+, QSFP y velocidad. Autocompletado de MAC y fabricante desde el escaneo de la LAN y detección del tipo por fabricante. Avisos en línea antes de guardar.
+
+**Fase 3. Mapa editable con Cytoscape.js** (núcleo): dibujar una línea arrastrando desde un puerto libre hasta otro, con validación al soltar (verde, aviso o rechazo); panel lateral para editar o borrar y reconectar; paleta de equipos del inventario para arrastrar al lienzo; guardado de posiciones y trazados en la base; deshacer y rehacer; cada cambio en el historial de Cambios. Reutilizar `site.css` y los paneles actuales; los nodos HTML dejan de dibujarse a mano. Mantener capas, filtros, agrupación e impresión.
+
+**Fase 4. Análisis técnico.** Panel de alertas del mapa, resaltado del camino entre dos equipos, coloreado por velocidad o por estado de los datos, exportación a imagen o PDF.
+
+### Orden y criterios
+1. Hacer primero las fases 1 y 2: dibujar sobre un modelo que no distingue equipos ni puertos genera conexiones inválidas.
+2. Avanzar por pasos pequeños, un cambio por commit, dejando que el usuario ejecute `git pull`, `dotnet build` y `dotnet run`.
+3. Comentar variables y métodos en español, como en el resto del proyecto; la documentación y la interfaz van en español.
+4. No copiar a código, documentación ni commits las credenciales que aparecen en las páginas del Visio.
+5. Pendiente sin confirmar: si el Cisco Catalyst 3560, el switch de 8 puertos de Inmuebles y el Intellinet tienen 4 SFP (hoy quedan fuera de esa regla).
