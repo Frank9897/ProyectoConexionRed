@@ -54,4 +54,10 @@ public class EnlaceFisico
     /// Observaciones del enlace; cambiarlo modifica el contexto asociado a la conexión física.
     /// </summary>
     public string? Observaciones { get; set; }
+
+    /// <summary>
+    /// Estado del enlace según STP o RSTP: No documentado, Reenvío, Bloqueado o Redundante.
+    /// Sirve para documentar la topología activa y no se consulta a los switches.
+    /// </summary>
+    public string EstadoStp { get; set; } = "No documentado";
 }

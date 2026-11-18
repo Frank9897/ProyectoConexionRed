@@ -54,6 +54,8 @@ public class InventarioDbContext : DbContext
     /// </summary>
     public DbSet<MantenimientoEjecutado> MantenimientosEjecutados => Set<MantenimientoEjecutado>();
 
+    public DbSet<PosicionNodoMapa> PosicionesNodoMapa => Set<PosicionNodoMapa>();
+
     /// <summary>
     /// Define nombres y límites de columnas; cambiar estas reglas requiere actualizar el esquema de la base.
     /// </summary>
@@ -123,6 +125,9 @@ public class InventarioDbContext : DbContext
         configuracionInterfaz.Property(nameof(InterfazEquipo.EstadoDatos)).HasMaxLength(60).IsRequired();
         configuracionInterfaz.Property(nameof(InterfazEquipo.EstadoUso)).HasMaxLength(40).IsRequired().HasDefaultValue("Desconocido");
         configuracionInterfaz.Property(nameof(InterfazEquipo.Observaciones)).HasMaxLength(1000);
+        configuracionInterfaz.Property(nameof(InterfazEquipo.MedioFisico)).HasMaxLength(20);
+        configuracionInterfaz.Property(nameof(InterfazEquipo.ModoPuerto)).HasMaxLength(20).IsRequired().HasDefaultValue("Acceso");
+        configuracionInterfaz.Property(nameof(InterfazEquipo.Vlan)).HasDefaultValue(1);
         configuracionInterfaz.HasIndex(nameof(InterfazEquipo.IdentificadorEquipo), nameof(InterfazEquipo.EtiquetaPuerto)).IsUnique();
         configuracionInterfaz.HasOne<EquipoRed>()
             .WithMany()
@@ -139,6 +144,7 @@ public class InventarioDbContext : DbContext
         configuracionEnlace.Property(nameof(EnlaceFisico.EstadoDatos)).HasMaxLength(60).IsRequired();
         configuracionEnlace.Property(nameof(EnlaceFisico.Fuente)).HasMaxLength(300);
         configuracionEnlace.Property(nameof(EnlaceFisico.Observaciones)).HasMaxLength(1000);
+        configuracionEnlace.Property(nameof(EnlaceFisico.EstadoStp)).HasMaxLength(30).IsRequired().HasDefaultValue("No documentado");
         configuracionEnlace.HasIndex(nameof(EnlaceFisico.IdentificadorPuertoOrigen));
         configuracionEnlace.HasIndex(nameof(EnlaceFisico.IdentificadorPuertoDestino));
         configuracionEnlace.HasOne<InterfazEquipo>()
@@ -166,6 +172,18 @@ public class InventarioDbContext : DbContext
         configuracionConexionDocumentada.HasOne<InterfazEquipo>()
             .WithMany()
             .HasForeignKey(nameof(ConexionDocumentada.IdentificadorPuertoLocal))
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // configuracionPosicion guarda el diseño del mapa; el índice único impide dos posiciones del mismo equipo en una vista.
+        var configuracionPosicion = constructorModelo.Entity<PosicionNodoMapa>();
+        configuracionPosicion.ToTable("PosicionesNodoMapa");
+        configuracionPosicion.HasKey(nameof(PosicionNodoMapa.Identificador));
+        configuracionPosicion.Property(nameof(PosicionNodoMapa.Vista)).HasMaxLength(40).IsRequired();
+        configuracionPosicion.Property(nameof(PosicionNodoMapa.NombreUsuario)).HasMaxLength(100).IsRequired();
+        configuracionPosicion.HasIndex(nameof(PosicionNodoMapa.IdentificadorEquipo), nameof(PosicionNodoMapa.Vista)).IsUnique();
+        configuracionPosicion.HasOne<EquipoRed>()
+            .WithMany()
+            .HasForeignKey(nameof(PosicionNodoMapa.IdentificadorEquipo))
             .OnDelete(DeleteBehavior.Restrict);
 
         // configuracionMantenimiento integra la tabla de marcas al esquema migrable; cambiarla modifica su persistencia.

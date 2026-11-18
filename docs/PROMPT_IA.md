@@ -504,3 +504,24 @@ Este bloque permite continuar el trabajo con otra IA. Está basado en la lectura
 3. Comentar variables y métodos en español, como en el resto del proyecto; la documentación y la interfaz van en español.
 4. No copiar a código, documentación ni commits las credenciales que aparecen en las páginas del Visio.
 5. Pendiente sin confirmar: si el Cisco Catalyst 3560, el switch de 8 puertos de Inmuebles y el Intellinet tienen 4 SFP (hoy quedan fuera de esa regla).
+
+### Estado de implementación
+
+**Fase 1a (hecha, sin compilar ni ejecutar en la sesión de desarrollo):**
+- `Models/EquipoRed.cs`: `EsAdministrable` (bool?). La categoría del equipo **sigue siendo `TipoDispositivo`** (ya es un select en `Views/Inventario/Crear.cshtml`); no se agregó otra columna de categoría. Falta ampliar sus opciones (por ejemplo cámara IP, switch no administrable) en la Fase 2.
+- `Models/InterfazEquipo.cs`: `VelocidadMbps`, `MedioFisico`, `ModoPuerto` (por defecto Acceso) y `Vlan` (por defecto 1, solo base, sin mostrar).
+- `Models/EnlaceFisico.cs`: `EstadoStp` (No documentado, Reenvío, Bloqueado, Redundante).
+- `Models/PosicionNodoMapa.cs` y tabla `PosicionesNodoMapa` para guardar el diseño del mapa; todavía nada la usa.
+- `Models/OpcionesTopologia.cs`: listas cerradas de medios, modos, estados STP y velocidades para los formularios.
+- Migración escrita a mano `Data/Migraciones/20261118120000_Fase1aModeloTopologico` (con su Designer) y snapshot actualizado. Si al arrancar aparece un error de «cambios pendientes del modelo», borrar esa migración y su Designer, restaurar el snapshot desde git y regenerar con `dotnet ef migrations add Fase1aModeloTopologico`.
+- `Services/ValidadorTopologia.cs`: `ValidarEnlaceAsync` (puerto inexistente, mismo puerto o equipo, puerto ocupado, relación parcial, conectores RJ45 contra óptico, SFP contra SFP+, velocidades distintas, posible bucle con aviso de STP y variante más fuerte si hay un switch no administrable) y `ValidarIpEquipo` (formato, red habitual 192.168.0.x, 192.168.1.x y 10.0.1.x, IP duplicada). Severidades: Error, Aviso, Información.
+- `Controllers/ConexionesController.cs` (`CrearEnlace` POST) usa el validador: los errores nuevos impiden guardar y los avisos se agregan al mensaje de éxito. `ValidarIpEquipo` todavía no está conectado a ningún formulario.
+- Limitación conocida: `PreparadorMigraciones` compara una base antigua sin historial de EF contra el modelo **actual**, por lo que una base que nunca haya arrancado con la migración inicial fallaría; las bases ya migradas no se ven afectadas.
+
+**Pendiente de la Fase 1 (1b):**
+- Tabla propia de IP con estados (libre, reservada, asignada, en conflicto) sincronizada con equipos y con el escaneo de la LAN.
+- Unificar `ConexionDocumentada` con `EnlaceFisico` (interfaz de red implícita para PC, impresoras y cámaras) migrando sin perder fuente, libro, fila ni estado.
+- Revisar y fijar por rol qué puede hacer cada cuenta: el técnico edita; borrar la base solo el Administrador.
+- Pruebas unitarias del validador (hoy no hay proyecto de pruebas).
+- Completar `EsAdministrable` de los switches existentes con datos confirmados por el usuario (hoy es nulo).
+

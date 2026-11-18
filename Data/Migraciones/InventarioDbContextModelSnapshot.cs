@@ -95,6 +95,13 @@ namespace ProyectoConexionRed.Web.Data.Migraciones
                         .HasMaxLength(60)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("EstadoStp")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("No documentado");
+
                     b.Property<DateOnly?>("FechaUltimaRevision")
                         .HasColumnType("TEXT");
 
@@ -165,6 +172,9 @@ namespace ProyectoConexionRed.Web.Data.Migraciones
                     b.Property<string>("DireccionMac")
                         .HasMaxLength(32)
                         .HasColumnType("TEXT");
+
+                    b.Property<bool?>("EsAdministrable")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("EstadoAdministrativo")
                         .IsRequired()
@@ -335,6 +345,17 @@ namespace ProyectoConexionRed.Web.Data.Migraciones
                     b.Property<int>("IdentificadorEquipo")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("MedioFisico")
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ModoPuerto")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("Acceso");
+
                     b.Property<string>("Observaciones")
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
@@ -343,6 +364,14 @@ namespace ProyectoConexionRed.Web.Data.Migraciones
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("VelocidadMbps")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Vlan")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1);
 
                     b.HasKey("Identificador");
 
@@ -365,6 +394,42 @@ namespace ProyectoConexionRed.Web.Data.Migraciones
                     b.HasKey("Codigo");
 
                     b.ToTable("MantenimientosEjecutados", (string)null);
+                });
+
+            modelBuilder.Entity("ProyectoConexionRed.Web.Models.PosicionNodoMapa", b =>
+                {
+                    b.Property<int>("Identificador")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("FechaActualizacionUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("IdentificadorEquipo")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("NombreUsuario")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Vista")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("X")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Y")
+                        .HasColumnType("REAL");
+
+                    b.HasKey("Identificador");
+
+                    b.HasIndex("IdentificadorEquipo", "Vista")
+                        .IsUnique();
+
+                    b.ToTable("PosicionesNodoMapa", (string)null);
                 });
 
             modelBuilder.Entity("ProyectoConexionRed.Web.Models.UsuarioAplicacion", b =>
@@ -434,6 +499,15 @@ namespace ProyectoConexionRed.Web.Data.Migraciones
                 });
 
             modelBuilder.Entity("ProyectoConexionRed.Web.Models.InterfazEquipo", b =>
+                {
+                    b.HasOne("ProyectoConexionRed.Web.Models.EquipoRed", null)
+                        .WithMany()
+                        .HasForeignKey("IdentificadorEquipo")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ProyectoConexionRed.Web.Models.PosicionNodoMapa", b =>
                 {
                     b.HasOne("ProyectoConexionRed.Web.Models.EquipoRed", null)
                         .WithMany()

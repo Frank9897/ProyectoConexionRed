@@ -636,6 +636,15 @@ public class ConexionesController : Controller
         if (puertoConRelacionParcial)
             ModelState.AddModelError(string.Empty, "Uno de los puertos ya tiene una relación documental parcial.");
 
+        // validacionTopologica aplica reglas comunes (conectores, velocidades y posibles bucles); los códigos ya revisados arriba se omiten.
+        var validacionTopologica = await ValidadorTopologia.ValidarEnlaceAsync(
+            contextoInventario, formulario.IdentificadorPuertoOrigen, formulario.IdentificadorPuertoDestino, null, cancelacion);
+        foreach (var hallazgoError in validacionTopologica.Errores
+            .Where(hallazgo => !ValidadorTopologia.CodigosYaVerificadosPorFormulario.Contains(hallazgo.Codigo)))
+        {
+            ModelState.AddModelError(string.Empty, hallazgoError.Mensaje);
+        }
+
         if (!ModelState.IsValid)
         {
             formulario.InterfacesDisponibles = await UtilidadesConexiones.ObtenerInterfacesDisponiblesAsync(contextoInventario, 
@@ -716,7 +725,10 @@ public class ConexionesController : Controller
         await contextoInventario.EventosModificacion.AddRangeAsync(eventosEnlace, cancelacion);
         await contextoInventario.SaveChangesAsync(cancelacion);
 
-        TempData["Mensaje"] = "Se registró el enlace documental. No se realizó ninguna acción sobre la red.";
+        // avisosTopologia se muestran junto al mensaje de éxito; no impiden guardar.
+        var avisosTopologia = validacionTopologica.Avisos.Select(hallazgo => hallazgo.Mensaje).ToList();
+        TempData["Mensaje"] = "Se registró el enlace documental. No se realizó ninguna acción sobre la red."
+            + (avisosTopologia.Count > 0 ? " Avisos: " + string.Join(" ", avisosTopologia) : string.Empty);
         return RedirectToAction(nameof(Index));
     }
 

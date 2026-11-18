@@ -114,4 +114,10 @@ public class EquipoRed
     /// Notas de inventario; cambiar su contenido modifica el contexto documental asociado al equipo.
     /// </summary>
     public string? Observaciones { get; set; }
+
+    /// <summary>
+    /// Indica si un switch se puede administrar: verdadero, falso o nulo si aún no se confirmó.
+    /// Un switch no administrable no tiene STP ni gestión de puertos; cambiarlo altera las alertas de bucle.
+    /// </summary>
+    public bool? EsAdministrable { get; set; }
 }

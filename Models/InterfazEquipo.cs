@@ -44,4 +44,25 @@ public class InterfazEquipo
     /// Notas de documentación del puerto; cambiarlo modifica el contexto asociado a la interfaz.
     /// </summary>
     public string? Observaciones { get; set; }
+
+    /// <summary>
+    /// Velocidad nominal del puerto en Mbps (10, 100, 1000, 2500, 10000, etc.); nulo si no está documentada.
+    /// Cambiarla modifica los avisos de velocidades distintas entre los extremos de un enlace.
+    /// </summary>
+    public int? VelocidadMbps { get; set; }
+
+    /// <summary>
+    /// Medio físico previsto del puerto (UTP, Fibra o DAC); nulo si no está documentado.
+    /// </summary>
+    public string? MedioFisico { get; set; }
+
+    /// <summary>
+    /// Modo del puerto: Acceso o Troncal. Por defecto es Acceso; todavía no se muestra en pantallas.
+    /// </summary>
+    public string ModoPuerto { get; set; } = "Acceso";
+
+    /// <summary>
+    /// VLAN nativa o de acceso del puerto. Por defecto es la VLAN 1; solo se guarda y todavía no se muestra.
+    /// </summary>
+    public int Vlan { get; set; } = 1;
 }
