@@ -117,12 +117,8 @@ public static class CatalogoVisualesDispositivos
         // interfacesSinPosicion ordena números como 2 antes de 10 y conserva después las etiquetas no numéricas.
         var interfacesSinPosicion = interfacesEquipo
             .Where(interfaz => !interfacesUsadas.Contains(interfaz.Identificador))
-            // Las filas SFP adicionales del HP 1920 se conservan en SQLite, pero no se dibujan como jaulas fuera de capacidad.
-            .Where(interfaz => !(string.Equals(equipo.Nombre, "Switch HP 1920", StringComparison.OrdinalIgnoreCase)
-                && string.Equals(interfaz.TipoInterfaz, "SFP", StringComparison.OrdinalIgnoreCase)
-                && interfaz.Observaciones?.Contains("Excel6", StringComparison.OrdinalIgnoreCase) == true
-                && !new[] { "SFP 1", "SFP 2", "SFP 3", "SFP 4", "SFP 25", "SFP 26", "SFP 27", "SFP 28" }
-                    .Contains(interfaz.EtiquetaPuerto, StringComparer.OrdinalIgnoreCase)))
+            // Las filas SFP sobrantes se conservan en SQLite, pero no se dibujan como bocas extra en switches de cuatro SFP.
+            .Where(interfaz => !EsInterfazSfpFueraDeCapacidad(equipo, interfaz))
             .Where(interfaz => !EsEtiquetaFueraCapacidadS4148(equipo, interfaz))
             .OrderBy(interfaz => ObtenerOrdenEtiquetaPuerto(interfaz.EtiquetaPuerto))
             .ThenBy(interfaz => interfaz.EtiquetaPuerto, StringComparer.OrdinalIgnoreCase);
@@ -140,7 +136,7 @@ public static class CatalogoVisualesDispositivos
     }
 
     /// <summary>
-    /// Normaliza etiquetas del HP 1920 y etiquetas numéricas de puertos por tipo de interfaz.
+    /// Normaliza etiquetas SFP consecutivas de los switches, con numeración local por conector.
     /// </summary>
     /// <param name="nombreEquipo">Equipo propietario; cambiarlo puede activar una regla visual específica.</param>
     /// <param name="etiqueta">Rótulo registrado; cambiarlo altera la numeración que se muestra.</param>
@@ -149,14 +145,18 @@ public static class CatalogoVisualesDispositivos
     {
         // etiquetaNormalizada elimina espacios externos para comparar las etiquetas guardadas.
         var etiquetaNormalizada = etiqueta.Trim();
-        if (string.Equals(nombreEquipo, "Switch HP 1920", StringComparison.OrdinalIgnoreCase)
-            && etiquetaNormalizada.StartsWith("SFP ", StringComparison.OrdinalIgnoreCase)
-            && int.TryParse(etiquetaNormalizada.Substring(4).Trim(), out var numeroSfp)
+        var esS4148 = nombreEquipo.Contains("S4148U", StringComparison.OrdinalIgnoreCase);
+        var familiaSfp = tipoInterfaz?.Trim().ToUpperInvariant();
+        var prefijoSfp = familiaSfp is "SFP" or "SFP+" ? familiaSfp : null;
+        var textoNumeroSfp = new string(etiquetaNormalizada.Reverse().TakeWhile(char.IsDigit).Reverse().ToArray());
+        if (!esS4148
+            && prefijoSfp is not null
+            && int.TryParse(textoNumeroSfp, out var numeroSfp)
             && numeroSfp is >= 25 and <= 28)
         {
-            // puertoSfpLocal traduce el conteo consecutivo del Visio a las cuatro jaulas SFP del HP 1920.
+            // puertoSfpLocal traduce la numeración consecutiva del Visio a las cuatro bocas SFP locales.
             var puertoSfpLocal = numeroSfp - 24;
-            return "SFP " + puertoSfpLocal;
+            return prefijoSfp + " " + puertoSfpLocal;
         }
 
         // textoNumero permite comparar una etiqueta "1" con el grupo de conectores SFP+ o QSFP correspondiente.
@@ -169,6 +169,26 @@ public static class CatalogoVisualesDispositivos
         }
 
         return etiquetaNormalizada;
+    }
+
+    /// <summary>
+    /// Oculta filas SFP que exceden las cuatro bocas declaradas para switches distintos del S4148U.
+    /// </summary>
+    /// <param name="equipo">Switch propietario; cambiarlo puede activar la excepción física del S4148U.</param>
+    /// <param name="interfaz">Puerto guardado; cambiarlo modifica el tipo o número evaluado.</param>
+    /// <returns>Verdadero si la fila representa una boca extra que no existe en el frontal documentado.</returns>
+    private static bool EsInterfazSfpFueraDeCapacidad(EquipoRed equipo, InterfazEquipo interfaz)
+    {
+        // esS4148 mantiene visibles las 48 jaulas SFP+ particulares del Dell.
+        var esS4148 = equipo.Nombre.Contains("S4148U", StringComparison.OrdinalIgnoreCase)
+            || equipo.Modelo?.Contains("S4148U", StringComparison.OrdinalIgnoreCase) == true;
+        if (esS4148 || !interfaz.TipoInterfaz.StartsWith("SFP", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        // etiquetaNormalizada convierte 25–28 en 1–4 para respetar la numeración local del grupo.
+        var etiquetaNormalizada = NormalizarEtiquetaPuertoVisual(equipo.Nombre, interfaz.EtiquetaPuerto, interfaz.TipoInterfaz);
+        var textoNumero = new string(etiquetaNormalizada.Reverse().TakeWhile(char.IsDigit).Reverse().ToArray());
+        return int.TryParse(textoNumero, out var numeroPuerto) && numeroPuerto > 4;
     }
 
     /// <summary>Filtra filas que exceden la capacidad física documentada del Dell S4148U-ON.</summary>

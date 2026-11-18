@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace ProyectoConexionRed.Web.Data;
 
 /// <summary>
-/// Mantiene posiciones de switches de área y rack documentadas en el V3.5.
+/// Mantiene posiciones de switches de área y rack documentadas en el V3.5 y verificadas contra el V4.0 (las tablas Excel del V4 no cambian sus destinos).
 /// </summary>
 internal static class CatalogoPuertosAreasV3
 {
@@ -3881,7 +3881,7 @@ internal static class CatalogoPuertosAreasV3
     "TipoInterfaz": "SFP+"
   },
   {
-    "EquipoLocal": "Switch HP 5500 (D)",
+    "EquipoLocal": "Switch HP 5500",
     "Pagina": "Switch HP 5500 (D) RACK1",
     "Libro": "Excel4",
     "FilaFuente": "2",
@@ -3893,7 +3893,7 @@ internal static class CatalogoPuertosAreasV3
     "EstadoRelacion": "Confirmado"
   },
   {
-    "EquipoLocal": "Switch HP 5500 (D)",
+    "EquipoLocal": "Switch HP 5500",
     "Pagina": "Switch HP 5500 (D) RACK1",
     "Libro": "Excel4",
     "FilaFuente": "3",
@@ -3905,7 +3905,7 @@ internal static class CatalogoPuertosAreasV3
     "EstadoRelacion": "Confirmado"
   },
   {
-    "EquipoLocal": "Switch HP 5500 (D)",
+    "EquipoLocal": "Switch HP 5500",
     "Pagina": "Switch HP 5500 (D) RACK1",
     "Libro": "Excel4",
     "FilaFuente": "4",
@@ -3917,95 +3917,11 @@ internal static class CatalogoPuertosAreasV3
     "EstadoRelacion": "Confirmado"
   },
   {
-    "EquipoLocal": "Switch HP 5500 (D)",
+    "EquipoLocal": "Switch HP 5500",
     "Pagina": "Switch HP 5500 (D) RACK1",
     "Libro": "Excel4",
     "FilaFuente": "5",
     "EtiquetaPuerto": "SFP 28",
-    "Destino": "LIBRE",
-    "IpRemota": null,
-    "EsRack": true,
-    "TipoInterfaz": "SFP",
-    "EstadoRelacion": "Confirmado"
-  },
-  {
-    "EquipoLocal": "Switch HP 5500 (D)",
-    "Pagina": "Switch HP 5500 (D) RACK1",
-    "Libro": "Excel4",
-    "FilaFuente": "6",
-    "EtiquetaPuerto": "SFP 11",
-    "Destino": "LIBRE",
-    "IpRemota": null,
-    "EsRack": true,
-    "TipoInterfaz": "SFP",
-    "EstadoRelacion": "Confirmado"
-  },
-  {
-    "EquipoLocal": "Switch HP 5500 (D)",
-    "Pagina": "Switch HP 5500 (D) RACK1",
-    "Libro": "Excel4",
-    "FilaFuente": "7",
-    "EtiquetaPuerto": "SFP 12",
-    "Destino": "LIBRE",
-    "IpRemota": null,
-    "EsRack": true,
-    "TipoInterfaz": "SFP",
-    "EstadoRelacion": "Confirmado"
-  },
-  {
-    "EquipoLocal": "Switch HP 5500 (D)",
-    "Pagina": "Switch HP 5500 (D) RACK1",
-    "Libro": "Excel4",
-    "FilaFuente": "8",
-    "EtiquetaPuerto": "SFP 14",
-    "Destino": "LIBRE",
-    "IpRemota": null,
-    "EsRack": true,
-    "TipoInterfaz": "SFP",
-    "EstadoRelacion": "Confirmado"
-  },
-  {
-    "EquipoLocal": "Switch HP 5500 (D)",
-    "Pagina": "Switch HP 5500 (D) RACK1",
-    "Libro": "Excel4",
-    "FilaFuente": "9",
-    "EtiquetaPuerto": "SFP 15",
-    "Destino": "LIBRE",
-    "IpRemota": null,
-    "EsRack": true,
-    "TipoInterfaz": "SFP",
-    "EstadoRelacion": "Confirmado"
-  },
-  {
-    "EquipoLocal": "Switch HP 5500 (D)",
-    "Pagina": "Switch HP 5500 (D) RACK1",
-    "Libro": "Excel4",
-    "FilaFuente": "10",
-    "EtiquetaPuerto": "SFP 17",
-    "Destino": "LIBRE",
-    "IpRemota": null,
-    "EsRack": true,
-    "TipoInterfaz": "SFP",
-    "EstadoRelacion": "Confirmado"
-  },
-  {
-    "EquipoLocal": "Switch HP 5500 (D)",
-    "Pagina": "Switch HP 5500 (D) RACK1",
-    "Libro": "Excel4",
-    "FilaFuente": "11",
-    "EtiquetaPuerto": "SFP 18",
-    "Destino": "LIBRE",
-    "IpRemota": null,
-    "EsRack": true,
-    "TipoInterfaz": "SFP",
-    "EstadoRelacion": "Confirmado"
-  },
-  {
-    "EquipoLocal": "Switch HP 5500 (D)",
-    "Pagina": "Switch HP 5500 (D) RACK1",
-    "Libro": "Excel4",
-    "FilaFuente": "12",
-    "EtiquetaPuerto": "SFP 22",
     "Destino": "LIBRE",
     "IpRemota": null,
     "EsRack": true,
@@ -4030,11 +3946,12 @@ internal static class CatalogoPuertosAreasV3
     "Libro": "Excel6",
     "FilaFuente": "3",
     "EtiquetaPuerto": "SFP 26",
-    "Destino": "Switch - Secretaria",
-    "IpRemota": "192.168.1.28",
+    "Destino": "DESCONOCIDO",
+    "IpRemota": null,
     "EsRack": true,
     "TipoInterfaz": "SFP",
-    "EstadoRelacion": "Confirmado"
+    "EstadoRelacion": "A verificar",
+    "ObservacionesImportacion": "DIAGRAMA RED V4.0 marca libres los SFP de Secretaría, pero esta tabla aún nombra el destino; no dibujar el enlace hasta conciliar la discrepancia."
   },
   {
     "EquipoLocal": "Switch HP 1920",
@@ -4056,90 +3973,6 @@ internal static class CatalogoPuertosAreasV3
     "EtiquetaPuerto": "SFP 28",
     "Destino": "Switch - Inmuebles",
     "IpRemota": "192.168.1.26",
-    "EsRack": true,
-    "TipoInterfaz": "SFP",
-    "EstadoRelacion": "Confirmado"
-  },
-  {
-    "EquipoLocal": "Switch HP 1920",
-    "Pagina": "Switch HP 1920 (E) RACK1",
-    "Libro": "Excel6",
-    "FilaFuente": "6",
-    "EtiquetaPuerto": "SFP 11",
-    "Destino": "LIBRE",
-    "IpRemota": null,
-    "EsRack": true,
-    "TipoInterfaz": "SFP",
-    "EstadoRelacion": "Confirmado"
-  },
-  {
-    "EquipoLocal": "Switch HP 1920",
-    "Pagina": "Switch HP 1920 (E) RACK1",
-    "Libro": "Excel6",
-    "FilaFuente": "7",
-    "EtiquetaPuerto": "SFP 12",
-    "Destino": "LIBRE",
-    "IpRemota": null,
-    "EsRack": true,
-    "TipoInterfaz": "SFP",
-    "EstadoRelacion": "Confirmado"
-  },
-  {
-    "EquipoLocal": "Switch HP 1920",
-    "Pagina": "Switch HP 1920 (E) RACK1",
-    "Libro": "Excel6",
-    "FilaFuente": "8",
-    "EtiquetaPuerto": "SFP 14",
-    "Destino": "LIBRE",
-    "IpRemota": null,
-    "EsRack": true,
-    "TipoInterfaz": "SFP",
-    "EstadoRelacion": "Confirmado"
-  },
-  {
-    "EquipoLocal": "Switch HP 1920",
-    "Pagina": "Switch HP 1920 (E) RACK1",
-    "Libro": "Excel6",
-    "FilaFuente": "9",
-    "EtiquetaPuerto": "SFP 15",
-    "Destino": "LIBRE",
-    "IpRemota": null,
-    "EsRack": true,
-    "TipoInterfaz": "SFP",
-    "EstadoRelacion": "Confirmado"
-  },
-  {
-    "EquipoLocal": "Switch HP 1920",
-    "Pagina": "Switch HP 1920 (E) RACK1",
-    "Libro": "Excel6",
-    "FilaFuente": "10",
-    "EtiquetaPuerto": "SFP 17",
-    "Destino": "LIBRE",
-    "IpRemota": null,
-    "EsRack": true,
-    "TipoInterfaz": "SFP",
-    "EstadoRelacion": "Confirmado"
-  },
-  {
-    "EquipoLocal": "Switch HP 1920",
-    "Pagina": "Switch HP 1920 (E) RACK1",
-    "Libro": "Excel6",
-    "FilaFuente": "11",
-    "EtiquetaPuerto": "SFP 18",
-    "Destino": "LIBRE",
-    "IpRemota": null,
-    "EsRack": true,
-    "TipoInterfaz": "SFP",
-    "EstadoRelacion": "Confirmado"
-  },
-  {
-    "EquipoLocal": "Switch HP 1920",
-    "Pagina": "Switch HP 1920 (E) RACK1",
-    "Libro": "Excel6",
-    "FilaFuente": "12",
-    "EtiquetaPuerto": "SFP 22",
-    "Destino": "LIBRE",
-    "IpRemota": null,
     "EsRack": true,
     "TipoInterfaz": "SFP",
     "EstadoRelacion": "Confirmado"

@@ -35,6 +35,9 @@ public static class InicializadorInventario
         // IncorporarDatosV3Async completa MAC confirmadas y agrega el equipo de reserva documentado sin duplicarlo.
         await IncorporarDatosV3Async(contextoInventario, cancelacion);
 
+        // ActualizacionV4.AplicarAsync fija 4 SFP por switch, incorpora el esquema de internet del V4 y completa fichas con el escaneo de la LAN.
+        await ActualizacionV4.AplicarAsync(contextoInventario, cancelacion);
+
         // CargarAdministradorInicialAsync utiliza variables de entorno y nunca escribe la contraseña en los registros.
         await CargarAdministradorInicialAsync(
             contextoInventario,
@@ -810,8 +813,16 @@ public static class InicializadorInventario
     /// <returns>Etiqueta sin espacios externos.</returns>
     private static string NormalizarEtiquetaPuertoV3(string etiqueta)
     {
-        // etiquetaNormalizada conserva los ceros y separadores del Visio y recorta solo espacios externos.
+        // etiquetaNormalizada conserva los puertos comunes y recorta solo espacios externos.
         var etiquetaNormalizada = etiqueta.Trim();
+        if (etiquetaNormalizada.StartsWith("SFP ", StringComparison.OrdinalIgnoreCase)
+            && int.TryParse(etiquetaNormalizada.Substring(4).Trim(), out var numeroSfp)
+            && numeroSfp is >= 25 and <= 28)
+        {
+            // numeroSfpLocal traduce el conteo consecutivo de los libros a las cuatro bocas SFP locales.
+            var numeroSfpLocal = numeroSfp - 24;
+            return "SFP " + numeroSfpLocal;
+        }
         return etiquetaNormalizada;
     }
 
