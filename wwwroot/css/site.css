@@ -1687,3 +1687,11 @@ body.mapa-ampliado-en-pagina::before {
         page-break-inside: avoid !important;
     }
 }
+
+/* ayuda-ip agrupa los controles que sugieren una IP libre; cambiarlo altera su disposición en el formulario de equipos. */
+.ayuda-ip { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; align-items: center; }
+/* aviso-campo muestra mensajes de validación bajo un campo; las variantes cambian solo el color según la gravedad. */
+.aviso-campo { margin: 6px 0 0; padding: 6px 10px; border-radius: 8px; font-size: .85rem; border: 1px solid #d8dee8; background: #f6f8fb; color: #3b4658; }
+.aviso-campo-error { border-color: #f1c3bd; background: #fff4f2; color: #913f34; }
+.aviso-campo-aviso { border-color: #e7d3a0; background: var(--ambar-fondo); color: var(--ambar-texto); }
+.aviso-campo button { margin-left: 8px; }

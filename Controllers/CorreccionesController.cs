@@ -53,6 +53,8 @@ public class CorreccionesController : Controller
             EstadoUso = interfazGuardada.EstadoUso,
             FechaUltimaRevision = interfazGuardada.FechaUltimaRevision,
             Observaciones = interfazGuardada.Observaciones,
+            VelocidadMbps = interfazGuardada.VelocidadMbps,
+            MedioFisico = interfazGuardada.MedioFisico,
             EquiposDisponibles = await UtilidadesConexiones.ObtenerEquiposDisponiblesAsync(contextoInventario, interfazGuardada.IdentificadorEquipo, cancelacion)
         };
         return View(formularioEdicion);
@@ -67,7 +69,7 @@ public class CorreccionesController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditarInterfaz(
-        [Bind("Identificador,IdentificadorEquipo,EtiquetaPuerto,TipoInterfaz,EstadoDatos,EstadoUso,FechaUltimaRevision,Observaciones")]
+        [Bind("Identificador,IdentificadorEquipo,EtiquetaPuerto,TipoInterfaz,EstadoDatos,EstadoUso,FechaUltimaRevision,Observaciones,VelocidadMbps,MedioFisico,AplicarVelocidadAOtrosPuertos")]
         EditarInterfazViewModel formulario,
         CancellationToken cancelacion)
     {
@@ -148,11 +150,37 @@ public class CorreccionesController : Controller
             formulario.FechaUltimaRevision?.ToString("yyyy-MM-dd"));
         UtilidadesConexiones.AgregarCambio(cambiosInterfaz, equipoAnterior.Identificador, equipoAnterior.Nombre, usuarioEditor, "Observaciones", interfazGuardada.Observaciones, formulario.Observaciones);
 
+        UtilidadesConexiones.AgregarCambio(cambiosInterfaz, equipoAnterior.Identificador, equipoAnterior.Nombre, usuarioEditor, "Velocidad del puerto",
+            TextoVelocidad(interfazGuardada.VelocidadMbps), TextoVelocidad(formulario.VelocidadMbps));
+        UtilidadesConexiones.AgregarCambio(cambiosInterfaz, equipoAnterior.Identificador, equipoAnterior.Nombre, usuarioEditor, "Medio físico",
+            interfazGuardada.MedioFisico, UtilidadesConexiones.NormalizarTexto(formulario.MedioFisico));
+
         interfazGuardada.IdentificadorEquipo = equipoNuevo.Identificador;
         interfazGuardada.EtiquetaPuerto = etiquetaNueva;
         interfazGuardada.TipoInterfaz = formulario.TipoInterfaz;
         interfazGuardada.EstadoDatos = formulario.EstadoDatos;
         interfazGuardada.EstadoUso = formulario.EstadoUso;
+        interfazGuardada.VelocidadMbps = formulario.VelocidadMbps;
+        interfazGuardada.MedioFisico = UtilidadesConexiones.NormalizarTexto(formulario.MedioFisico);
+
+        // puertosHermanos son los demás puertos del mismo tipo y equipo sin velocidad; solo se completan si el técnico lo pidió.
+        if (formulario.AplicarVelocidadAOtrosPuertos && formulario.VelocidadMbps is int velocidadNueva)
+        {
+            var puertosHermanos = await contextoInventario.InterfacesEquipo
+                .Where(interfaz => interfaz.IdentificadorEquipo == equipoNuevo.Identificador
+                    && interfaz.Identificador != interfazGuardada.Identificador
+                    && interfaz.TipoInterfaz == interfazGuardada.TipoInterfaz
+                    && interfaz.VelocidadMbps == null)
+                .ToListAsync(cancelacion);
+            foreach (var puertoHermano in puertosHermanos) puertoHermano.VelocidadMbps = velocidadNueva;
+            if (puertosHermanos.Count > 0)
+            {
+                UtilidadesConexiones.AgregarCambio(cambiosInterfaz, equipoNuevo.Identificador, equipoNuevo.Nombre, usuarioEditor,
+                    "Velocidad aplicada a otros puertos", null,
+                    $"{puertosHermanos.Count} puertos {interfazGuardada.TipoInterfaz} a {TextoVelocidad(velocidadNueva)}");
+            }
+        }
+
         interfazGuardada.FechaUltimaRevision = formulario.FechaUltimaRevision;
         interfazGuardada.Observaciones = UtilidadesConexiones.NormalizarTexto(formulario.Observaciones);
         await contextoInventario.EventosModificacion.AddRangeAsync(cambiosInterfaz, cancelacion);
@@ -165,6 +193,9 @@ public class CorreccionesController : Controller
             ? RedirectToAction("Detalle", "Topologia", new { identificador = equipoNuevo.Identificador })
             : RedirectToAction("Index", "Conexiones");
     }
+
+    /// <summary>Convierte una velocidad en Mbps a texto legible para el historial; nulo si no hay velocidad.</summary>
+    private static string? TextoVelocidad(int? mbps) => mbps is int valor ? OpcionesTopologia.EtiquetaVelocidad(valor) : null;
 
     /// <summary>
     /// Elimina una interfaz solo si no sostiene una relación documentada.

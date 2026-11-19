@@ -534,3 +534,18 @@ Este bloque permite continuar el trabajo con otra IA. Está basado en la lectura
 - Unificar `ConexionDocumentada` con `EnlaceFisico` (interfaz de red implícita para PC, impresoras y cámaras). Es el cambio más invasivo: toca `TopologiaController`, `ConexionesController`, `CorreccionesController`, sus vistas y el importador del Visio; hacerlo con una migración de datos que no pierda fuente, libro, fila ni estado, y probarlo contra una copia de la base real.
 - Proyecto de pruebas del validador (el proyecto web compila todos los `.cs` de sus subcarpetas: excluir la carpeta de pruebas con `Compile Remove` en el `.csproj`).
 - Conectar `ValidadorTopologia.ValidarIpEquipo` a los formularios de equipo, validando duplicados solo cuando la IP cambia, porque hay duplicados históricos documentados.
+
+**Fase 2, primera entrega: formularios guiados (18 de noviembre de 2026; sin compilar ni ejecutar en la sesión de desarrollo):**
+- `wwwroot/js/formulario-equipo.js` (cargado en `Views/Inventario/Crear.cshtml` y `Editar.cshtml`) agrega, sin cambiar el HTML de los formularios: botón y lista de **IP libres** por red (192.168.0.x o 192.168.1.x), **validación de IP en vivo**, normalización y validación de la **MAC**, consulta al **escaneo de la LAN** que ofrece «Completar campos vacíos» (nunca pisa lo escrito), **sugerencia de tipo de dispositivo** (solo la propone; el técnico la aplica), sugerencia de **switch administrable** según tenga IP, **plantillas de switch** (por ejemplo 24 RJ45 + 4 SFP) y valores habituales por conector.
+- Acciones de ayuda GET en `Controllers/InventarioController.cs`: `IpsLibres`, `ValidarIp` y `SugerirDesdeEscaneo`. El escaneo sale de `Data/CatalogoEscaneoLan.cs`; nada se guarda al consultarlas.
+- `Services/SugeridorTipoDispositivo.cs`: reglas por nombre, modelo y fabricante, usando solo los tipos que ya existen en el select. No hay tipo «Cámara IP» todavía.
+- Validación al guardar equipos (alta y edición): formato de IP y duplicados son **error**, red fuera de lo habitual y reservas son **aviso** que se agrega al mensaje de éxito. En la edición, un duplicado histórico (por ejemplo 192.168.1.19) solo avisa si la IP no cambió. Tras guardar se llama a `SincronizadorIps` para que la tabla de IP no quede vieja.
+- **Puertos:** el formulario de puerto (`Views/Conexiones/_CamposInterfaz.cshtml`, usado al crear y al corregir) tiene selects de **velocidad** (10 Mbps a 100 Gbps) y **medio físico** (UTP, Fibra, DAC), con auditoría; al corregir hay una casilla para aplicar la velocidad a los demás puertos del mismo tipo del equipo que no la tengan. VLAN y modo siguen ocultos.
+- Estilos nuevos al final de `wwwroot/css/site.css` (`ayuda-ip`, `aviso-campo`).
+
+**Pendiente de la Fase 2:**
+- Alta de equipo en dos pasos (elegir primero la categoría y mostrar solo los campos que corresponden); hoy el formulario es uno solo.
+- Ampliar los tipos de dispositivo (cámara IP, entre otros) y revisar los filtros del inventario que dependen de ellos.
+- Selects de velocidad y medio también al crear puertos en bloque desde la capacidad del switch (`GeneradorInterfacesSwitch`).
+- Avisos en línea para el resto de los campos (nombre repetido, MAC repetida en otra ficha).
+- Pruebas manuales de los formularios en el navegador: el script no se ejecutó.

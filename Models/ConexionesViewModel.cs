@@ -189,6 +189,18 @@ public abstract class InterfazFormularioViewModel
     public string? Observaciones { get; set; }
     /// <summary>Opciones de equipos; cambiar la lista altera el selector disponible.</summary>
     public List<SelectListItem> EquiposDisponibles { get; set; } = [];
+
+    /// <summary>Velocidad nominal del puerto en Mbps; nulo si no está documentada.</summary>
+    [Range(10, 400000, ErrorMessage = "Selecciona una velocidad válida.")]
+    public int? VelocidadMbps { get; set; }
+
+    /// <summary>Medio físico previsto (UTP, Fibra o DAC); vacío si no está documentado.</summary>
+    [StringLength(20)]
+    [RegularExpression(@"^(UTP|Fibra|DAC)?$", ErrorMessage = "Selecciona un medio válido.")]
+    public string? MedioFisico { get; set; }
+
+    /// <summary>Si es verdadero al editar, copia la velocidad a los demás puertos del mismo tipo del equipo que no la tengan.</summary>
+    public bool AplicarVelocidadAOtrosPuertos { get; set; }
 }
 
 /// <summary>Formulario para dar de alta una interfaz.</summary>

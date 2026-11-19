@@ -220,7 +220,9 @@ public class ConexionesController : Controller
             EstadoDatos = formulario.EstadoDatos,
             EstadoUso = formulario.EstadoUso,
             FechaUltimaRevision = formulario.FechaUltimaRevision,
-            Observaciones = UtilidadesConexiones.NormalizarTexto(formulario.Observaciones)
+            Observaciones = UtilidadesConexiones.NormalizarTexto(formulario.Observaciones),
+            VelocidadMbps = formulario.VelocidadMbps,
+            MedioFisico = UtilidadesConexiones.NormalizarTexto(formulario.MedioFisico)
         };
 
         // eventoCambio registra el alta del puerto; cambiar sus datos altera la línea que queda en el historial.

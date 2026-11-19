@@ -20,6 +20,35 @@
     }
     <div><label asp-for="TipoInterfaz">Tipo de interfaz</label><select asp-for="TipoInterfaz"><option>No confirmado</option><option>RJ45</option><option>RJ45 + PoE</option><option>SFP</option><option>SFP+</option><option>QSFP</option><option>QSFP+</option><option>QSFP28</option><option>Otro</option></select><span asp-validation-for="TipoInterfaz" class="mensaje-error"></span></div>
     <div>
+        <label asp-for="VelocidadMbps">Velocidad del puerto</label>
+        <select asp-for="VelocidadMbps">
+            <option value="">Sin documentar</option>
+            @foreach (var velocidad in ProyectoConexionRed.Web.Models.OpcionesTopologia.VelocidadesMbps)
+            {
+                <option value="@velocidad">@ProyectoConexionRed.Web.Models.OpcionesTopologia.EtiquetaVelocidad(velocidad)</option>
+            }
+        </select>
+        <span asp-validation-for="VelocidadMbps" class="mensaje-error"></span>
+        <small class="ayuda-formulario">Los switches administrables actuales suelen ser de 1 Gbps.</small>
+    </div>
+    <div>
+        <label asp-for="MedioFisico">Medio físico</label>
+        <select asp-for="MedioFisico">
+            <option value="">Sin documentar</option>
+            @foreach (var medio in ProyectoConexionRed.Web.Models.OpcionesTopologia.MediosFisicos)
+            {
+                <option>@medio</option>
+            }
+        </select>
+        <span asp-validation-for="MedioFisico" class="mensaje-error"></span>
+    </div>
+    @if (Model is ProyectoConexionRed.Web.Models.EditarInterfazViewModel)
+    {
+        <div class="campo-ancho">
+            <label><input asp-for="AplicarVelocidadAOtrosPuertos" type="checkbox" /> Aplicar esta velocidad a los demás puertos del mismo tipo de este equipo que no tengan velocidad</label>
+        </div>
+    }
+    <div>
         <label asp-for="EstadoDatos">Confirmación de los datos del puerto</label>
         <select asp-for="EstadoDatos"><option>Pendiente de revisión</option><option>Confirmado</option><option>A verificar</option><option>Desactualizado</option></select>
         <span asp-validation-for="EstadoDatos" class="mensaje-error"></span>

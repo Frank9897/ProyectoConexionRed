@@ -79,6 +79,13 @@ public class InventarioController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Crear(EditarEquipoViewModel formulario, CancellationToken cancelacion)
     {
+        // validacionIp comprueba formato, duplicados y reservas de la IP; los errores impiden guardar y los avisos se notifican.
+        var validacionIp = await ValidarIpDelFormularioAsync(formulario.IpAdministracion, null, cancelacion);
+        foreach (var errorIp in validacionIp.Errores)
+        {
+            ModelState.AddModelError(nameof(formulario.IpAdministracion), errorIp.Mensaje);
+        }
+
         if (!ModelState.IsValid)
         {
             return View(formulario);
@@ -147,8 +154,144 @@ public class InventarioController : Controller
         await contextoInventario.SaveChangesAsync(cancelacion);
         await transaccionAlta.CommitAsync(cancelacion);
 
-        TempData["Mensaje"] = "Se creó la ficha y se registró su origen en el historial.";
+        // La tabla de IP se actualiza al momento para que las listas de IP libres reflejen la ficha nueva.
+        await SincronizadorIps.SincronizarAsync(contextoInventario, cancelacion);
+        var avisosAlta = validacionIp.Avisos.Select(aviso => aviso.Mensaje).ToList();
+        TempData["Mensaje"] = "Se creó la ficha y se registró su origen en el historial."
+            + (avisosAlta.Count > 0 ? " Avisos: " + string.Join(" ", avisosAlta) : string.Empty);
         return RedirectToAction(nameof(Index));
+    }
+
+    /// <summary>
+    /// Devuelve las IP libres de una red para ofrecerlas como sugerencia en el formulario.
+    /// </summary>
+    /// <param name="red">«0» para 192.168.0.x, «1» para 192.168.1.x o vacío para ambas; cambiarlo cambia el rango devuelto.</param>
+    /// <param name="actual">IP de la ficha en edición, que se conserva aunque ya esté asignada.</param>
+    /// <param name="cancelacion">Señal de cancelación.</param>
+    /// <returns>Lista JSON de direcciones libres ordenadas.</returns>
+    [HttpGet]
+    public async Task<IActionResult> IpsLibres(string? red, string? actual, CancellationToken cancelacion)
+    {
+        // opciones ya excluye IP de equipos, relaciones documentadas y reservas.
+        var opciones = await UtilidadesConexiones.ObtenerIpsLibresAsync(contextoInventario, actual, cancelacion);
+        var prefijo = red == "1" ? "192.168.1." : red == "0" ? "192.168.0." : null;
+        var libres = opciones
+            .Select(opcion => opcion.Value)
+            .Where(valor => valor is not null && (prefijo is null || valor.StartsWith(prefijo, StringComparison.Ordinal)))
+            .ToList();
+        return Json(libres);
+    }
+
+    /// <summary>
+    /// Valida una IP mientras se escribe, con las mismas reglas que al guardar.
+    /// </summary>
+    /// <param name="ip">IP escrita en el formulario.</param>
+    /// <param name="id">Identificador del equipo en edición; nulo en un alta.</param>
+    /// <param name="cancelacion">Señal de cancelación.</param>
+    /// <returns>Lista JSON de hallazgos con severidad, código y mensaje.</returns>
+    [HttpGet]
+    public async Task<IActionResult> ValidarIp(string? ip, int? id, CancellationToken cancelacion)
+    {
+        var resultado = await ValidarIpDelFormularioAsync(ip, id, cancelacion);
+        return Json(resultado.Hallazgos.Select(hallazgo => new
+        {
+            severidad = hallazgo.Severidad.ToString().ToLowerInvariant(),
+            codigo = hallazgo.Codigo,
+            mensaje = hallazgo.Mensaje
+        }));
+    }
+
+    /// <summary>
+    /// Busca en el escaneo de la LAN la IP o la MAC escrita y propone fabricante, nombre y tipo de equipo.
+    /// </summary>
+    /// <param name="ip">IP escrita; se busca primero por ella.</param>
+    /// <param name="mac">MAC escrita; se usa si la IP no aparece en el escaneo.</param>
+    /// <param name="nombre">Nombre escrito; ayuda a sugerir el tipo.</param>
+    /// <param name="fabricante">Fabricante escrito; ayuda a sugerir el tipo.</param>
+    /// <param name="modelo">Modelo escrito; ayuda a sugerir el tipo.</param>
+    /// <returns>JSON con los datos del escaneo y el tipo sugerido; nada se guarda.</returns>
+    [HttpGet]
+    public IActionResult SugerirDesdeEscaneo(string? ip, string? mac, string? nombre, string? fabricante, string? modelo)
+    {
+        // macNormalizada acepta separadores distintos y devuelve nulo si no tiene 12 dígitos hexadecimales.
+        var macNormalizada = NormalizarMac(mac);
+        var filas = CatalogoEscaneoLan.ObtenerFilas();
+        var ipLimpia = ip?.Trim();
+        var fila = string.IsNullOrEmpty(ipLimpia) ? null : filas.FirstOrDefault(f => f.Ip == ipLimpia);
+        if (fila is null && macNormalizada is not null)
+        {
+            fila = filas.FirstOrDefault(f => f.Mac == macNormalizada);
+        }
+
+        // otrasIps lista las demás direcciones con la misma MAC (equipos con más de una IP).
+        var otrasIps = fila?.Mac is null
+            ? new List<string>()
+            : filas.Where(f => f.Mac == fila.Mac && f.Ip != fila.Ip).Select(f => f.Ip).ToList();
+        var sugerenciaTipo = SugeridorTipoDispositivo.Sugerir(
+            string.IsNullOrWhiteSpace(nombre) ? fila?.Nombre : nombre,
+            string.IsNullOrWhiteSpace(fabricante) ? fila?.Fabricante : fabricante,
+            modelo);
+        return Json(new
+        {
+            encontrado = fila is not null,
+            ip = fila?.Ip,
+            nombre = fila?.Nombre,
+            fabricante = fila?.Fabricante,
+            mac = fila?.Mac,
+            activo = fila?.Activo,
+            otrasIps,
+            tipoSugerido = sugerenciaTipo?.Tipo,
+            motivoTipo = sugerenciaTipo?.Motivo
+        });
+    }
+
+    /// <summary>
+    /// Aplica las reglas de IP del formulario: formato, rango habitual, duplicados y reservas.
+    /// </summary>
+    /// <param name="ip">IP escrita; vacía o «Desconocido» no genera hallazgos.</param>
+    /// <param name="idActual">Equipo en edición; nulo en un alta.</param>
+    /// <param name="cancelacion">Señal de cancelación.</param>
+    /// <returns>Resultado con errores que impiden guardar y avisos que solo se notifican.</returns>
+    private async Task<ResultadoValidacion> ValidarIpDelFormularioAsync(string? ip, int? idActual, CancellationToken cancelacion)
+    {
+        var texto = ip?.Trim();
+        var resultado = new ResultadoValidacion();
+        if (string.IsNullOrEmpty(texto) || string.Equals(texto, "Desconocido", StringComparison.OrdinalIgnoreCase))
+            return resultado;
+
+        var equipos = await contextoInventario.Equipos.AsNoTracking().ToListAsync(cancelacion);
+        var hallazgos = ValidadorTopologia.ValidarIpEquipo(texto, idActual, equipos);
+        // sinCambio indica que la IP ya era la guardada: un duplicado histórico se avisa pero no bloquea.
+        var equipoActual = idActual is null ? null : equipos.FirstOrDefault(equipo => equipo.Identificador == idActual);
+        var sinCambio = equipoActual is not null
+            && string.Equals(equipoActual.IpAdministracion?.Trim(), texto, StringComparison.Ordinal);
+        foreach (var hallazgo in hallazgos.Hallazgos)
+        {
+            var severidad = sinCambio && hallazgo.Codigo == "IP_DUPLICADA" ? SeveridadValidacion.Aviso : hallazgo.Severidad;
+            resultado.Agregar(severidad, hallazgo.Codigo, hallazgo.Mensaje);
+        }
+
+        if (!sinCambio)
+        {
+            var reservada = await contextoInventario.DireccionesIp.AsNoTracking()
+                .FirstOrDefaultAsync(direccion => direccion.Direccion == texto && direccion.Estado == "Reservada", cancelacion);
+            if (reservada is not null)
+            {
+                resultado.Agregar(SeveridadValidacion.Aviso, "IP_RESERVADA",
+                    $"La IP {texto} figura como reservada ({reservada.Observaciones ?? "sin motivo indicado"}). Confirma que puedes usarla.");
+            }
+        }
+
+        return resultado;
+    }
+
+    /// <summary>Convierte una MAC escrita con cualquier separador a AA:BB:CC:DD:EE:FF; nulo si no tiene 12 dígitos hexadecimales.</summary>
+    private static string? NormalizarMac(string? mac)
+    {
+        if (string.IsNullOrWhiteSpace(mac)) return null;
+        var digitos = new string(mac.Where(Uri.IsHexDigit).ToArray()).ToUpperInvariant();
+        if (digitos.Length != 12) return null;
+        return string.Join(':', Enumerable.Range(0, 6).Select(indice => digitos.Substring(indice * 2, 2)));
     }
 
     /// <summary>
@@ -277,6 +420,13 @@ public class InventarioController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Editar(EditarEquipoViewModel formulario, CancellationToken cancelacion)
     {
+        // validacionIp solo marca error de duplicado si la IP cambió; los duplicados históricos se muestran como aviso.
+        var validacionIp = await ValidarIpDelFormularioAsync(formulario.IpAdministracion, formulario.Identificador, cancelacion);
+        foreach (var errorIp in validacionIp.Errores)
+        {
+            ModelState.AddModelError(nameof(formulario.IpAdministracion), errorIp.Mensaje);
+        }
+
         if (!ModelState.IsValid)
         {
             return View(formulario);
@@ -362,9 +512,12 @@ public class InventarioController : Controller
         }
 
         await contextoInventario.SaveChangesAsync(cancelacion);
-        TempData["Mensaje"] = cambiosRegistrados.Count == 0
+        await SincronizadorIps.SincronizarAsync(contextoInventario, cancelacion);
+        var avisosEdicion = validacionIp.Avisos.Select(aviso => aviso.Mensaje).ToList();
+        TempData["Mensaje"] = (cambiosRegistrados.Count == 0
             ? "No se detectaron cambios en la ficha."
-            : $"Se guardaron {cambiosRegistrados.Count} cambios en el historial.";
+            : $"Se guardaron {cambiosRegistrados.Count} cambios en el historial.")
+            + (avisosEdicion.Count > 0 ? " Avisos: " + string.Join(" ", avisosEdicion) : string.Empty);
         return RedirectToAction(nameof(Index));
     }
 
