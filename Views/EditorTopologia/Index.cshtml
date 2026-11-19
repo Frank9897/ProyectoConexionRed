@@ -15,7 +15,7 @@
          data-url-validar="@Url.Action("Validar", "EditorTopologia")"
          data-url-crear="@Url.Action("CrearEnlace", "EditorTopologia")"
          data-url-eliminar="@Url.Action("EliminarEnlace", "EditorTopologia")"
-         data-url-stp="@Url.Action("ActualizarEstadoStp", "EditorTopologia")"
+         data-url-actualizar="@Url.Action("ActualizarEnlace", "EditorTopologia")"
          data-url-posiciones="@Url.Action("GuardarPosiciones", "EditorTopologia")"
          data-url-editar="@Url.Action("Editar", "Inventario", new { id = "__ID__" })">
     <div class="editor-barra" role="toolbar" aria-label="Herramientas del mapa">
@@ -24,6 +24,10 @@
         <select id="mapa-tipo" aria-label="Filtrar por tipo"><option value="">Todos los tipos</option></select>
         <label class="editor-casilla"><input type="checkbox" id="mapa-solo-conectados" checked /> Solo equipos con conexiones</label>
         <label class="editor-casilla"><input type="checkbox" id="mapa-etiquetas" checked /> Etiquetas de puertos</label>
+        <select id="mapa-color" aria-label="Colorear enlaces por">
+            <option value="stp">Colorear enlaces por estado STP</option>
+            <option value="datos">Colorear enlaces por estado de los datos</option>
+        </select>
         <button type="button" id="mapa-conectar" class="boton boton-secundario" aria-pressed="false">Modo conectar</button>
         <select id="mapa-diseno" aria-label="Tipo de distribución">
             <option value="cose">Distribución por fuerzas</option>
@@ -34,6 +38,7 @@
         <button type="button" id="mapa-redistribuir" class="boton boton-secundario">Redistribuir</button>
         <button type="button" id="mapa-ajustar" class="boton boton-secundario">Ajustar a pantalla</button>
         <button type="button" id="mapa-recargar" class="boton boton-secundario">Recargar datos</button>
+        <button type="button" id="mapa-exportar" class="boton boton-secundario">Exportar imagen</button>
     </div>
 
     <div id="lienzo-mapa" class="editor-lienzo" aria-label="Mapa de red"></div>
@@ -56,6 +61,7 @@
                 <li><span class="leyenda-linea leyenda-redundante"></span> Redundante</li>
                 <li><span class="leyenda-linea leyenda-reenvio"></span> En reenvío (STP)</li>
                 <li>Borde punteado: switch no administrable</li>
+                <li>Al colorear por estado de los datos: verde confirmado, gris pendiente, ámbar a verificar, rojo desactualizado</li>
             </ul>
         </section>
     </aside>

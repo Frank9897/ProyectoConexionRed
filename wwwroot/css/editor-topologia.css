@@ -28,3 +28,6 @@
 .editor-campos label { display: block; font-weight: 600; margin-bottom: 4px; }
 .editor-campos select { width: 100%; }
 @media (max-width: 1000px) { .editor-mapa { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(480px, 70vh) auto auto; } }
+.editor-camino { margin: 8px 0 0; padding: 6px 8px; border: 1px solid #d8c8ec; border-radius: 8px; background: #f7f1fd; font-size: .85rem; color: #3f2a5c; }
+.editor-campos-inline { display: grid; gap: 6px; margin-top: 8px; }
+.editor-campos-inline label { font-weight: 600; font-size: .85rem; }

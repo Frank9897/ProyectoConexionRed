@@ -568,3 +568,12 @@ Este bloque permite continuar el trabajo con otra IA. Está basado en la lectura
 - Reconectar un extremo de un enlace arrastrándolo.
 - Rendimiento con todos los equipos visibles (la vista filtra por defecto los equipos sin conexiones).
 - Iconos de equipos recién agregados y estilos por tipo adicionales.
+
+**Fase 3, segunda entrega (18 de noviembre de 2026; sin compilar ni ejecutar en navegador):**
+- Panel de un enlace completo: ahora edita **medio, estado de los datos y estado STP** con un solo botón (`EditorTopologiaController.ActualizarEnlace`, que reemplaza a `ActualizarEstadoStp`; cada campo cambiado deja un evento en el historial) y permite eliminarlo.
+- Panel de un equipo: **resaltar el camino documentado más corto** hasta otro equipo (Dijkstra sin dirección sobre enlaces completos y parciales; la distancia infinita significa que no hay camino) y quitar el resaltado.
+- Selector «Colorear enlaces por»: estado STP o estado de los datos (verde confirmado, gris pendiente, ámbar a verificar, rojo desactualizado).
+- Botón «Exportar imagen»: PNG de todo el mapa visible con fondo blanco.
+- La búsqueda por nombre o IP muestra el equipo aunque esté oculto por «Solo equipos con conexiones», para poder encontrarlo y conectarlo.
+
+**Pendiente de la Fase 3:** probar todo en navegador, deshacer y rehacer, reconectar un extremo arrastrándolo, y una lista de equipos sin conexiones para arrastrarlos al lienzo (hoy se buscan por nombre).

@@ -304,32 +304,48 @@ public class EditorTopologiaController : Controller
         return Json(new { ok = true });
     }
 
-    /// <summary>Cambia el estado STP o RSTP de un enlace para documentar qué camino queda activo.</summary>
+    /// <summary>
+    /// Actualiza el medio, el estado de los datos y el estado STP o RSTP de un enlace; cada campo cambiado queda en el historial.
+    /// </summary>
     /// <param name="id">Identificador del enlace.</param>
-    /// <param name="estado">Uno de los estados permitidos.</param>
+    /// <param name="medio">Uno de los medios permitidos.</param>
+    /// <param name="estadoDatos">Uno de los estados de confirmación permitidos.</param>
+    /// <param name="estadoStp">Uno de los estados STP permitidos; documenta qué camino queda activo.</param>
     /// <param name="cancelacion">Señal de cancelación.</param>
-    /// <returns>JSON de confirmación, 400 si el estado no es válido o 404 si el enlace no existe.</returns>
+    /// <returns>JSON de confirmación, 400 si algún valor no es válido o 404 si el enlace no existe.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ActualizarEstadoStp(int id, string estado, CancellationToken cancelacion)
+    public async Task<IActionResult> ActualizarEnlace(int id, string medio, string estadoDatos, string estadoStp, CancellationToken cancelacion)
     {
-        if (!OpcionesTopologia.EstadosStp.Contains(estado))
-            return BadRequest(new { errores = new[] { "Selecciona un estado STP válido." } });
+        if (!MediosPermitidos.Contains(medio) || !EstadosDatosPermitidos.Contains(estadoDatos) || !OpcionesTopologia.EstadosStp.Contains(estadoStp))
+            return BadRequest(new { errores = new[] { "El medio, el estado de los datos o el estado STP no son válidos." } });
         var enlace = await contextoInventario.EnlacesFisicos.FirstOrDefaultAsync(e => e.Identificador == id, cancelacion);
         if (enlace is null) return NotFound(new { errores = new[] { "El enlace ya no existe." } });
 
-        if (enlace.EstadoStp != estado)
+        var extremos = await ObtenerExtremosAsync(enlace, cancelacion);
+        var usuario = ObtenerUsuario();
+        var eventos = new List<EventoModificacion>();
+        // Cada campo se compara contra el valor guardado; solo los que cambian generan un evento.
+        void Registrar(string campo, string anterior, string nuevo)
         {
-            var extremos = await ObtenerExtremosAsync(enlace, cancelacion);
-            var eventos = new List<EventoModificacion>();
-            UtilidadesConexiones.AgregarCambio(eventos, extremos.IdEquipoOrigen, extremos.NombreOrigen, ObtenerUsuario(),
-                "Estado STP del enlace", $"{extremos.Descripcion}: {enlace.EstadoStp}", $"{extremos.Descripcion}: {estado}");
-            enlace.EstadoStp = estado;
-            await contextoInventario.EventosModificacion.AddRangeAsync(eventos, cancelacion);
-            await contextoInventario.SaveChangesAsync(cancelacion);
+            if (anterior == nuevo) return;
+            UtilidadesConexiones.AgregarCambio(eventos, extremos.IdEquipoOrigen, extremos.NombreOrigen, usuario, campo,
+                $"{extremos.Descripcion}: {anterior}", $"{extremos.Descripcion}: {nuevo}");
         }
 
-        return Json(new { ok = true });
+        Registrar("Medio del enlace", enlace.Medio, medio);
+        Registrar("Estado de los datos del enlace", enlace.EstadoDatos, estadoDatos);
+        Registrar("Estado STP del enlace", enlace.EstadoStp, estadoStp);
+        enlace.Medio = medio;
+        enlace.EstadoDatos = estadoDatos;
+        enlace.EstadoStp = estadoStp;
+        if (eventos.Count > 0)
+        {
+            await contextoInventario.EventosModificacion.AddRangeAsync(eventos, cancelacion);
+        }
+
+        await contextoInventario.SaveChangesAsync(cancelacion);
+        return Json(new { ok = true, cambios = eventos.Count });
     }
 
     /// <summary>Guarda la posición de los equipos movidos en el lienzo, compartida entre técnicos.</summary>

@@ -13,7 +13,7 @@
 
     const urls = {
         datos: raiz.dataset.urlDatos, validar: raiz.dataset.urlValidar, crear: raiz.dataset.urlCrear,
-        eliminar: raiz.dataset.urlEliminar, stp: raiz.dataset.urlStp, posiciones: raiz.dataset.urlPosiciones,
+        eliminar: raiz.dataset.urlEliminar, actualizar: raiz.dataset.urlActualizar, posiciones: raiz.dataset.urlPosiciones,
         editar: raiz.dataset.urlEditar
     };
     const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? "";
@@ -95,7 +95,13 @@
         { selector: "edge[estadoStp = 'Reenvío']", style: { "line-color": "#2f9f6f" } },
         { selector: "edge[estadoStp = 'Bloqueado']", style: { "line-style": "dashed", "line-color": "#b4533c" } },
         { selector: "edge[estadoStp = 'Redundante']", style: { "line-style": "dashed", "line-color": "#d9822b" } },
+        { selector: "edge.modo-datos[estadoDatos = 'Confirmado']", style: { "line-color": "#2f9f6f" } },
+        { selector: "edge.modo-datos[estadoDatos = 'Pendiente de revisión']", style: { "line-color": "#8591a3" } },
+        { selector: "edge.modo-datos[estadoDatos = 'A verificar']", style: { "line-color": "#d9a42b" } },
+        { selector: "edge.modo-datos[estadoDatos = 'Desactualizado']", style: { "line-color": "#b4533c" } },
         { selector: "edge:selected", style: { width: 4, "line-color": "#d9822b" } },
+        { selector: "edge.camino", style: { width: 5, "line-color": "#7a2fb4", "z-index": 10 } },
+        { selector: "node.camino", style: { "border-color": "#7a2fb4", "border-width": 5 } },
         { selector: "edge.ciclo", style: { "underlay-color": "#d9822b", "underlay-opacity": 0.25, "underlay-padding": 4 } },
         { selector: ".eh-handle", style: { "background-color": "#d9822b", width: 14, height: 14, shape: "ellipse", "overlay-opacity": 0, "border-width": 10, "border-opacity": 0, label: "" } },
         { selector: ".eh-hover", style: { "background-color": "#b86a1d" } },
@@ -199,15 +205,17 @@
         cy.batch(() => {
             nodosReales().forEach((nodo) => {
                 const conectado = nodo.connectedEdges().filter((arista) => arista.data("real") === true).nonempty();
-                const visible = (!soloConectados || conectado)
+                // Una búsqueda por texto muestra el equipo aunque no tenga conexiones, para poder encontrarlo y conectarlo.
+                const coincideTexto = texto.length > 0
+                    && `${nodo.data("nombre")} ${nodo.data("ip") ?? ""}`.toLowerCase().includes(texto);
+                const visible = (!soloConectados || conectado || coincideTexto)
                     && (!area || nodo.data("area") === area)
                     && (!tipo || nodo.data("tipo") === tipo);
                 nodo.toggleClass("oculto", !visible);
-                const coincide = texto.length > 0 && visible
-                    && `${nodo.data("nombre")} ${nodo.data("ip") ?? ""}`.toLowerCase().includes(texto);
-                nodo.toggleClass("coincidencia", coincide);
+                nodo.toggleClass("coincidencia", coincideTexto && visible);
             });
             cy.edges().toggleClass("sin-etiquetas", !porId("mapa-etiquetas").checked);
+            cy.edges().toggleClass("modo-datos", porId("mapa-color").value === "datos");
         });
         const coincidencias = cy.nodes(".coincidencia");
         if (texto.length > 0 && coincidencias.nonempty()) {
@@ -215,7 +223,7 @@
         }
     };
 
-    ["mapa-area", "mapa-tipo", "mapa-solo-conectados", "mapa-etiquetas"].forEach((id) =>
+    ["mapa-area", "mapa-tipo", "mapa-solo-conectados", "mapa-etiquetas", "mapa-color"].forEach((id) =>
         porId(id).addEventListener("change", aplicarFiltros));
     let temporizadorBusqueda = 0;
     porId("mapa-buscar").addEventListener("input", () => {
@@ -224,6 +232,15 @@
     });
     porId("mapa-ajustar").addEventListener("click", () => cy.fit(cy.elements(":visible"), 40));
     porId("mapa-recargar").addEventListener("click", () => cargar().catch((error) => avisar(error.message)));
+    porId("mapa-exportar").addEventListener("click", () => {
+        // Se exporta todo lo visible (no solo la parte en pantalla) con fondo blanco, apto para documentación impresa.
+        const imagen = cy.png({ full: true, scale: 2, bg: "#ffffff" });
+        const descarga = crear("a");
+        descarga.href = imagen;
+        descarga.download = "mapa-de-red.png";
+        descarga.click();
+        avisar("Imagen exportada.");
+    });
 
     // ---------- Distribución y posiciones ----------
     const redistribuir = () => {
@@ -310,8 +327,51 @@
             dato("Administrable", administrable === true ? "Sí" : administrable === false ? "No" : "Sin confirmar"),
             dato("Puertos", `${puertos.length} registrados, ${libres} sin conexión documentada`),
             dato("Relaciones sin equipo asociado", String(nodo.data("notasSinEquipo") ?? 0)),
-            acciones);
+            acciones, bloqueCamino(nodo));
     };
+
+    /** Permite elegir otro equipo y resaltar el camino documentado más corto hasta él, útil para análisis rápido. */
+    const bloqueCamino = (origen) => {
+        const contenedor = crear("div", "editor-campos-inline");
+        const etiqueta = crear("label", "", "Camino hasta otro equipo");
+        etiqueta.htmlFor = "mapa-camino-destino";
+        const entrada = crear("input");
+        entrada.id = "mapa-camino-destino";
+        entrada.setAttribute("list", "mapa-camino-lista");
+        entrada.placeholder = "Nombre del equipo destino";
+        const lista = crear("datalist");
+        lista.id = "mapa-camino-lista";
+        nodosReales().filter((nodo) => nodo.id() !== origen.id()).forEach((nodo) => {
+            const opcion = crear("option");
+            opcion.value = nodo.data("nombre");
+            lista.append(opcion);
+        });
+        const resultado = crear("div");
+        const resaltar = crear("button", "boton boton-secundario", "Resaltar camino");
+        resaltar.type = "button";
+        resaltar.addEventListener("click", () => {
+            limpiarCamino();
+            const destino = nodosReales().filter((nodo) => nodo.data("nombre").toLowerCase() === entrada.value.trim().toLowerCase());
+            if (destino.empty()) { resultado.replaceChildren(crear("p", "editor-camino", "No hay un equipo con ese nombre.")); return; }
+            const recorrido = cy.elements().filter((elemento) => esNodoReal(elemento.isNode() ? elemento : elemento.source()))
+                .dijkstra({ root: origen, weight: () => 1, directed: false });
+            // Cytoscape devuelve una ruta aunque el destino sea inalcanzable; la distancia infinita indica que no hay camino.
+            const ruta = recorrido.pathTo(destino[0]);
+            if (!Number.isFinite(recorrido.distanceTo(destino[0]))) { resultado.replaceChildren(crear("p", "editor-camino", "No hay un camino documentado entre esos equipos.")); return; }
+            ruta.removeClass("oculto").addClass("camino");
+            const nombres = ruta.nodes().map((nodo) => nodo.data("nombre"));
+            resultado.replaceChildren(crear("p", "editor-camino", `${nombres.length - 1} saltos: ${nombres.join(" → ")}`));
+        });
+        const limpiar = crear("button", "boton boton-secundario", "Quitar resaltado");
+        limpiar.type = "button";
+        limpiar.addEventListener("click", () => { limpiarCamino(); resultado.replaceChildren(); });
+        const acciones = crear("div", "editor-acciones");
+        acciones.append(resaltar, limpiar);
+        contenedor.append(etiqueta, entrada, lista, acciones, resultado);
+        return contenedor;
+    };
+
+    const limpiarCamino = () => cy.elements(".camino").removeClass("camino");
 
     const mostrarArista = (arista) => {
         const panel = porId("mapa-seleccion");
@@ -329,23 +389,30 @@
             elementos.push(crear("p", "editor-vacio",
                 "Es una nota de un solo extremo. Para registrarla como enlace completo, dibuja la conexión entre estos mismos equipos eligiendo el puerto documentado: se convertirá automáticamente."));
         } else {
-            const selectorStp = crear("select");
-            selectorStp.id = "mapa-stp";
-            ["No documentado", "Reenvío", "Bloqueado", "Redundante"].forEach((estado) => {
-                const opcion = crear("option", "", estado);
-                opcion.value = estado;
-                selectorStp.append(opcion);
-            });
-            selectorStp.value = arista.data("estadoStp");
-            const etiquetaStp = crear("label", "", "Estado STP o RSTP");
-            etiquetaStp.htmlFor = "mapa-stp";
-            const guardarStp = crear("button", "boton boton-secundario", "Guardar estado STP");
-            guardarStp.type = "button";
-            guardarStp.addEventListener("click", async () => {
+            // selectorLista arma un select con etiqueta y el valor actual del enlace.
+            const selectorLista = (identificador, titulo, opciones, valor) => {
+                const bloque = crear("div", "editor-campos-inline");
+                const etiqueta = crear("label", "", titulo);
+                etiqueta.htmlFor = identificador;
+                const selector = crear("select");
+                selector.id = identificador;
+                opciones.forEach((opcion) => { const elemento = crear("option", "", opcion); elemento.value = opcion; selector.append(elemento); });
+                selector.value = opciones.includes(valor) ? valor : opciones[0];
+                bloque.append(etiqueta, selector);
+                return { bloque, selector };
+            };
+            const medio = selectorLista("mapa-medio", "Medio", ["No confirmado", "Cobre RJ45", "Fibra", "DAC", "Otro"], arista.data("medio"));
+            const datos = selectorLista("mapa-datos", "Estado de los datos", ["Pendiente de revisión", "Confirmado", "A verificar", "Desactualizado"], arista.data("estadoDatos"));
+            const stp = selectorLista("mapa-stp", "Estado STP o RSTP", ["No documentado", "Reenvío", "Bloqueado", "Redundante"], arista.data("estadoStp"));
+            const guardar = crear("button", "boton boton-secundario", "Guardar cambios");
+            guardar.type = "button";
+            guardar.addEventListener("click", async () => {
                 try {
-                    await enviar(urls.stp, { id: arista.data("enlaceId"), estado: selectorStp.value });
+                    const respuesta = await enviar(urls.actualizar, {
+                        id: arista.data("enlaceId"), medio: medio.selector.value, estadoDatos: datos.selector.value, estadoStp: stp.selector.value
+                    });
                     await cargar();
-                    avisar("Estado STP guardado.");
+                    avisar(respuesta.cambios > 0 ? "Enlace actualizado." : "No había cambios que guardar.");
                 } catch (error) { avisar(error.message); }
             });
             const eliminar = crear("button", "boton boton-secundario", "Eliminar enlace");
@@ -360,8 +427,8 @@
                 } catch (error) { avisar(error.message); }
             });
             const acciones = crear("div", "editor-acciones");
-            acciones.append(guardarStp, eliminar);
-            elementos.push(etiquetaStp, selectorStp, acciones);
+            acciones.append(guardar, eliminar);
+            elementos.push(medio.bloque, datos.bloque, stp.bloque, acciones);
         }
         panel.replaceChildren(...elementos);
     };
