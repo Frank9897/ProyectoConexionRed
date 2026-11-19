@@ -1,0 +1,4 @@
+Bibliotecas incluidas localmente para que el mapa funcione sin internet:
+- cytoscape 3.30.2 (MIT), copiado de dist/cytoscape.min.js del paquete npm.
+- cytoscape-edgehandles 4.0.1 (MIT), copiado del paquete npm. Necesita las funciones memoize y throttle de lodash:
+  las aporta wwwroot/js/lodash-minimo.js, que debe cargarse antes que esta biblioteca.

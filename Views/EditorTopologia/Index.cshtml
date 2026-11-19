@@ -1,0 +1,103 @@
+@{
+    ViewData["Title"] = "Editor del mapa";
+}
+<link rel="stylesheet" href="~/css/editor-topologia.css" asp-append-version="true" />
+
+<section class="encabezado-pagina">
+    <h1>Editor del mapa</h1>
+    <p>Dibuja conexiones arrastrando desde un equipo hasta otro. Cada conexión se valida antes de guardarse. Solo se modifica la documentación; no se toca la red real.</p>
+</section>
+
+@Html.AntiForgeryToken()
+
+<section id="editor-topologia" class="editor-mapa"
+         data-url-datos="@Url.Action("Datos", "EditorTopologia")"
+         data-url-validar="@Url.Action("Validar", "EditorTopologia")"
+         data-url-crear="@Url.Action("CrearEnlace", "EditorTopologia")"
+         data-url-eliminar="@Url.Action("EliminarEnlace", "EditorTopologia")"
+         data-url-stp="@Url.Action("ActualizarEstadoStp", "EditorTopologia")"
+         data-url-posiciones="@Url.Action("GuardarPosiciones", "EditorTopologia")"
+         data-url-editar="@Url.Action("Editar", "Inventario", new { id = "__ID__" })">
+    <div class="editor-barra" role="toolbar" aria-label="Herramientas del mapa">
+        <input type="search" id="mapa-buscar" placeholder="Buscar por nombre o IP" aria-label="Buscar equipo" />
+        <select id="mapa-area" aria-label="Filtrar por área"><option value="">Todas las áreas</option></select>
+        <select id="mapa-tipo" aria-label="Filtrar por tipo"><option value="">Todos los tipos</option></select>
+        <label class="editor-casilla"><input type="checkbox" id="mapa-solo-conectados" checked /> Solo equipos con conexiones</label>
+        <label class="editor-casilla"><input type="checkbox" id="mapa-etiquetas" checked /> Etiquetas de puertos</label>
+        <button type="button" id="mapa-conectar" class="boton boton-secundario" aria-pressed="false">Modo conectar</button>
+        <select id="mapa-diseno" aria-label="Tipo de distribución">
+            <option value="cose">Distribución por fuerzas</option>
+            <option value="breadthfirst">Distribución en árbol</option>
+            <option value="concentric">Distribución concéntrica</option>
+            <option value="grid">Distribución en cuadrícula</option>
+        </select>
+        <button type="button" id="mapa-redistribuir" class="boton boton-secundario">Redistribuir</button>
+        <button type="button" id="mapa-ajustar" class="boton boton-secundario">Ajustar a pantalla</button>
+        <button type="button" id="mapa-recargar" class="boton boton-secundario">Recargar datos</button>
+    </div>
+
+    <div id="lienzo-mapa" class="editor-lienzo" aria-label="Mapa de red"></div>
+
+    <aside class="editor-lateral">
+        <section class="editor-panel" aria-live="polite">
+            <h2>Selección</h2>
+            <div id="mapa-seleccion"><p class="editor-vacio">Selecciona un equipo o un enlace.</p></div>
+        </section>
+        <section class="editor-panel">
+            <h2>Alertas</h2>
+            <div id="mapa-alertas"><p class="editor-vacio">Cargando.</p></div>
+        </section>
+        <section class="editor-panel">
+            <h2>Leyenda</h2>
+            <ul class="editor-leyenda">
+                <li><span class="leyenda-linea leyenda-completo"></span> Enlace físico completo</li>
+                <li><span class="leyenda-linea leyenda-parcial"></span> Relación documentada parcial</li>
+                <li><span class="leyenda-linea leyenda-bloqueado"></span> Bloqueado por STP</li>
+                <li><span class="leyenda-linea leyenda-redundante"></span> Redundante</li>
+                <li><span class="leyenda-linea leyenda-reenvio"></span> En reenvío (STP)</li>
+                <li>Borde punteado: switch no administrable</li>
+            </ul>
+        </section>
+    </aside>
+
+    <p id="mapa-estado" class="editor-estado" role="status"></p>
+</section>
+
+<dialog id="dialogo-enlace" class="editor-dialogo">
+    <form method="dialog" id="formulario-enlace">
+        <h2>Nuevo enlace</h2>
+        <p id="enlace-resumen"></p>
+        <div class="editor-campos">
+            <div id="enlace-bloque-a"></div>
+            <div id="enlace-bloque-b"></div>
+            <div>
+                <label for="enlace-medio">Medio</label>
+                <select id="enlace-medio">
+                    <option>No confirmado</option><option>Cobre RJ45</option><option>Fibra</option><option>DAC</option><option>Otro</option>
+                </select>
+            </div>
+            <div>
+                <label for="enlace-estado-datos">Estado de los datos</label>
+                <select id="enlace-estado-datos">
+                    <option>Pendiente de revisión</option><option>Confirmado</option><option>A verificar</option><option>Desactualizado</option>
+                </select>
+            </div>
+            <div>
+                <label for="enlace-stp">Estado STP o RSTP</label>
+                <select id="enlace-stp">
+                    <option>No documentado</option><option>Reenvío</option><option>Bloqueado</option><option>Redundante</option>
+                </select>
+            </div>
+        </div>
+        <div id="enlace-avisos"></div>
+        <div class="editor-acciones">
+            <button type="button" id="enlace-cancelar" class="boton boton-secundario">Cancelar</button>
+            <button type="button" id="enlace-guardar" class="boton">Guardar enlace</button>
+        </div>
+    </form>
+</dialog>
+
+<script src="~/lib/cytoscape/cytoscape.min.js"></script>
+<script src="~/js/lodash-minimo.js" asp-append-version="true"></script>
+<script src="~/lib/cytoscape/cytoscape-edgehandles.js"></script>
+<script src="~/js/editor-topologia.js" asp-append-version="true"></script>

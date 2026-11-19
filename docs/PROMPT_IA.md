@@ -549,3 +549,22 @@ Este bloque permite continuar el trabajo con otra IA. Está basado en la lectura
 - Selects de velocidad y medio también al crear puertos en bloque desde la capacidad del switch (`GeneradorInterfacesSwitch`).
 - Avisos en línea para el resto de los campos (nombre repetido, MAC repetida en otra ficha).
 - Pruebas manuales de los formularios en el navegador: el script no se ejecutó.
+
+**Fase 3, primera entrega: mapa editable con Cytoscape.js (18 de noviembre de 2026; sin compilar ni ejecutar en la sesión de desarrollo):**
+- Página nueva `Views/EditorTopologia/Index.cshtml` (menú «Editor del mapa»), **separada del mapa de solo lectura** (`Topologia/Index`), que sigue intacto.
+- Bibliotecas locales en `wwwroot/lib/cytoscape/` (cytoscape 3.30.2 y cytoscape-edgehandles 4.0.1, ambas MIT) para que funcione sin internet; `wwwroot/js/lodash-minimo.js` aporta `memoize` y `throttle`, que edgehandles espera en `window._` y debe cargarse antes que ella.
+- `Controllers/EditorTopologiaController.cs`: `Datos` (GET, grafo en JSON: equipos con puertos, enlaces completos, relaciones parciales resueltas con `TopologiaController.ResolverEquipoRelacionado`, posiciones y alertas), `Validar` (GET), `CrearEnlace`, `EliminarEnlace`, `ActualizarEstadoStp` y `GuardarPosiciones` (POST con token antifalsificación enviado como campo `__RequestVerificationToken`).
+- Dibujo: arrastrar desde el punto naranja de un equipo (o con «Modo conectar») hasta otro abre un diálogo para elegir el puerto de cada extremo (ocupados desactivados), medio, estado de los datos y estado STP; valida en vivo con `ValidadorTopologia` y solo permite guardar sin errores.
+- **Equipos sin interfaces** (PC, impresoras): al conectarlos se crea la interfaz «Red 1» (tipo «No confirmado», `Observaciones` indica que nació en el editor). Si el puerto elegido tenía una **relación parcial** hacia ese mismo equipo, se **convierte** en el enlace completo y la relación se elimina, con evento en el historial. Esto adelanta parte de la unificación 1c sin migrar datos viejos.
+- Las relaciones parciales ya documentadas se dibujan punteadas y no se editan en el mapa; las que no se pueden asociar a una ficha se cuentan en el panel del equipo.
+- Posiciones guardadas en `PosicionesNodoMapa` (vista «general»), compartidas entre técnicos; si faltan más del 40 % se distribuye con el algoritmo por fuerzas y se guarda.
+- Alertas: enlaces que cierran un ciclo (informativas, STP/RSTP asumido; piden documentar el estado STP del enlace) y IP en conflicto. Los ciclos solo se calculan con enlaces completos y relaciones parciales entre switches; el estado STP solo se puede registrar en enlaces completos.
+- Filtros por área y tipo, búsqueda por nombre o IP, ocultar equipos sin conexiones, etiquetas de puertos y cuatro distribuciones.
+- Reglas nuevas en `ValidadorTopologia.ValidarEquiposAsync` (validación a nivel equipo cuando un extremo aún no tiene puerto).
+
+**Pendiente de la Fase 3:**
+- Probar en navegador: carga, arrastre de enlaces y guardado de posiciones (nada se ejecutó).
+- Paleta de equipos para arrastrar fichas del inventario al lienzo, deshacer y rehacer, y editar medio o módulos de un enlace existente.
+- Reconectar un extremo de un enlace arrastrándolo.
+- Rendimiento con todos los equipos visibles (la vista filtra por defecto los equipos sin conexiones).
+- Iconos de equipos recién agregados y estilos por tipo adicionales.

@@ -527,7 +527,7 @@ public class TopologiaController : Controller
     /// <param name="nombreRemoto">Etiqueta escrita en el Visio; cambiarla selecciona otra ficha por nombre.</param>
     /// <param name="ipRemota">IP escrita en el Visio; cambiarla prioriza otra coincidencia exacta.</param>
     /// <returns>La ficha única encontrada o nulo si la evidencia no distingue un solo equipo.</returns>
-    private static EquipoRed? ResolverEquipoRelacionado(
+    internal static EquipoRed? ResolverEquipoRelacionado(
         IReadOnlyList<EquipoRed> equipos,
         string? nombreRemoto,
         string? ipRemota)

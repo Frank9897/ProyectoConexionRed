@@ -1,0 +1,30 @@
+/* editor-mapa dispone barra, lienzo y panel lateral; cambiar la altura mínima altera el espacio del lienzo. */
+.editor-mapa { display: grid; grid-template-columns: minmax(0, 1fr) 340px; grid-template-rows: auto minmax(560px, calc(100vh - 260px)) auto; gap: 12px; }
+.editor-barra { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.editor-barra input[type="search"] { min-width: 220px; }
+.editor-casilla { display: inline-flex; align-items: center; gap: 6px; font-size: .9rem; }
+.editor-lienzo { border: 1px solid #d8dee8; border-radius: 10px; background: #fbfcfe; min-height: 560px; }
+.editor-lateral { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+.editor-panel { border: 1px solid #d8dee8; border-radius: 10px; padding: 10px 12px; background: #fff; }
+.editor-panel h2 { margin: 0 0 8px; font-size: 1rem; }
+.editor-vacio { margin: 0; color: #5a6677; font-size: .9rem; }
+.editor-estado { grid-column: 1 / -1; margin: 0; min-height: 1.4em; color: #3b4658; font-size: .9rem; }
+.editor-dato { margin: 2px 0; font-size: .9rem; }
+.editor-dato strong { font-weight: 600; }
+.editor-acciones { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; flex-wrap: wrap; }
+.editor-alerta { display: block; width: 100%; text-align: left; margin: 0 0 6px; padding: 6px 8px; border: 1px solid #e7d3a0; border-radius: 8px; background: #fff8e6; color: #5c4a14; font-size: .85rem; cursor: pointer; }
+.editor-alerta-ok { border-color: #bcd9c8; background: #f1faf4; color: #2d5a42; }
+.editor-leyenda { list-style: none; margin: 0; padding: 0; font-size: .85rem; display: grid; gap: 4px; }
+.leyenda-linea { display: inline-block; width: 34px; border-top: 3px solid #46556b; vertical-align: middle; margin-right: 6px; }
+.leyenda-parcial { border-top: 2px dotted #9aa5b4; }
+.leyenda-bloqueado { border-top: 3px dashed #b4533c; }
+.leyenda-redundante { border-top: 3px dashed #d9822b; }
+.leyenda-reenvio { border-top-color: #2f9f6f; }
+/* editor-dialogo es la ventana de creación de enlaces; el ancho máximo evita que los selects queden desproporcionados. */
+.editor-dialogo { width: min(640px, 94vw); border: 1px solid #c8d0dc; border-radius: 12px; padding: 16px 18px; }
+.editor-dialogo::backdrop { background: rgba(20, 30, 45, .45); }
+.editor-dialogo h2 { margin: 0 0 6px; }
+.editor-campos { display: grid; gap: 10px; }
+.editor-campos label { display: block; font-weight: 600; margin-bottom: 4px; }
+.editor-campos select { width: 100%; }
+@media (max-width: 1000px) { .editor-mapa { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(480px, 70vh) auto auto; } }

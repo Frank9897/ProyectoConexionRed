@@ -123,17 +123,61 @@ public static class ValidadorTopologia
 
         AgregarHallazgosDeConectores(resultado, extremoA.Interfaz, extremoA.Equipo, extremoB.Interfaz, extremoB.Equipo);
 
-        if (extremoA.Equipo.Identificador != extremoB.Equipo.Identificador
-            && await ExisteCaminoAsync(contexto, extremoA.Equipo.Identificador, extremoB.Equipo.Identificador, excluido, cancelacion))
+        await AgregarAvisoDeBucleAsync(contexto, resultado, extremoA.Equipo, extremoB.Equipo, excluido, cancelacion);
+        return resultado;
+    }
+
+    /// <summary>
+    /// Valida un enlace entre dos equipos cuando todavía no se eligieron puertos (por ejemplo un equipo sin interfaces):
+    /// comprueba que sean distintos y avisa si ya existe un camino entre ellos.
+    /// </summary>
+    /// <param name="contexto">Inventario consultado.</param>
+    /// <param name="idEquipoA">Primer equipo.</param>
+    /// <param name="idEquipoB">Segundo equipo.</param>
+    /// <param name="idEnlaceExcluido">Enlace en edición que no debe contar como camino; nulo al crear.</param>
+    /// <param name="cancelacion">Señal de cancelación.</param>
+    /// <returns>Errores y avisos de nivel equipo.</returns>
+    public static async Task<ResultadoValidacion> ValidarEquiposAsync(
+        InventarioDbContext contexto, int idEquipoA, int idEquipoB, int? idEnlaceExcluido, CancellationToken cancelacion)
+    {
+        var resultado = new ResultadoValidacion();
+        var equipos = await contexto.Equipos.AsNoTracking()
+            .Where(equipo => equipo.Identificador == idEquipoA || equipo.Identificador == idEquipoB)
+            .ToListAsync(cancelacion);
+        var equipoA = equipos.FirstOrDefault(equipo => equipo.Identificador == idEquipoA);
+        var equipoB = equipos.FirstOrDefault(equipo => equipo.Identificador == idEquipoB);
+        if (equipoA is null || equipoB is null)
         {
-            // sinStp indica que un extremo es un switch no administrable: no tiene STP y el bucle sería real.
-            var sinStp = extremoA.Equipo.EsAdministrable == false || extremoB.Equipo.EsAdministrable == false;
-            resultado.Agregar(SeveridadValidacion.Aviso, "POSIBLE_BUCLE", sinStp
-                ? $"Ya existe un camino entre {extremoA.Equipo.Nombre} y {extremoB.Equipo.Nombre} y uno de los extremos es un switch no administrable, que no tiene STP: este enlace crearía un bucle real."
-                : $"Ya existe un camino entre {extremoA.Equipo.Nombre} y {extremoB.Equipo.Nombre}. Con STP o RSTP un enlace redundante es normal, pero documenta qué enlace queda activo y cuál bloqueado para evitar bucles.");
+            resultado.Agregar(SeveridadValidacion.Error, "EQUIPO_INEXISTENTE", "Selecciona dos equipos existentes.");
+            return resultado;
         }
 
+        if (idEquipoA == idEquipoB)
+        {
+            resultado.Agregar(SeveridadValidacion.Error, "MISMO_EQUIPO", "Un equipo no se puede conectar consigo mismo.");
+            return resultado;
+        }
+
+        await AgregarAvisoDeBucleAsync(contexto, resultado, equipoA, equipoB, idEnlaceExcluido ?? -1, cancelacion);
         return resultado;
+    }
+
+    /// <summary>Agrega el aviso de posible bucle si ya hay un camino entre los dos equipos.</summary>
+    private static async Task AgregarAvisoDeBucleAsync(
+        InventarioDbContext contexto, ResultadoValidacion resultado, EquipoRed equipoA, EquipoRed equipoB,
+        int enlaceExcluido, CancellationToken cancelacion)
+    {
+        if (equipoA.Identificador == equipoB.Identificador
+            || !await ExisteCaminoAsync(contexto, equipoA.Identificador, equipoB.Identificador, enlaceExcluido, cancelacion))
+        {
+            return;
+        }
+
+        // sinStp indica que un extremo es un switch no administrable: no tiene STP y el bucle sería real.
+        var sinStp = equipoA.EsAdministrable == false || equipoB.EsAdministrable == false;
+        resultado.Agregar(SeveridadValidacion.Aviso, "POSIBLE_BUCLE", sinStp
+            ? $"Ya existe un camino entre {equipoA.Nombre} y {equipoB.Nombre} y uno de los extremos es un switch no administrable, que no tiene STP: este enlace crearía un bucle real."
+            : $"Ya existe un camino entre {equipoA.Nombre} y {equipoB.Nombre}. Con STP o RSTP un enlace redundante es normal, pero documenta qué enlace queda activo y cuál bloqueado para evitar bucles.");
     }
 
     /// <summary>
