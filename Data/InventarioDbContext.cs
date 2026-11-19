@@ -56,6 +56,8 @@ public class InventarioDbContext : DbContext
 
     public DbSet<PosicionNodoMapa> PosicionesNodoMapa => Set<PosicionNodoMapa>();
 
+    public DbSet<DireccionIp> DireccionesIp => Set<DireccionIp>();
+
     /// <summary>
     /// Define nombres y límites de columnas; cambiar estas reglas requiere actualizar el esquema de la base.
     /// </summary>
@@ -185,6 +187,20 @@ public class InventarioDbContext : DbContext
             .WithMany()
             .HasForeignKey(nameof(PosicionNodoMapa.IdentificadorEquipo))
             .OnDelete(DeleteBehavior.Restrict);
+
+        // configuracionDireccionIp guarda el estado de cada IP; la dirección es única y el equipo se libera si se elimina.
+        var configuracionDireccionIp = constructorModelo.Entity<DireccionIp>();
+        configuracionDireccionIp.ToTable("DireccionesIp");
+        configuracionDireccionIp.HasKey(nameof(DireccionIp.Identificador));
+        configuracionDireccionIp.Property(nameof(DireccionIp.Direccion)).HasMaxLength(45).IsRequired();
+        configuracionDireccionIp.Property(nameof(DireccionIp.Estado)).HasMaxLength(20).IsRequired().HasDefaultValue("Libre");
+        configuracionDireccionIp.Property(nameof(DireccionIp.Observaciones)).HasMaxLength(300);
+        configuracionDireccionIp.HasIndex(nameof(DireccionIp.Direccion)).IsUnique();
+        configuracionDireccionIp.HasIndex(nameof(DireccionIp.IdentificadorEquipo));
+        configuracionDireccionIp.HasOne<EquipoRed>()
+            .WithMany()
+            .HasForeignKey(nameof(DireccionIp.IdentificadorEquipo))
+            .OnDelete(DeleteBehavior.SetNull);
 
         // configuracionMantenimiento integra la tabla de marcas al esquema migrable; cambiarla modifica su persistencia.
         var configuracionMantenimiento = constructorModelo.Entity<MantenimientoEjecutado>();

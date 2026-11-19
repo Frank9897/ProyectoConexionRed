@@ -105,6 +105,9 @@ public class EditarEquipoViewModel
     [Range(0, 512)]
     public int? CantidadPuertosQsfp28 { get; set; }
 
+    /// <summary>Indica si el switch es administrable; nulo significa sin confirmar. Solo aplica al tipo Switch.</summary>
+    public bool? EsAdministrable { get; set; }
+
     /// <summary>
     /// Estado de vigencia documental; cambiarlo ajusta el aviso que presenta la aplicación.
     /// </summary>

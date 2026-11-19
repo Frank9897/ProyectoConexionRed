@@ -106,6 +106,7 @@ public class InventarioController : Controller
             CantidadPuertosQsfp = esSwitch ? formulario.CantidadPuertosQsfp : null,
             CantidadPuertosQsfpPlus = esSwitch ? formulario.CantidadPuertosQsfpPlus : null,
             CantidadPuertosQsfp28 = esSwitch ? formulario.CantidadPuertosQsfp28 : null,
+            EsAdministrable = esSwitch ? formulario.EsAdministrable : null,
             EstadoDatos = formulario.EstadoDatos.Trim(),
             FechaUltimaRevision = formulario.FechaUltimaRevision,
             Observaciones = UtilidadesConexiones.NormalizarTexto(formulario.Observaciones)
@@ -256,6 +257,7 @@ public class InventarioController : Controller
             CantidadPuertosQsfp = equipoEncontrado.CantidadPuertosQsfp,
             CantidadPuertosQsfpPlus = equipoEncontrado.CantidadPuertosQsfpPlus,
             CantidadPuertosQsfp28 = equipoEncontrado.CantidadPuertosQsfp28,
+            EsAdministrable = equipoEncontrado.EsAdministrable,
             TipoDispositivo = equipoEncontrado.TipoDispositivo,
             EstadoDatos = equipoEncontrado.EstadoDatos,
             FechaUltimaRevision = equipoEncontrado.FechaUltimaRevision,
@@ -304,6 +306,9 @@ public class InventarioController : Controller
         UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Piso o sector", equipoGuardado.Piso, formulario.Piso);
         UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Rol en el área", equipoGuardado.RolEnArea, formulario.RolEnArea);
         UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Tipo de dispositivo", equipoGuardado.TipoDispositivo, formulario.TipoDispositivo);
+        UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Switch administrable",
+            TextoAdministrable(equipoGuardado.EsAdministrable),
+            TextoAdministrable(string.Equals(formulario.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase) ? formulario.EsAdministrable : null));
         AgregarCambiosCapacidad(cambiosRegistrados, equipoGuardado, usuarioEditor, formulario);
         UtilidadesConexiones.AgregarCambio(cambiosRegistrados, equipoGuardado.Identificador, nombreEquipoAnterior, usuarioEditor, "Vigencia de datos", equipoGuardado.EstadoDatos, formulario.EstadoDatos);
         UtilidadesConexiones.AgregarCambio(
@@ -331,6 +336,7 @@ public class InventarioController : Controller
         equipoGuardado.CantidadPuertosQsfp = string.Equals(formulario.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase) ? formulario.CantidadPuertosQsfp : null;
         equipoGuardado.CantidadPuertosQsfpPlus = string.Equals(formulario.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase) ? formulario.CantidadPuertosQsfpPlus : null;
         equipoGuardado.CantidadPuertosQsfp28 = string.Equals(formulario.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase) ? formulario.CantidadPuertosQsfp28 : null;
+        equipoGuardado.EsAdministrable = string.Equals(formulario.TipoDispositivo, "Switch", StringComparison.OrdinalIgnoreCase) ? formulario.EsAdministrable : null;
         equipoGuardado.EstadoDatos = formulario.EstadoDatos.Trim();
         equipoGuardado.FechaUltimaRevision = formulario.FechaUltimaRevision;
         equipoGuardado.Observaciones = UtilidadesConexiones.NormalizarTexto(formulario.Observaciones);
@@ -770,6 +776,14 @@ public class InventarioController : Controller
     {
         return valor?.Contains(busqueda, StringComparison.OrdinalIgnoreCase) == true;
     }
+    /// <summary>
+    /// Convierte el estado de administrabilidad a texto para el historial; nulo significa sin confirmar.
+    /// </summary>
+    /// <param name="esAdministrable">Valor guardado o recibido; cambiarlo cambia el texto auditado.</param>
+    /// <returns>«Sí», «No» o nulo.</returns>
+    private static string? TextoAdministrable(bool? esAdministrable) =>
+        esAdministrable switch { true => "Sí", false => "No", null => null };
+
     /// <summary>
     /// Audita cantidades de conectores cuando se crea o edita un switch.
     /// </summary>

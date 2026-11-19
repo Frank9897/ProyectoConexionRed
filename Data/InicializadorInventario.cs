@@ -38,6 +38,9 @@ public static class InicializadorInventario
         // ActualizacionV4.AplicarAsync fija 4 SFP por switch, incorpora el esquema de internet del V4 y completa fichas con el escaneo de la LAN.
         await ActualizacionV4.AplicarAsync(contextoInventario, cancelacion);
 
+        // CargaFase1b clasifica los switches como administrables según su IP y sincroniza la tabla de direcciones IP.
+        await CargaFase1b.AplicarAsync(contextoInventario, cancelacion);
+
         // CargarAdministradorInicialAsync utiliza variables de entorno y nunca escribe la contraseña en los registros.
         await CargarAdministradorInicialAsync(
             contextoInventario,

@@ -19,6 +19,7 @@
                 <div><label asp-for="CantidadPuertosQsfp">Puertos QSFP</label><input asp-for="CantidadPuertosQsfp" type="number" min="0" max="512" /><span asp-validation-for="CantidadPuertosQsfp" class="mensaje-error"></span></div>
                 <div><label asp-for="CantidadPuertosQsfpPlus">Puertos QSFP+</label><input asp-for="CantidadPuertosQsfpPlus" type="number" min="0" max="512" /><span asp-validation-for="CantidadPuertosQsfpPlus" class="mensaje-error"></span></div>
                 <div><label asp-for="CantidadPuertosQsfp28">Puertos QSFP28</label><input asp-for="CantidadPuertosQsfp28" type="number" min="0" max="512" /><span asp-validation-for="CantidadPuertosQsfp28" class="mensaje-error"></span></div>
+                <div><label asp-for="EsAdministrable">Switch administrable</label><select asp-for="EsAdministrable"><option value="">Sin confirmar</option><option value="true">Sí</option><option value="false">No</option></select><small>Un switch sin IP no se puede administrar ni tiene STP.</small></div>
             </div>
             <div><label asp-for="Fabricante">Fabricante</label><input asp-for="Fabricante" /><span asp-validation-for="Fabricante" class="mensaje-error"></span></div>
             <div><label asp-for="Modelo">Modelo</label><input asp-for="Modelo" /><span asp-validation-for="Modelo" class="mensaje-error"></span></div>

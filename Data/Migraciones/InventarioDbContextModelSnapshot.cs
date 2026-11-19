@@ -84,6 +84,44 @@ namespace ProyectoConexionRed.Web.Data.Migraciones
                     b.ToTable("ConexionesDocumentadas", (string)null);
                 });
 
+            modelBuilder.Entity("ProyectoConexionRed.Web.Models.DireccionIp", b =>
+                {
+                    b.Property<int>("Identificador")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Direccion")
+                        .IsRequired()
+                        .HasMaxLength(45)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("Libre");
+
+                    b.Property<DateTime>("FechaActualizacionUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("IdentificadorEquipo")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Observaciones")
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Identificador");
+
+                    b.HasIndex("Direccion")
+                        .IsUnique();
+
+                    b.HasIndex("IdentificadorEquipo");
+
+                    b.ToTable("DireccionesIp", (string)null);
+                });
+
             modelBuilder.Entity("ProyectoConexionRed.Web.Models.EnlaceFisico", b =>
                 {
                     b.Property<int>("Identificador")
@@ -514,6 +552,14 @@ namespace ProyectoConexionRed.Web.Data.Migraciones
                         .HasForeignKey("IdentificadorEquipo")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("ProyectoConexionRed.Web.Models.DireccionIp", b =>
+                {
+                    b.HasOne("ProyectoConexionRed.Web.Models.EquipoRed", null)
+                        .WithMany()
+                        .HasForeignKey("IdentificadorEquipo")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 #pragma warning restore 612, 618
         }

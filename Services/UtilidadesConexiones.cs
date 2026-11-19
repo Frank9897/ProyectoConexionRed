@@ -121,8 +121,13 @@ public static class UtilidadesConexiones
             .Where(relacion => relacion.IpRemota != null)
             .Select(relacion => relacion.IpRemota!)
             .ToListAsync(cancelacion);
+        // ipsReservadas son direcciones apartadas en la tabla de IP; no se ofrecen como libres aunque ningún equipo las use.
+        var ipsReservadas = await contextoInventario.DireccionesIp.AsNoTracking()
+            .Where(direccion => direccion.Estado == "Reservada")
+            .Select(direccion => direccion.Direccion)
+            .ToListAsync(cancelacion);
         // ipsOcupadas permite verificar direcciones sin repetir búsquedas en SQLite.
-        var ipsOcupadas = ipsRegistradas.Concat(ipsRemotas).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var ipsOcupadas = ipsRegistradas.Concat(ipsRemotas).Concat(ipsReservadas).ToHashSet(StringComparer.OrdinalIgnoreCase);
         // ipsDisponibles agrupa las direcciones libres de las dos subredes permitidas.
         var ipsDisponibles = new List<SelectListItem>();
         // segundoOcteto recorre los segmentos de usuario que se pueden asignar desde el formulario.
