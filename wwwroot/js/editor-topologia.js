@@ -7,13 +7,15 @@
         return;
     }
 
-    if (typeof cytoscapeEdgehandles === "function") {
+    // La biblioteca de dibujo se registra sola al cargarse después de Cytoscape; solo se registra a mano si no ocurrió.
+    if (typeof cytoscapeEdgehandles === "function" && typeof cytoscape("core", "edgehandles") !== "function") {
         cytoscape.use(cytoscapeEdgehandles);
     }
 
     const urls = {
         datos: raiz.dataset.urlDatos, validar: raiz.dataset.urlValidar, crear: raiz.dataset.urlCrear,
         eliminar: raiz.dataset.urlEliminar, actualizar: raiz.dataset.urlActualizar, posiciones: raiz.dataset.urlPosiciones,
+        leerPosiciones: raiz.dataset.urlLeerPosiciones,
         editar: raiz.dataset.urlEditar
     };
     const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? "";
@@ -131,16 +133,59 @@
     const nodosReales = () => cy.nodes().filter(esNodoReal);
     const aristasReales = () => cy.edges().filter((arista) => arista.data("real") === true);
 
+    // ---------- Vistas: qué equipos se muestran ----------
+    // vistaActual decide qué se ve: "switches" (solo switches y sus conexiones, por defecto), "foco" (un switch con sus equipos
+    // y los switches relacionados) o "todo" (inventario completo, solo si el técnico lo pide).
+    let vistaActual = "switches";
+    const selectorVista = porId("mapa-vista");
+    const selectorFoco = porId("mapa-foco");
+    const etiquetaFoco = porId("mapa-etiqueta-foco");
+    // conPosicion marca los equipos que ya tienen una posición válida en la disposición de la vista actual.
+    const conPosicion = new Set();
+    let primeraCarga = true;
+
+    const esSwitch = (nodo) => nodo.data("tipo") === "Switch";
+    const esAristaReal = (arista) => arista.data("real") === true;
+    const vecinosReales = (nodo) => nodo.connectedEdges().filter(esAristaReal).connectedNodes().filter((vecino) => vecino.id() !== nodo.id());
+    const visiblesReales = () => nodosReales().filter((nodo) => !nodo.hasClass("oculto"));
+    // La disposición de cada vista se guarda por separado: la del foco depende del switch elegido.
+    const claveVista = () => vistaActual === "switches" ? "switches" : vistaActual === "todo" ? "todo" : `foco-${selectorFoco.value}`;
+
+    /** Devuelve el switch en foco: el elegido o, si no hay, el que tiene más conexiones documentadas. */
+    const elegirFoco = () => {
+        const elegido = selectorFoco.value ? cy.getElementById(selectorFoco.value) : cy.collection();
+        if (elegido.nonempty()) return elegido[0];
+        const mejor = nodosReales().filter(esSwitch).toArray()
+            .sort((p, q) => vecinosReales(q).length - vecinosReales(p).length)[0];
+        if (mejor) selectorFoco.value = mejor.id();
+        return mejor ?? null;
+    };
+
+    /** Conjunto de equipos que corresponden a la vista; nulo significa todos. */
+    const equiposDeLaVista = () => {
+        if (vistaActual === "todo") return null;
+        const ids = new Set();
+        if (vistaActual === "switches") {
+            nodosReales().filter(esSwitch).forEach((nodo) => ids.add(nodo.id()));
+            return ids;
+        }
+        const foco = elegirFoco();
+        if (foco) {
+            ids.add(foco.id());
+            vecinosReales(foco).forEach((vecino) => ids.add(vecino.id()));
+        }
+        return ids;
+    };
+
     // ---------- Carga y reconciliación ----------
-    const cargar = async ({ redistribuirSiFalta = false } = {}) => {
+    const cargar = async () => {
         avisar("Cargando el mapa documentado.");
         datosActuales = await pedirJson(urls.datos);
-        const { nodos, aristas, posiciones } = datosActuales;
-        const sinPosicion = [];
+        const { nodos, aristas } = datosActuales;
 
         cy.batch(() => {
             const idsNodos = new Set(nodos.map((nodo) => String(nodo.id)));
-            nodosReales().forEach((nodo) => { if (!idsNodos.has(nodo.id())) nodo.remove(); });
+            nodosReales().forEach((nodo) => { if (!idsNodos.has(nodo.id())) { conPosicion.delete(nodo.id()); nodo.remove(); } });
             aristasReales().remove();
 
             nodos.forEach((nodo) => {
@@ -151,13 +196,8 @@
                     icono: nodo.icono, color: colorTipo(nodo.tipo), puertos: nodo.puertos, notasSinEquipo: nodo.notasSinEquipo
                 };
                 const existente = cy.getElementById(id);
-                if (existente.nonempty()) {
-                    existente.data(datosNodo);
-                    return;
-                }
-                const guardada = posiciones[id];
-                if (!guardada) sinPosicion.push(id);
-                cy.add({ group: "nodes", data: datosNodo, position: guardada ?? { x: Math.random() * 900, y: Math.random() * 600 } });
+                if (existente.nonempty()) existente.data(datosNodo);
+                else cy.add({ group: "nodes", data: datosNodo, position: { x: 0, y: 0 }, classes: "oculto" });
             });
 
             aristas.forEach((arista) => {
@@ -170,15 +210,33 @@
         });
 
         llenarFiltros(nodos);
-        aplicarFiltros();
         pintarAlertas(datosActuales.alertas);
-        // Si faltan posiciones guardadas (primera vez o equipos nuevos) se distribuye el mapa y se guarda.
-        if (redistribuirSiFalta && sinPosicion.length > nodos.length * 0.4) {
-            redistribuir();
-        } else if (sinPosicion.length > 0) {
-            await guardarPosiciones(sinPosicion.map((id) => cy.getElementById(id)));
+        if (primeraCarga) {
+            primeraCarga = false;
+            await cambiarVista();
+        } else {
+            aplicarFiltros();
         }
-        avisar(`${nodos.length} equipos y ${aristas.length} enlaces documentados.`);
+        const cantidadSwitches = nodos.filter((nodo) => nodo.tipo === "Switch").length;
+        avisar(`${nodos.length} equipos en el inventario (${cantidadSwitches} switches) y ${aristas.length} conexiones documentadas.`);
+    };
+
+    /** Cambia lo que se muestra: carga la disposición guardada de esa vista y encaja el mapa en pantalla. */
+    const cambiarVista = async () => {
+        vistaActual = selectorVista.value;
+        etiquetaFoco.hidden = vistaActual !== "foco";
+        if (vistaActual === "foco") elegirFoco();
+        conPosicion.clear();
+        try {
+            const guardadas = await pedirJson(urls.leerPosiciones, { vista: claveVista() });
+            cy.batch(() => Object.entries(guardadas).forEach(([id, posicion]) => {
+                const nodo = cy.getElementById(id);
+                if (nodo.nonempty()) { nodo.position(posicion); conPosicion.add(id); }
+            }));
+        } catch {
+            // Sin posiciones guardadas se calculan al mostrar la vista.
+        }
+        aplicarFiltros({ encajar: true });
     };
 
     // ---------- Filtros y búsqueda ----------
@@ -195,20 +253,39 @@
         };
         rellenar(porId("mapa-area"), nodos.map((nodo) => nodo.area), porId("mapa-area").value);
         rellenar(porId("mapa-tipo"), nodos.map((nodo) => nodo.tipo), porId("mapa-tipo").value);
+
+        // El selector de foco ofrece solo switches; conserva la elección si sigue existiendo.
+        const actual = selectorFoco.value;
+        const switches = nodos.filter((nodo) => nodo.tipo === "Switch").sort((p, q) => colador.compare(p.nombre, q.nombre));
+        selectorFoco.replaceChildren(...switches.map((nodo) => {
+            const opcion = crear("option", "", nodo.nombre);
+            opcion.value = String(nodo.id);
+            return opcion;
+        }));
+        if (switches.some((nodo) => String(nodo.id) === actual)) {
+            selectorFoco.value = actual;
+        } else if (switches.length > 0) {
+            // Sin una elección previa se propone el switch con más conexiones documentadas.
+            const conteo = new Map();
+            datosActuales.aristas.forEach((arista) => [String(arista.source), String(arista.target)]
+                .forEach((id) => conteo.set(id, (conteo.get(id) ?? 0) + 1)));
+            const mejor = [...switches].sort((p, q) => (conteo.get(String(q.id)) ?? 0) - (conteo.get(String(p.id)) ?? 0))[0];
+            selectorFoco.value = String(mejor.id);
+        }
     };
 
-    const aplicarFiltros = () => {
+    /** Muestra u oculta equipos según la vista, el área, el tipo y la búsqueda, y ubica los que aún no tienen posición. */
+    const aplicarFiltros = ({ encajar = false } = {}) => {
         const area = porId("mapa-area").value;
         const tipo = porId("mapa-tipo").value;
-        const soloConectados = porId("mapa-solo-conectados").checked;
         const texto = porId("mapa-buscar").value.trim().toLowerCase();
+        const permitidos = equiposDeLaVista();
         cy.batch(() => {
             nodosReales().forEach((nodo) => {
-                const conectado = nodo.connectedEdges().filter((arista) => arista.data("real") === true).nonempty();
-                // Una búsqueda por texto muestra el equipo aunque no tenga conexiones, para poder encontrarlo y conectarlo.
+                // Una búsqueda por texto muestra el equipo aunque no corresponda a la vista, para poder encontrarlo y conectarlo.
                 const coincideTexto = texto.length > 0
                     && `${nodo.data("nombre")} ${nodo.data("ip") ?? ""}`.toLowerCase().includes(texto);
-                const visible = (!soloConectados || conectado || coincideTexto)
+                const visible = (permitidos === null || permitidos.has(nodo.id()) || coincideTexto)
                     && (!area || nodo.data("area") === area)
                     && (!tipo || nodo.data("tipo") === tipo);
                 nodo.toggleClass("oculto", !visible);
@@ -217,20 +294,26 @@
             cy.edges().toggleClass("sin-etiquetas", !porId("mapa-etiquetas").checked);
             cy.edges().toggleClass("modo-datos", porId("mapa-color").value === "datos");
         });
+
+        ubicarFaltantes();
         const coincidencias = cy.nodes(".coincidencia");
         if (texto.length > 0 && coincidencias.nonempty()) {
             cy.animate({ fit: { eles: coincidencias, padding: 120 }, duration: 250 });
+        } else if (encajar && visiblesReales().nonempty()) {
+            cy.fit(visiblesReales(), 40);
         }
     };
 
-    ["mapa-area", "mapa-tipo", "mapa-solo-conectados", "mapa-etiquetas", "mapa-color"].forEach((id) =>
-        porId(id).addEventListener("change", aplicarFiltros));
+    ["mapa-area", "mapa-tipo", "mapa-etiquetas", "mapa-color"].forEach((id) =>
+        porId(id).addEventListener("change", () => aplicarFiltros()));
+    selectorVista.addEventListener("change", () => cambiarVista().catch((error) => avisar(error.message)));
+    selectorFoco.addEventListener("change", () => cambiarVista().catch((error) => avisar(error.message)));
     let temporizadorBusqueda = 0;
     porId("mapa-buscar").addEventListener("input", () => {
         window.clearTimeout(temporizadorBusqueda);
-        temporizadorBusqueda = window.setTimeout(aplicarFiltros, 250);
+        temporizadorBusqueda = window.setTimeout(() => aplicarFiltros(), 250);
     });
-    porId("mapa-ajustar").addEventListener("click", () => cy.fit(cy.elements(":visible"), 40));
+    porId("mapa-ajustar").addEventListener("click", () => cy.fit(visiblesReales(), 40));
     porId("mapa-recargar").addEventListener("click", () => cargar().catch((error) => avisar(error.message)));
     porId("mapa-exportar").addEventListener("click", () => {
         // Se exporta todo lo visible (no solo la parte en pantalla) con fondo blanco, apto para documentación impresa.
@@ -243,24 +326,89 @@
     });
 
     // ---------- Distribución y posiciones ----------
+    // Tamaño aproximado de un equipo con su nombre, usado para que la distribución no los superponga.
+    const anchoEquipo = 112;
+    const altoEquipo = 76;
+
+    /** Distribuye los equipos indicados por niveles: central arriba, switches por filas y equipos finales debajo de su switch. */
+    const distribuirNiveles = (nodos) => {
+        if (!window.DistribucionRed || nodos.length === 0) return;
+        const ids = new Set(nodos.map((nodo) => nodo.id()));
+        const entrada = nodos.map((nodo) => ({
+            id: nodo.id(), ancho: anchoEquipo, alto: altoEquipo, esSwitch: esSwitch(nodo), nombre: nodo.data("nombre")
+        }));
+        const conexiones = aristasReales().toArray()
+            .filter((arista) => ids.has(arista.source().id()) && ids.has(arista.target().id()))
+            .map((arista) => ({ a: arista.source().id(), b: arista.target().id() }));
+        const resultado = window.DistribucionRed.distribuirPorNiveles(entrada, conexiones,
+            { separacionX: 36, separacionNiveles: 130, separacionHoja: 16, maxColumnasHojas: 6 });
+        cy.batch(() => nodos.forEach((nodo) => {
+            const posicion = resultado.get(nodo.id());
+            if (!posicion) return;
+            nodo.position({ x: posicion.x + anchoEquipo / 2, y: posicion.y + altoEquipo / 2 });
+            conPosicion.add(nodo.id());
+        }));
+        guardarPosiciones(nodos).catch((error) => avisar(error.message));
+        cy.fit(visiblesReales(), 40);
+    };
+
+    /** Ubica un equipo nuevo debajo de uno de sus vecinos ya ubicados; si no tiene vecinos, a la derecha del conjunto. */
+    const ubicarCerca = (faltan) => {
+        const contador = new Map();
+        const ubicados = visiblesReales().filter((nodo) => conPosicion.has(nodo.id()));
+        const limiteDerecho = ubicados.nonempty() ? ubicados.boundingBox().x2 : 0;
+        const arriba = ubicados.nonempty() ? ubicados.boundingBox().y1 : 0;
+        let sueltos = 0;
+        faltan.forEach((nodo) => {
+            const vecino = vecinosReales(nodo).filter((v) => conPosicion.has(v.id()) && !v.hasClass("oculto"))[0];
+            if (vecino) {
+                const indice = contador.get(vecino.id()) ?? 0;
+                contador.set(vecino.id(), indice + 1);
+                nodo.position({ x: vecino.position("x") + ((indice % 6) - 2.5) * (anchoEquipo + 8), y: vecino.position("y") + 150 + Math.floor(indice / 6) * (altoEquipo + 12) });
+            } else {
+                nodo.position({ x: limiteDerecho + 160, y: arriba + sueltos * (altoEquipo + 12) });
+                sueltos++;
+            }
+            conPosicion.add(nodo.id());
+        });
+        guardarPosiciones(faltan).catch((error) => avisar(error.message));
+    };
+
+    /** Asegura que todo equipo visible tenga posición: distribuye todo si faltan muchos, o ubica los pocos nuevos cerca de sus vecinos. */
+    const ubicarFaltantes = () => {
+        const visibles = visiblesReales();
+        const faltan = visibles.filter((nodo) => !conPosicion.has(nodo.id()));
+        if (faltan.empty()) return;
+        if (faltan.length > visibles.length * 0.25) distribuirNiveles(visibles.toArray());
+        else ubicarCerca(faltan.toArray());
+    };
+
     const redistribuir = () => {
         const tipoDiseno = porId("mapa-diseno").value;
-        const visibles = cy.elements(":visible");
+        const visibles = visiblesReales();
+        if (visibles.empty()) return;
+        if (tipoDiseno === "niveles") {
+            distribuirNiveles(visibles.toArray());
+            return;
+        }
+        const elementos = visibles.union(visibles.connectedEdges().filter((arista) => esAristaReal(arista)
+            && !arista.source().hasClass("oculto") && !arista.target().hasClass("oculto")));
         const opciones = tipoDiseno === "cose"
             ? { name: "cose", animate: false, fit: true, padding: 30, idealEdgeLength: 110, nodeRepulsion: 12000, gravity: 0.5, numIter: 1500 }
             : { name: tipoDiseno, animate: false, fit: true, padding: 30 };
-        visibles.layout(opciones).run();
-        guardarPosiciones(visibles.nodes().filter(esNodoReal).toArray().map((nodo) => nodo)).catch((error) => avisar(error.message));
+        elementos.layout(opciones).run();
+        visibles.forEach((nodo) => conPosicion.add(nodo.id()));
+        guardarPosiciones(visibles.toArray()).catch((error) => avisar(error.message));
     };
     porId("mapa-redistribuir").addEventListener("click", redistribuir);
 
-    /** Guarda en el servidor la posición de los nodos indicados para que todos los técnicos vean el mismo diseño. */
+    /** Guarda en el servidor la posición de los nodos indicados para la vista actual, compartida entre técnicos. */
     const guardarPosiciones = async (nodos) => {
-        const coleccion = nodos.length !== undefined && typeof nodos.map === "function" ? nodos : [...nodos];
-        const lista = coleccion.map((nodo) => ({ id: Number(nodo.id()), x: nodo.position("x"), y: nodo.position("y") }));
+        const lista = nodos.map((nodo) => ({ id: Number(nodo.id()), x: nodo.position("x"), y: nodo.position("y") }));
         if (lista.length === 0) return;
+        const vista = claveVista();
         for (let inicio = 0; inicio < lista.length; inicio += 1000) {
-            await enviar(urls.posiciones, { posiciones: JSON.stringify(lista.slice(inicio, inicio + 1000)) });
+            await enviar(urls.posiciones, { posiciones: JSON.stringify(lista.slice(inicio, inicio + 1000)), vista });
         }
         avisar("Disposición guardada.");
     };
@@ -279,6 +427,14 @@
             try { await guardarPosiciones(nodos); } catch (error) { avisar(error.message); }
         }, 900);
     });
+
+    /** Muestra un switch con sus equipos y los switches relacionados (vista «foco»). */
+    const verEquiposDelSwitch = (nodo) => {
+        selectorVista.value = "foco";
+        selectorFoco.value = nodo.id();
+        return cambiarVista().catch((error) => avisar(error.message));
+    };
+    cy.on("dbltap", "node", (evento) => { if (esNodoReal(evento.target) && esSwitch(evento.target)) verEquiposDelSwitch(evento.target); });
 
     // ---------- Alertas ----------
     const pintarAlertas = (alertas) => {
@@ -321,6 +477,12 @@
         const enlaceFicha = crear("a", "boton boton-secundario", "Abrir ficha");
         enlaceFicha.href = urls.editar.replace("__ID__", encodeURIComponent(nodo.id()));
         acciones.append(enlaceFicha);
+        if (esSwitch(nodo)) {
+            const verEquipos = crear("button", "boton boton-secundario", "Ver sus equipos");
+            verEquipos.type = "button";
+            verEquipos.addEventListener("click", () => verEquiposDelSwitch(nodo));
+            acciones.append(verEquipos);
+        }
         panel.replaceChildren(
             crear("h3", "", nodo.data("nombre")),
             dato("Tipo", nodo.data("tipo")), dato("IP", nodo.data("ip")), dato("Área", nodo.data("area")),
@@ -570,7 +732,7 @@
         if (activo) asistente.disableDrawMode(); else asistente.enableDrawMode();
     });
 
-    cargar({ redistribuirSiFalta: true }).catch((error) => {
+    cargar().catch((error) => {
         avisar(error.message);
         porId("mapa-alertas").replaceChildren(crear("p", "editor-vacio", "No se pudieron cargar los datos del mapa."));
     });

@@ -117,12 +117,21 @@
                 }
             </select>
         </label>
+        <label data-etiqueta-filtro-switch hidden>Switch en foco
+            <select data-filtro-switch>
+                <option value="">Automático (el de más conexiones)</option>
+                @foreach (var dispositivoSwitch in Model.Dispositivos.Where(d => (d.TipoDispositivo ?? string.Empty).Contains("switch", StringComparison.OrdinalIgnoreCase)).OrderBy(d => d.Nombre, StringComparer.OrdinalIgnoreCase))
+                {
+                    <option value="@dispositivoSwitch.Identificador">@dispositivoSwitch.Nombre</option>
+                }
+            </select>
+        </label>
     </div>
 
     <div class="selector-capas-topologia" role="group" aria-label="Seleccionar vista de topología">
-        <button type="button" class="selector-capa-topologia activa" data-seleccionar-capa="fisica" aria-pressed="true">Capa 1 · Física</button>
-        <button type="button" class="selector-capa-topologia" data-seleccionar-capa="switching" aria-pressed="false">Capa 2 · Switching</button>
-        <button type="button" class="selector-capa-topologia" data-seleccionar-capa="acceso" aria-pressed="false">Capa 3 · Acceso</button>
+        <button type="button" class="selector-capa-topologia activa" data-seleccionar-capa="switching" aria-pressed="true" title="Solo los switches y las conexiones entre ellos">Entre switches</button>
+        <button type="button" class="selector-capa-topologia" data-seleccionar-capa="acceso" aria-pressed="false" title="Un switch con sus equipos finales y los switches relacionados">Switch y sus equipos</button>
+        <button type="button" class="selector-capa-topologia" data-seleccionar-capa="fisica" aria-pressed="false" title="Muestra todos los equipos del inventario; puede ser pesado">Inventario completo</button>
         <span data-resumen-mapa>@Model.Dispositivos.Count equipos · @Model.Enlaces.Count enlaces</span>
     </div>
 
@@ -159,8 +168,9 @@
                         </label>
                         <label class="selector-distribucion">Distribución
                             <select data-modo-distribucion title="Elige cómo se reparten las tarjetas">
+                                <option value="niveles" selected>Jerárquica por niveles (recomendada)</option>
                                 <option value="mosaico">Mosaico</option>
-                                <option value="filas" selected>Jerárquica por niveles</option>
+                                <option value="filas">Árbol horizontal</option>
                                 <option value="cuadricula">Cuadrícula por área</option>
                             </select>
                         </label>
@@ -173,7 +183,7 @@
                 </details>
             </div>
         </div>
-        <div class="mapa-topologia" data-mapa-topologia data-capa-actual="fisica" role="region" aria-label="Mapa navegable de equipos y conexiones" tabindex="0">
+        <div class="mapa-topologia" data-mapa-topologia data-capa-actual="switching" role="region" aria-label="Mapa navegable de equipos y conexiones" tabindex="0">
             <div class="lienzo-topologia" data-lienzo-topologia>
                 <svg class="capa-svg-enlaces" data-capa-enlaces aria-hidden="true"></svg>
         @if (Model.Dispositivos.Count == 0)
@@ -253,7 +263,7 @@
             </div>
             <div class="mapa-sin-elementos" data-mapa-vacio hidden>
                 <strong>Ningún equipo cumple los filtros</strong>
-                <p>Cambia la capa, el área o la búsqueda, o desmarca «Solo equipos con conexión» para ver todo el inventario.</p>
+                <p>Cambia la vista, el área o la búsqueda. «Inventario completo» muestra todos los equipos.</p>
             </div>
         </div>
         <p class="estado-mapa-topologia solo-lectores-pantalla" data-estado-mapa role="status" aria-live="polite"></p>
@@ -346,4 +356,5 @@
 </div>
 
 <script src="~/js/paginacion-conexiones.js" asp-append-version="true"></script>
+<script src="~/js/distribucion-red.js" asp-append-version="true"></script>
 <script src="~/js/topologia-grafica.js" asp-append-version="true"></script>

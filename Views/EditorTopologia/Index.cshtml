@@ -17,12 +17,18 @@
          data-url-eliminar="@Url.Action("EliminarEnlace", "EditorTopologia")"
          data-url-actualizar="@Url.Action("ActualizarEnlace", "EditorTopologia")"
          data-url-posiciones="@Url.Action("GuardarPosiciones", "EditorTopologia")"
+         data-url-leer-posiciones="@Url.Action("Posiciones", "EditorTopologia")"
          data-url-editar="@Url.Action("Editar", "Inventario", new { id = "__ID__" })">
     <div class="editor-barra" role="toolbar" aria-label="Herramientas del mapa">
         <input type="search" id="mapa-buscar" placeholder="Buscar por nombre o IP" aria-label="Buscar equipo" />
         <select id="mapa-area" aria-label="Filtrar por área"><option value="">Todas las áreas</option></select>
         <select id="mapa-tipo" aria-label="Filtrar por tipo"><option value="">Todos los tipos</option></select>
-        <label class="editor-casilla"><input type="checkbox" id="mapa-solo-conectados" checked /> Solo equipos con conexiones</label>
+        <select id="mapa-vista" aria-label="Qué mostrar">
+            <option value="switches" selected>Solo switches y sus conexiones</option>
+            <option value="foco">Un switch y sus equipos</option>
+            <option value="todo">Todo el inventario</option>
+        </select>
+        <label id="mapa-etiqueta-foco" hidden>Switch en foco <select id="mapa-foco" aria-label="Switch en foco"></select></label>
         <label class="editor-casilla"><input type="checkbox" id="mapa-etiquetas" checked /> Etiquetas de puertos</label>
         <select id="mapa-color" aria-label="Colorear enlaces por">
             <option value="stp">Colorear enlaces por estado STP</option>
@@ -30,6 +36,7 @@
         </select>
         <button type="button" id="mapa-conectar" class="boton boton-secundario" aria-pressed="false">Modo conectar</button>
         <select id="mapa-diseno" aria-label="Tipo de distribución">
+            <option value="niveles" selected>Distribución por niveles (recomendada)</option>
             <option value="cose">Distribución por fuerzas</option>
             <option value="breadthfirst">Distribución en árbol</option>
             <option value="concentric">Distribución concéntrica</option>
@@ -106,4 +113,5 @@
 <script src="~/lib/cytoscape/cytoscape.min.js"></script>
 <script src="~/js/lodash-minimo.js" asp-append-version="true"></script>
 <script src="~/lib/cytoscape/cytoscape-edgehandles.js"></script>
+<script src="~/js/distribucion-red.js" asp-append-version="true"></script>
 <script src="~/js/editor-topologia.js" asp-append-version="true"></script>

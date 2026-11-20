@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProyectoConexionRed.Web.Data;
@@ -14,7 +15,7 @@ namespace ProyectoConexionRed.Web.Controllers;
 /// </summary>
 public class EditorTopologiaController : Controller
 {
-    // VistaGeneral es la única disposición guardada por ahora; la columna Vista permite agregar otras más adelante.
+    // VistaGeneral es la vista por defecto cuando no se indica ninguna; las vistas válidas son general, switches, todo y foco-IDENTIFICADOR.
     private const string VistaGeneral = "general";
 
     // MediosPermitidos, EstadosDatosPermitidos y EstadosStpPermitidos replican las listas cerradas de los formularios de enlaces.
@@ -48,8 +49,6 @@ public class EditorTopologiaController : Controller
         var interfaces = await contextoInventario.InterfacesEquipo.AsNoTracking().ToListAsync(cancelacion);
         var enlaces = await contextoInventario.EnlacesFisicos.AsNoTracking().ToListAsync(cancelacion);
         var relaciones = await contextoInventario.ConexionesDocumentadas.AsNoTracking().ToListAsync(cancelacion);
-        var posiciones = await contextoInventario.PosicionesNodoMapa.AsNoTracking()
-            .Where(posicion => posicion.Vista == VistaGeneral).ToListAsync(cancelacion);
         var ipsEnConflicto = await contextoInventario.DireccionesIp.AsNoTracking()
             .Where(direccion => direccion.Estado == SincronizadorIps.EnConflicto).ToListAsync(cancelacion);
 
@@ -172,10 +171,25 @@ public class EditorTopologiaController : Controller
                 estadoStp = arista.EstadoStp,
                 fuente = arista.Fuente
             }),
-            posiciones = posiciones.ToDictionary(posicion => posicion.IdentificadorEquipo.ToString(CultureInfo.InvariantCulture),
-                posicion => new { x = posicion.X, y = posicion.Y }),
             alertas = CalcularAlertas(aristas, equipoPorId, ipsEnConflicto)
         });
+    }
+
+    /// <summary>
+    /// Devuelve las posiciones guardadas de una vista del mapa (switches, todo o foco-IDENTIFICADOR del switch).
+    /// </summary>
+    /// <param name="vista">Nombre de la vista; vacío equivale a general.</param>
+    /// <param name="cancelacion">Señal de cancelación.</param>
+    /// <returns>JSON con un objeto identificador de equipo a coordenadas x, y; 400 si el nombre de vista no es válido.</returns>
+    [HttpGet]
+    public async Task<IActionResult> Posiciones(string? vista, CancellationToken cancelacion)
+    {
+        var nombreVista = NormalizarVista(vista);
+        if (nombreVista is null) return BadRequest(new { errores = new[] { "La vista indicada no es válida." } });
+        var guardadas = await contextoInventario.PosicionesNodoMapa.AsNoTracking()
+            .Where(posicion => posicion.Vista == nombreVista).ToListAsync(cancelacion);
+        return Json(guardadas.ToDictionary(posicion => posicion.IdentificadorEquipo.ToString(CultureInfo.InvariantCulture),
+            posicion => new { x = posicion.X, y = posicion.Y }));
     }
 
     /// <summary>
@@ -350,12 +364,16 @@ public class EditorTopologiaController : Controller
 
     /// <summary>Guarda la posición de los equipos movidos en el lienzo, compartida entre técnicos.</summary>
     /// <param name="posiciones">JSON con una lista de objetos id, x, y; se ignoran equipos inexistentes y valores no numéricos.</param>
+    /// <param name="vista">Vista a la que pertenecen (switches, todo o foco-IDENTIFICADOR); vacío equivale a general.</param>
     /// <param name="cancelacion">Señal de cancelación.</param>
     /// <returns>JSON con la cantidad de posiciones guardadas.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> GuardarPosiciones(string posiciones, CancellationToken cancelacion)
+    public async Task<IActionResult> GuardarPosiciones(string posiciones, string? vista, CancellationToken cancelacion)
     {
+        var nombreVista = NormalizarVista(vista);
+        if (nombreVista is null) return BadRequest(new { errores = new[] { "La vista indicada no es válida." } });
+
         List<PosicionRecibida>? recibidas;
         try
         {
@@ -378,7 +396,7 @@ public class EditorTopologiaController : Controller
             .Where(equipo => identificadores.Contains(equipo.Identificador))
             .Select(equipo => equipo.Identificador).ToListAsync(cancelacion)).ToHashSet();
         var guardadas = await contextoInventario.PosicionesNodoMapa
-            .Where(posicion => posicion.Vista == VistaGeneral && identificadores.Contains(posicion.IdentificadorEquipo))
+            .Where(posicion => posicion.Vista == nombreVista && identificadores.Contains(posicion.IdentificadorEquipo))
             .ToDictionaryAsync(posicion => posicion.IdentificadorEquipo, cancelacion);
 
         var ahora = DateTime.UtcNow;
@@ -388,7 +406,7 @@ public class EditorTopologiaController : Controller
         {
             if (!guardadas.TryGetValue(recibida.Id, out var posicion))
             {
-                posicion = new PosicionNodoMapa { IdentificadorEquipo = recibida.Id, Vista = VistaGeneral };
+                posicion = new PosicionNodoMapa { IdentificadorEquipo = recibida.Id, Vista = nombreVista };
                 await contextoInventario.PosicionesNodoMapa.AddAsync(posicion, cancelacion);
             }
 
@@ -600,6 +618,13 @@ public class EditorTopologiaController : Controller
         CatalogoVisualesDispositivos.NormalizarEtiquetaPuertoVisual(
             equipoPorId.TryGetValue(interfaz.IdentificadorEquipo, out var equipo) ? equipo.Nombre : string.Empty,
             interfaz.EtiquetaPuerto, interfaz.TipoInterfaz);
+
+    /// <summary>Valida el nombre de una vista del mapa; devuelve nulo si no es general, switches, todo ni foco-número.</summary>
+    private static string? NormalizarVista(string? vista)
+    {
+        var nombre = string.IsNullOrWhiteSpace(vista) ? VistaGeneral : vista.Trim();
+        return Regex.IsMatch(nombre, @"^(general|switches|todo|foco-\d{1,9})$") ? nombre : null;
+    }
 
     /// <summary>Nombre del usuario que edita, o la marca de uso sin sesión mientras el login esté desactivado.</summary>
     private string ObtenerUsuario() => User.Identity?.Name ?? "Pruebas sin sesión";

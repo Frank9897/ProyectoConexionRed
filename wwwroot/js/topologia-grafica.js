@@ -224,7 +224,7 @@
     const escalaMinima = 0.1;
     const escalaMaxima = 1.6;
     // claveAlmacenamiento nombra el registro local de posiciones movidas; cambiarla descarta las posiciones guardadas.
-    const claveAlmacenamiento = "topologia-tarjetas-jerarquica-v2";
+    const claveAlmacenamiento = "topologia-tarjetas-jerarquica-v3";
     // separacionVertical es el espacio entre tarjetas apiladas; aumentarlo deja más aire entre ellas.
     const separacionVertical = 56;
     // separacionNiveles es el espacio horizontal entre niveles de la red; es el pasillo por donde se ven las líneas.
@@ -237,7 +237,7 @@
     const altoMapaImpresionPx = 180 * 96 / 25.4;
 
     // modoCapaActual inicia el mapa en la vista física completa.
-    let modoCapaActual = "fisica";
+    let modoCapaActual = "switching";
     // vista guarda la traslación (px de pantalla) y el zoom del lienzo; cambiarla mueve o acerca todo el mapa.
     const vista = { x: 0, y: 0, escala: 1 };
     // posicionesPorCapa guarda la esquina superior izquierda de cada tarjeta en coordenadas del lienzo, por capa.
@@ -250,8 +250,8 @@
     const escalaInicialMinima = 0.5;
     // capaDispuesta indica si la capa ya recibió su disposición automática inicial.
     const capaDispuesta = { fisica: false, switching: false, acceso: false };
-    // modoDistribucion define la disposición inicial jerárquica, con cada nivel a la derecha de su padre.
-    let modoDistribucion = "filas";
+    // modoDistribucion define la disposición inicial: niveles (switches arriba y equipos finales debajo), filas, mosaico o cuadrícula.
+    let modoDistribucion = "niveles";
     // tarjetasContraidas son las tarjetas que solo muestran su cabecera; contraerlas las hace mucho más pequeñas.
     const tarjetasContraidas = new Set();
     // gruposColapsados guarda, por capa, las tarjetas cuyos equipos dependientes están ocultos.
@@ -324,7 +324,9 @@
      * @returns {boolean} Verdadero para todas las relaciones físicas o para la capa seleccionada.
      */
     const perteneceALaCapaActual = enlace =>
-        modoCapaActual === "fisica" || enlace.dataset.capaRelacional === modoCapaActual;
+        modoCapaActual === "fisica" || enlace.dataset.capaRelacional === modoCapaActual
+        // En «Switch y sus equipos» también se dibujan las conexiones con los switches relacionados.
+        || (modoCapaActual === "acceso" && enlace.dataset.capaRelacional === "switching");
 
     /**
      * Omite una relación parcial cuando ya existe un enlace completo con el mismo puerto local y equipos.
@@ -689,6 +691,21 @@
         // resultado acumula la posición propuesta por tarjeta; raizPrincipal es la tarjeta central del componente más grande.
         const resultado = new Map();
         resultado.raizPrincipal = null;
+
+        if (modo === "niveles" && window.DistribucionRed) {
+            // La distribución por niveles es un cálculo común con el editor: central arriba, switches por filas y equipos finales debajo de su switch.
+            const entrada = nodosParaDisponer.map(nodo => {
+                const tamanoNodo = obtenerTamano(nodo);
+                return {
+                    id: nodo.dataset.identificadorDispositivo, ancho: tamanoNodo.ancho, alto: tamanoNodo.alto,
+                    esSwitch: normalizarTexto(nodo.dataset.dispositivoTipo || "").includes("switch"),
+                    nombre: nodo.dataset.dispositivoNombre || ""
+                };
+            });
+            const conexiones = enlacesParaDisponer.map(registro => ({ a: registro.idOrigen, b: registro.idDestino }));
+            return window.DistribucionRed.distribuirPorNiveles(entrada, conexiones,
+                { separacionX: 56, separacionNiveles: 150, separacionHoja: 22, maxColumnasHojas: 4 });
+        }
 
         if (modo === "cuadricula") {
             // ordenadas agrupa por área y deja primero los switches de cada área.
@@ -1438,7 +1455,7 @@
         // casillaSoloConectados queda apagada para incluir también fichas documentadas sin enlace dibujable.
         if (casillaSoloConectados) casillaSoloConectados.checked = false;
         // selectorDistribucion coincide con el orden jerárquico genérico de primera carga.
-        modoDistribucion = "filas";
+        modoDistribucion = "niveles";
         if (selectorDistribucion) selectorDistribucion.value = modoDistribucion;
         // capa recorre cada vista para borrar sus coordenadas guardadas y permitir recomputar el origen.
         Object.keys(posicionesPorCapa).forEach(capa => {
@@ -1463,13 +1480,13 @@
         } catch {
             // Si el navegador bloquea localStorage, el mapa igual vuelve a su distribución inicial.
         }
-        seleccionarCapa("fisica");
+        seleccionarCapa("switching");
         if (estadoMapa) estadoMapa.textContent = "Mapa restablecido a su distribución jerárquica inicial.";
     };
     botonesRestablecerMapa.forEach(botonRestablecer =>
         botonRestablecer.addEventListener("click", restablecerMapa));
     selectorDistribucion?.addEventListener("change", () => {
-        modoDistribucion = ["mosaico", "filas", "cuadricula"].includes(selectorDistribucion.value) ? selectorDistribucion.value : "mosaico";
+        modoDistribucion = ["niveles", "mosaico", "filas", "cuadricula"].includes(selectorDistribucion.value) ? selectorDistribucion.value : "niveles";
         distribuir();
     });
 
@@ -1673,20 +1690,42 @@
      * Filtra equipos y enlaces por capa, texto, área y conexión; ubica las tarjetas y redibuja las líneas.
      * No infiere relaciones: solo decide qué parte de lo documentado se muestra.
      */
+    // selectorFoco elige el switch cuyo entorno se muestra en la vista «Switch y sus equipos».
+    const selectorFoco = document.querySelector("[data-filtro-switch]");
+    const etiquetaFoco = document.querySelector("[data-etiqueta-filtro-switch]");
+
+    /**
+     * Devuelve el switch en foco: el elegido o, en modo automático, el que tiene más conexiones documentadas.
+     * @returns {string|null} ID del switch, o nulo si el inventario no tiene switches.
+     */
+    const elegirSwitchEnFoco = () => {
+        if (!selectorFoco) return null;
+        if (selectorFoco.value && nodosPorId.has(selectorFoco.value)) return selectorFoco.value;
+        // conteo suma las conexiones de cada equipo en cualquier capa.
+        const conteo = new Map();
+        datosEnlaces.forEach(enlace => [enlace.dataset.equipoOrigen, enlace.dataset.equipoDestino]
+            .forEach(identificador => { if (identificador) conteo.set(identificador, (conteo.get(identificador) || 0) + 1); }));
+        // La opción vacía («Automático») no se elige: se devuelve el switch con más conexiones sin cambiar el selector.
+        return [...selectorFoco.options].map(opcion => opcion.value).filter(Boolean)
+            .sort((a, b) => (conteo.get(b) || 0) - (conteo.get(a) || 0))[0] ?? null;
+    };
+
     const actualizarFiltros = () => {
         // textoBuscado se compara sin distinguir mayúsculas ni tildes.
         const textoBuscado = normalizarTexto(buscarTopologia?.value || "");
         const areaElegida = filtrarArea?.value || "";
-        // identificadoresAcceso contiene puestos y los equipos finales enlazados a un puerto de switch.
-        const identificadoresAcceso = new Set(nodosTopologia
-            .filter(nodo => normalizarTexto(nodo.dataset.dispositivoTipo || "").includes("puesto"))
-            .map(nodo => nodo.dataset.identificadorDispositivo));
+        // identificadoresAcceso es el switch en foco, los equipos conectados a él y los switches relacionados;
+        // el resto del inventario no se muestra a menos que se elija «Inventario completo».
+        const identificadoresAcceso = new Set();
         if (modoCapaActual === "acceso") {
-            datosEnlaces.filter(enlace => enlace.dataset.capaRelacional === "acceso")
-                .forEach(enlace => {
-                    identificadoresAcceso.add(enlace.dataset.equipoOrigen);
-                    identificadoresAcceso.add(enlace.dataset.equipoDestino);
+            const identificadorFoco = elegirSwitchEnFoco();
+            if (identificadorFoco) {
+                identificadoresAcceso.add(identificadorFoco);
+                datosEnlaces.forEach(enlace => {
+                    if (enlace.dataset.equipoOrigen === identificadorFoco) identificadoresAcceso.add(enlace.dataset.equipoDestino);
+                    if (enlace.dataset.equipoDestino === identificadorFoco) identificadoresAcceso.add(enlace.dataset.equipoOrigen);
                 });
+            }
         }
 
         nodosTopologia.forEach(nodo => {
@@ -1767,9 +1806,11 @@
      */
     const seleccionarCapa = modoSolicitado => {
         // modoValido evita activar una vista desconocida si el HTML recibe un valor inesperado.
-        const modoValido = ["fisica", "switching", "acceso"].includes(modoSolicitado) ? modoSolicitado : "fisica";
+        const modoValido = ["fisica", "switching", "acceso"].includes(modoSolicitado) ? modoSolicitado : "switching";
         modoCapaActual = modoValido;
         mapaTopologia.dataset.capaActual = modoValido;
+        // El selector de switch en foco solo tiene sentido en la vista «Switch y sus equipos».
+        if (etiquetaFoco) etiquetaFoco.hidden = modoValido !== "acceso";
         botonesCapa.forEach(boton => {
             // estaActiva evita marcar simultáneamente dos perspectivas.
             const estaActiva = boton.dataset.seleccionarCapa === modoCapaActual;
@@ -1786,10 +1827,18 @@
 
     botonesCapa.forEach(boton => {
         // cada boton cambia solo la perspectiva visual y conserva los filtros de búsqueda y área.
-        boton.addEventListener("click", () => seleccionarCapa(boton.dataset.seleccionarCapa || "fisica"));
+        boton.addEventListener("click", () => seleccionarCapa(boton.dataset.seleccionarCapa || "switching"));
     });
     buscarTopologia?.addEventListener("input", actualizarFiltros);
     filtrarArea?.addEventListener("change", actualizarFiltros);
+    selectorFoco?.addEventListener("change", () => {
+        // Al cambiar de switch las posiciones de esta vista ya no corresponden: se vuelve a distribuir el entorno elegido.
+        movidasPorCapa.acceso.clear();
+        posicionesPorCapa.acceso.clear();
+        capaDispuesta.acceso = false;
+        actualizarFiltros();
+        vistaInicial();
+    });
     casillaSoloConectados?.addEventListener("change", () => {
         actualizarFiltros();
         vistaInicial();
@@ -1839,6 +1888,6 @@
     leerPosicionesGuardadas();
     actualizarControlMaximizar();
     // Primera disposición: se calcula con las tarjetas ya medidas y luego se encaja la vista completa.
-    seleccionarCapa("fisica");
+    seleccionarCapa("switching");
     window.requestAnimationFrame(() => vistaInicial());
 })();
