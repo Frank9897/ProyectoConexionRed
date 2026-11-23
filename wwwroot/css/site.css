@@ -1695,3 +1695,29 @@ body.mapa-ampliado-en-pagina::before {
 .aviso-campo-error { border-color: #f1c3bd; background: #fff4f2; color: #913f34; }
 .aviso-campo-aviso { border-color: #e7d3a0; background: var(--ambar-fondo); color: var(--ambar-texto); }
 .aviso-campo button { margin-left: 8px; }
+
+/* estado-red agrupa los indicadores de IP, administración, STP y conexiones bajo el mapa de Topología. */
+.estado-red .rejilla-estado-red { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 14px; margin-top: 12px; }
+.tarjeta-estado { border: 1px solid var(--borde); border-radius: 12px; padding: 14px 16px; background: #fff; }
+.tarjeta-estado h3 { margin: 0 0 10px; font-size: 1rem; }
+.tarjeta-estado p { margin: 8px 0 0; font-size: .9rem; }
+.tarjeta-estado-ancha { grid-column: 1 / -1; }
+.cifras-estado { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
+.cifras-estado li { display: flex; flex-direction: column; }
+.cifras-estado strong { font-size: 1.5rem; line-height: 1.1; color: var(--tinta); font-variant-numeric: tabular-nums; }
+.cifras-estado span { color: var(--secundario); font-size: .8rem; }
+/* barra-uso dibuja el reparto de direcciones o puertos; cada segmento tiene el color de su estado. */
+.barra-uso { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: #dcebe3; }
+.barra-uso-asignada { background: var(--azul); }
+.barra-uso-reservada { background: #d9a42b; }
+.barra-uso-conflicto { background: #b4533c; }
+.lista-estado { margin: 6px 0 0; padding-left: 18px; font-size: .88rem; }
+.estado-ok { color: var(--verde-texto); }
+.nota-estado { color: var(--secundario); font-size: .82rem; }
+
+/* tarjetas-categoria es el primer paso del alta de equipos: una tarjeta con ícono por categoría; la elegida queda resaltada. */
+.tarjetas-categoria { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; margin: 10px 0 18px; }
+.tarjeta-categoria { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px; border: 1px solid var(--borde); border-radius: 12px; background: #fff; cursor: pointer; font: inherit; color: var(--tinta); }
+.tarjeta-categoria img { width: 44px; height: 44px; }
+.tarjeta-categoria:hover { border-color: var(--azul); }
+.tarjeta-categoria[aria-pressed="true"] { border-color: var(--azul); box-shadow: 0 0 0 2px var(--azul) inset; background: #f1f7fa; }

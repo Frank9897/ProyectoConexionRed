@@ -323,8 +323,12 @@
      * @param {HTMLElement} enlace Relación documental; su capa asignada decide si se dibuja.
      * @returns {boolean} Verdadero para todas las relaciones físicas o para la capa seleccionada.
      */
+    // hayBusquedaActiva indica que el técnico pidió algo concreto (texto o área): en ese caso se muestra lo encontrado
+    // aunque no pertenezca a la vista elegida, para que ninguna búsqueda deje el mapa vacío.
+    const hayBusquedaActiva = () => (filtrarArea?.value || "") !== "" || normalizarTexto(buscarTopologia?.value || "") !== "";
+
     const perteneceALaCapaActual = enlace =>
-        modoCapaActual === "fisica" || enlace.dataset.capaRelacional === modoCapaActual
+        modoCapaActual === "fisica" || hayBusquedaActiva() || enlace.dataset.capaRelacional === modoCapaActual
         // En «Switch y sus equipos» también se dibujan las conexiones con los switches relacionados.
         || (modoCapaActual === "acceso" && enlace.dataset.capaRelacional === "switching");
 
@@ -1728,6 +1732,28 @@
             }
         }
 
+        // pasaFiltros aplica el área y el texto buscados a un equipo; coincidentes reúne lo que el técnico pidió.
+        const pasaFiltros = nodo => {
+            const textoDelNodo = normalizarTexto([
+                nodo.dataset.dispositivoNombre, nodo.dataset.dispositivoTipo, nodo.dataset.dispositivoArea,
+                nodo.dataset.dispositivoModelo, nodo.dataset.dispositivoIp
+            ].join(" "));
+            return (areaElegida === "" || nodo.dataset.dispositivoArea === areaElegida)
+                && (textoBuscado === "" || textoDelNodo.includes(textoBuscado));
+        };
+        const buscando = areaElegida !== "" || textoBuscado !== "";
+        // identificadoresContexto son los switches conectados a lo encontrado, para que sus líneas tengan dónde terminar.
+        const identificadoresContexto = new Set();
+        if (buscando) {
+            const coincidentes = new Set(nodosTopologia.filter(pasaFiltros).map(nodo => nodo.dataset.identificadorDispositivo));
+            datosEnlaces.forEach(enlace => {
+                const origen = enlace.dataset.equipoOrigen;
+                const destino = enlace.dataset.equipoDestino;
+                if (coincidentes.has(origen) && destino) identificadoresContexto.add(destino);
+                if (coincidentes.has(destino) && origen) identificadoresContexto.add(origen);
+            });
+        }
+
         nodosTopologia.forEach(nodo => {
             // tipoNormalizado permite aplicar los filtros por familia sin depender de mayúsculas ni tildes.
             const tipoNormalizado = normalizarTexto(nodo.dataset.dispositivoTipo || "");
@@ -1743,9 +1769,10 @@
                 nodo.dataset.dispositivoModelo,
                 nodo.dataset.dispositivoIp
             ].join(" "));
-            nodo.hidden = !coincideCapa
-                || (areaElegida !== "" && nodo.dataset.dispositivoArea !== areaElegida)
-                || (textoBuscado !== "" && !textoNormalizado.includes(textoBuscado));
+            // Con una búsqueda activa se ignora la vista: se ve lo encontrado y los switches conectados a ello.
+            nodo.hidden = buscando
+                ? !(pasaFiltros(nodo) || (identificadoresContexto.has(nodo.dataset.identificadorDispositivo) && tipoNormalizado.includes("switch")))
+                : !coincideCapa;
         });
 
         // enlacesVisibles son las conexiones cuyos dos extremos pasaron los filtros anteriores.

@@ -31,3 +31,12 @@
 .editor-camino { margin: 8px 0 0; padding: 6px 8px; border: 1px solid #d8c8ec; border-radius: 8px; background: #f7f1fd; font-size: .85rem; color: #3f2a5c; }
 .editor-campos-inline { display: grid; gap: 6px; margin-top: 8px; }
 .editor-campos-inline label { font-weight: 600; font-size: .85rem; }
+.editor-tipos { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; }
+.editor-tipo { display: flex; align-items: center; gap: 8px; padding: 4px 8px; border: 1px solid #d8dee8; border-radius: 8px; background: #fff; font-size: .85rem; cursor: pointer; text-align: left; }
+.editor-tipo img { width: 26px; height: 26px; }
+.editor-sin-conexion { display: flex; align-items: center; gap: 8px; width: 100%; margin: 0 0 4px; padding: 4px 8px; border: 1px solid #d8dee8; border-radius: 8px; background: #fff; font-size: .85rem; cursor: pointer; text-align: left; }
+.editor-sin-conexion img { width: 24px; height: 24px; }
+.editor-sin-conexion small { color: #5a6677; margin-left: auto; }
+#mapa-sin-conexion { max-height: 220px; overflow-y: auto; margin-top: 8px; }
+.editor-casillas-tipo { display: flex; flex-wrap: wrap; gap: 6px; }
+.editor-tarjetas-categoria { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }

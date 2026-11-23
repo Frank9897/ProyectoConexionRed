@@ -18,6 +18,8 @@
          data-url-actualizar="@Url.Action("ActualizarEnlace", "EditorTopologia")"
          data-url-posiciones="@Url.Action("GuardarPosiciones", "EditorTopologia")"
          data-url-leer-posiciones="@Url.Action("Posiciones", "EditorTopologia")"
+         data-url-cambiar-puertos="@Url.Action("CambiarPuertos", "EditorTopologia")"
+         data-base-iconos="@Url.Content("~/images/iconos/")"
          data-url-editar="@Url.Action("Editar", "Inventario", new { id = "__ID__" })">
     <div class="editor-barra" role="toolbar" aria-label="Herramientas del mapa">
         <input type="search" id="mapa-buscar" placeholder="Buscar por nombre o IP" aria-label="Buscar equipo" />
@@ -44,6 +46,8 @@
         </select>
         <button type="button" id="mapa-redistribuir" class="boton boton-secundario">Redistribuir</button>
         <button type="button" id="mapa-ajustar" class="boton boton-secundario">Ajustar a pantalla</button>
+        <button type="button" id="mapa-deshacer" class="boton boton-secundario" disabled>Deshacer</button>
+        <button type="button" id="mapa-rehacer" class="boton boton-secundario" disabled>Rehacer</button>
         <button type="button" id="mapa-recargar" class="boton boton-secundario">Recargar datos</button>
         <button type="button" id="mapa-exportar" class="boton boton-secundario">Exportar imagen</button>
     </div>
@@ -58,6 +62,15 @@
         <section class="editor-panel">
             <h2>Alertas</h2>
             <div id="mapa-alertas"><p class="editor-vacio">Cargando.</p></div>
+        </section>
+        <section class="editor-panel">
+            <h2>Equipos sin conexiones</h2>
+            <input type="search" id="mapa-sin-conexion-filtro" placeholder="Filtrar la lista" aria-label="Filtrar equipos sin conexiones" />
+            <div id="mapa-sin-conexion"><p class="editor-vacio">Cargando.</p></div>
+        </section>
+        <section class="editor-panel">
+            <h2>Tipos de equipo</h2>
+            <div id="mapa-tipos" class="editor-tipos"></div>
         </section>
         <section class="editor-panel">
             <h2>Leyenda</h2>
@@ -78,11 +91,12 @@
 
 <dialog id="dialogo-enlace" class="editor-dialogo">
     <form method="dialog" id="formulario-enlace">
-        <h2>Nuevo enlace</h2>
+        <h2 id="enlace-titulo">Nuevo enlace</h2>
         <p id="enlace-resumen"></p>
         <div class="editor-campos">
             <div id="enlace-bloque-a"></div>
             <div id="enlace-bloque-b"></div>
+            <div id="enlace-campos-extra" class="editor-campos">
             <div>
                 <label for="enlace-medio">Medio</label>
                 <select id="enlace-medio">
@@ -101,6 +115,7 @@
                     <option>No documentado</option><option>Reenvío</option><option>Bloqueado</option><option>Redundante</option>
                 </select>
             </div>
+            </div>
         </div>
         <div id="enlace-avisos"></div>
         <div class="editor-acciones">
@@ -113,5 +128,6 @@
 <script src="~/lib/cytoscape/cytoscape.min.js"></script>
 <script src="~/js/lodash-minimo.js" asp-append-version="true"></script>
 <script src="~/lib/cytoscape/cytoscape-edgehandles.js"></script>
+<script src="~/js/iconos-equipo.js" asp-append-version="true"></script>
 <script src="~/js/distribucion-red.js" asp-append-version="true"></script>
 <script src="~/js/editor-topologia.js" asp-append-version="true"></script>

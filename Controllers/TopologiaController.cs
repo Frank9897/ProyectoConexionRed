@@ -269,6 +269,7 @@ public class TopologiaController : Controller
             RelacionesParciales = relacionesParciales
         };
 
+        resumenTopologia.Resumen = await ResumenRedService.CalcularAsync(contextoInventario, cancelacion);
         return View(resumenTopologia);
     }
 

@@ -22,7 +22,10 @@ public static class SugeridorTipoDispositivo
         (new Regex(@"\bups\b", Opciones), "UPS", "el nombre o el modelo menciona una UPS"),
         (new Regex(@"impresora|printer|plotter|laserjet|multifunci", Opciones), "Impresora", "el nombre o el modelo menciona una impresora"),
         (new Regex(@"idrac|poweredge|servidor|server|storage|backup", Opciones), "Servidor", "el nombre o el modelo menciona un servidor"),
-        (new Regex(@"reloj|biom[eé]tric", Opciones), "Reloj", "el nombre o el modelo menciona un reloj o lector biométrico")
+        (new Regex(@"reloj|biom[eé]tric", Opciones), "Reloj", "el nombre o el modelo menciona un reloj o lector biométrico"),
+        (new Regex(@"c[aá]mara|camera|\bcctv\b|\bnvr\b|\bdvr\b", Opciones), "Cámara IP", "el nombre o el modelo menciona una cámara"),
+        (new Regex(@"access ?point|punto de acceso|\bap[-_ ]?\d|wifi|wi-fi", Opciones), "Punto de acceso", "el nombre o el modelo menciona un punto de acceso Wi-Fi"),
+        (new Regex(@"\bnas\b|almacenamiento|\bsan\b", Opciones), "Almacenamiento", "el nombre o el modelo menciona almacenamiento")
     ];
 
     // reglasFabricante se evalúan sobre el fabricante informado por el escaneo o escrito en la ficha.
@@ -30,6 +33,9 @@ public static class SugeridorTipoDispositivo
     [
         (new Regex(@"american power|\bapc\b|eaton", Opciones), "UPS", "el fabricante fabrica UPS"),
         (new Regex(@"epson|brother|kyocera|lexmark|ricoh|xerox|canon|konica", Opciones), "Impresora", "el fabricante fabrica impresoras"),
+        (new Regex(@"hikvision|dahua|axis comm|hanwha|vivotek", Opciones), "Cámara IP", "el fabricante fabrica cámaras IP"),
+        (new Regex(@"ubiquiti|aruba instant|ruckus|cambium", Opciones), "Punto de acceso", "el fabricante fabrica puntos de acceso"),
+        (new Regex(@"synology|qnap|netapp|western digital", Opciones), "Almacenamiento", "el fabricante fabrica equipos de almacenamiento"),
         (new Regex(@"vmware", Opciones), "Servidor", "el fabricante es VMware, es decir una máquina virtual")
     ];
 

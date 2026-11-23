@@ -15,7 +15,7 @@
     const urls = {
         datos: raiz.dataset.urlDatos, validar: raiz.dataset.urlValidar, crear: raiz.dataset.urlCrear,
         eliminar: raiz.dataset.urlEliminar, actualizar: raiz.dataset.urlActualizar, posiciones: raiz.dataset.urlPosiciones,
-        leerPosiciones: raiz.dataset.urlLeerPosiciones,
+        leerPosiciones: raiz.dataset.urlLeerPosiciones, cambiarPuertos: raiz.dataset.urlCambiarPuertos,
         editar: raiz.dataset.urlEditar
     };
     const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? "";
@@ -23,12 +23,10 @@
     const porId = (id) => document.getElementById(id);
     const estadoPagina = porId("mapa-estado");
 
-    // colores por tipo de dispositivo; un tipo desconocido usa el gris neutro.
-    const coloresTipo = {
-        "Switch": "#2f6f9f", "Router": "#7a5ea8", "Firewall": "#b4533c", "Servidor": "#3f7f5f",
-        "Puesto de usuario": "#6b7685", "Impresora": "#8a7a3c", "UPS": "#a0662a"
-    };
-    const colorTipo = (tipo) => coloresTipo[tipo] ?? "#8591a3";
+    // Los íconos y colores por tipo vienen de iconos-equipo.js; un tipo desconocido usa el ícono y el gris genéricos.
+    const baseIconos = raiz.dataset.baseIconos ?? "/images/iconos/";
+    const colorTipo = (tipo) => window.IconosEquipo?.color(tipo) ?? "#8591a3";
+    const iconoTipo = (tipo) => window.IconosEquipo?.ruta(baseIconos, tipo) ?? `${baseIconos}otro.svg`;
     const velocidadTexto = (mbps) => mbps >= 1000 ? `${Number((mbps / 1000).toFixed(1))} Gbps` : `${mbps} Mbps`;
 
     const crear = (etiqueta, clase, texto) => {
@@ -71,14 +69,14 @@
         {
             selector: "node",
             style: {
-                width: 44, height: 44, shape: "round-rectangle", "background-color": "#ffffff",
-                "background-image": "data(icono)", "background-fit": "contain", "background-clip": "none",
+                width: 46, height: 46, shape: "round-rectangle", "background-color": "#ffffff",
+                "background-image": "data(iconoMapa)", "background-fit": "contain", "background-clip": "none", "background-width-relative-to": "inner",
                 "border-width": 3, "border-color": "data(color)", label: "data(nombre)", "font-size": 10,
                 "text-valign": "bottom", "text-margin-y": 4, "text-wrap": "ellipsis", "text-max-width": 96,
                 color: "#26303f", "min-zoomed-font-size": 6
             }
         },
-        { selector: "node[tipo = 'Switch']", style: { width: 56, height: 40 } },
+        { selector: "node[tipo = 'Switch']", style: { width: 60, height: 46 } },
         { selector: "node[?noAdministrable]", style: { "border-style": "dashed" } },
         { selector: "node:selected", style: { "border-color": "#d9822b", "border-width": 5 } },
         { selector: "node.coincidencia", style: { "border-color": "#d9822b", "border-width": 5 } },
@@ -142,6 +140,8 @@
     const etiquetaFoco = porId("mapa-etiqueta-foco");
     // conPosicion marca los equipos que ya tienen una posición válida en la disposición de la vista actual.
     const conPosicion = new Set();
+    // forzados son equipos que el técnico eligió mostrar desde la lista «Equipos sin conexiones», aunque no correspondan a la vista.
+    const forzados = new Set();
     let primeraCarga = true;
 
     const esSwitch = (nodo) => nodo.data("tipo") === "Switch";
@@ -193,7 +193,7 @@
                 const datosNodo = {
                     id, nombre: nodo.nombre, tipo: nodo.tipo, ip: nodo.ip, area: nodo.area, administrable: nodo.administrable,
                     noAdministrable: nodo.administrable === false,
-                    icono: nodo.icono, color: colorTipo(nodo.tipo), puertos: nodo.puertos, notasSinEquipo: nodo.notasSinEquipo
+                    icono: nodo.icono, iconoMapa: iconoTipo(nodo.tipo), color: colorTipo(nodo.tipo), puertos: nodo.puertos, notasSinEquipo: nodo.notasSinEquipo
                 };
                 const existente = cy.getElementById(id);
                 if (existente.nonempty()) existente.data(datosNodo);
@@ -211,6 +211,7 @@
 
         llenarFiltros(nodos);
         pintarAlertas(datosActuales.alertas);
+        pintarTipos(nodos);
         if (primeraCarga) {
             primeraCarga = false;
             await cambiarVista();
@@ -226,6 +227,7 @@
         vistaActual = selectorVista.value;
         etiquetaFoco.hidden = vistaActual !== "foco";
         if (vistaActual === "foco") elegirFoco();
+        forzados.clear();
         conPosicion.clear();
         try {
             const guardadas = await pedirJson(urls.leerPosiciones, { vista: claveVista() });
@@ -280,14 +282,26 @@
         const tipo = porId("mapa-tipo").value;
         const texto = porId("mapa-buscar").value.trim().toLowerCase();
         const permitidos = equiposDeLaVista();
+        const hayFiltro = Boolean(area || tipo);
+        const textoCoincide = (nodo) => texto.length > 0
+            && `${nodo.data("nombre")} ${nodo.data("ip") ?? ""}`.toLowerCase().includes(texto);
+        const coincideFiltro = (nodo) => (!area || nodo.data("area") === area) && (!tipo || nodo.data("tipo") === tipo);
+        // contexto reúne los switches conectados a lo filtrado, para que sus líneas tengan dónde terminar.
+        const contexto = new Set();
+        if (hayFiltro) {
+            nodosReales().forEach((nodo) => {
+                if (coincideFiltro(nodo) && (texto.length === 0 || textoCoincide(nodo))) {
+                    vecinosReales(nodo).filter(esSwitch).forEach((vecino) => contexto.add(vecino.id()));
+                }
+            });
+        }
         cy.batch(() => {
             nodosReales().forEach((nodo) => {
-                // Una búsqueda por texto muestra el equipo aunque no corresponda a la vista, para poder encontrarlo y conectarlo.
-                const coincideTexto = texto.length > 0
-                    && `${nodo.data("nombre")} ${nodo.data("ip") ?? ""}`.toLowerCase().includes(texto);
-                const visible = (permitidos === null || permitidos.has(nodo.id()) || coincideTexto)
-                    && (!area || nodo.data("area") === area)
-                    && (!tipo || nodo.data("tipo") === tipo);
+                const coincideTexto = textoCoincide(nodo);
+                // Pedir un área o un tipo es una petición explícita: se ve aunque no sea parte de la vista, para que no quede el mapa vacío.
+                const visible = hayFiltro
+                    ? (coincideFiltro(nodo) && (texto.length === 0 || coincideTexto)) || contexto.has(nodo.id()) || forzados.has(nodo.id())
+                    : permitidos === null || permitidos.has(nodo.id()) || forzados.has(nodo.id()) || coincideTexto;
                 nodo.toggleClass("oculto", !visible);
                 nodo.toggleClass("coincidencia", coincideTexto && visible);
             });
@@ -296,6 +310,7 @@
         });
 
         ubicarFaltantes();
+        pintarSinConexion();
         const coincidencias = cy.nodes(".coincidencia");
         if (texto.length > 0 && coincidencias.nonempty()) {
             cy.animate({ fit: { eles: coincidencias, padding: 120 }, duration: 250 });
@@ -426,6 +441,148 @@
             pendientes.clear();
             try { await guardarPosiciones(nodos); } catch (error) { avisar(error.message); }
         }, 900);
+    });
+
+    // ---------- Equipos sin conexiones y tipos ----------
+    /** Lista los equipos sin conexiones documentadas; al elegir uno se muestra en el mapa para poder dibujar su conexión. */
+    const pintarSinConexion = () => {
+        const contenedor = porId("mapa-sin-conexion");
+        const filtro = porId("mapa-sin-conexion-filtro").value.trim().toLowerCase();
+        const aislados = nodosReales().filter((nodo) => vecinosReales(nodo).empty()).toArray()
+            .sort((p, q) => colador.compare(p.data("nombre"), q.data("nombre")));
+        const coincidentes = aislados.filter((nodo) => !filtro || `${nodo.data("nombre")} ${nodo.data("ip") ?? ""}`.toLowerCase().includes(filtro));
+        const elementos = [crear("p", "editor-vacio", `${aislados.length} equipos sin conexiones documentadas${filtro ? `, ${coincidentes.length} coinciden` : ""}.`)];
+        coincidentes.slice(0, 40).forEach((nodo) => {
+            const boton = crear("button", "editor-sin-conexion");
+            boton.type = "button";
+            const imagen = crear("img");
+            imagen.src = iconoTipo(nodo.data("tipo"));
+            imagen.alt = "";
+            boton.append(imagen, crear("span", "", nodo.data("nombre")), crear("small", "", nodo.data("ip") ?? ""));
+            boton.addEventListener("click", () => {
+                forzados.add(nodo.id());
+                aplicarFiltros();
+                cy.elements().unselect();
+                nodo.select();
+                mostrarNodo(nodo);
+                cy.animate({ center: { eles: nodo }, zoom: Math.max(cy.zoom(), 1), duration: 250 });
+                avisar(`${nodo.data("nombre")} está visible: arrastra desde el punto naranja hasta otro equipo para conectarlo.`);
+            });
+            elementos.push(boton);
+        });
+        if (coincidentes.length > 40) elementos.push(crear("p", "editor-vacio", "Se muestran los primeros 40; usa el filtro para acotar."));
+        if (forzados.size > 0) {
+            const limpiar = crear("button", "boton boton-secundario", "Ocultar los equipos agregados");
+            limpiar.type = "button";
+            limpiar.addEventListener("click", () => { forzados.clear(); aplicarFiltros(); });
+            elementos.push(limpiar);
+        }
+        contenedor.replaceChildren(...elementos);
+    };
+    porId("mapa-sin-conexion-filtro").addEventListener("input", () => pintarSinConexion());
+
+    /** Muestra los tipos de equipo del inventario con su ícono; elegir uno filtra el mapa por ese tipo. */
+    const pintarTipos = (nodos) => {
+        const cuenta = new Map();
+        nodos.forEach((nodo) => cuenta.set(nodo.tipo, (cuenta.get(nodo.tipo) ?? 0) + 1));
+        porId("mapa-tipos").replaceChildren(...[...cuenta.entries()].sort((p, q) => q[1] - p[1]).map(([tipo, cantidad]) => {
+            const boton = crear("button", "editor-tipo");
+            boton.type = "button";
+            boton.title = `Mostrar solo ${tipo}`;
+            const imagen = crear("img");
+            imagen.src = iconoTipo(tipo);
+            imagen.alt = "";
+            boton.append(imagen, crear("span", "", `${tipo} (${cantidad})`));
+            boton.addEventListener("click", () => {
+                porId("mapa-tipo").value = [...porId("mapa-tipo").options].some((opcion) => opcion.value === tipo) ? tipo : "";
+                aplicarFiltros({ encajar: true });
+            });
+            return boton;
+        }));
+    };
+
+    // ---------- Historial: deshacer y rehacer ----------
+    const historial = [];
+    let indiceHistorial = 0;
+    let historialOcupado = false;
+    const botonDeshacer = porId("mapa-deshacer");
+    const botonRehacer = porId("mapa-rehacer");
+    const actualizarBotonesHistorial = () => {
+        botonDeshacer.disabled = historialOcupado || indiceHistorial === 0;
+        botonRehacer.disabled = historialOcupado || indiceHistorial >= historial.length;
+        botonDeshacer.title = indiceHistorial > 0 ? `Deshacer: ${historial[indiceHistorial - 1].texto}` : "No hay nada que deshacer";
+        botonRehacer.title = indiceHistorial < historial.length ? `Rehacer: ${historial[indiceHistorial].texto}` : "No hay nada que rehacer";
+    };
+
+    /** Guarda una acción con las funciones para revertirla y repetirla; descarta lo que se había deshecho. */
+    const registrarAccion = (accion) => {
+        historial.splice(indiceHistorial);
+        historial.push(accion);
+        if (historial.length > 50) historial.shift();
+        indiceHistorial = historial.length;
+        actualizarBotonesHistorial();
+    };
+
+    const ejecutarHistorial = async (direccion) => {
+        if (historialOcupado) return;
+        const accion = direccion < 0 ? historial[indiceHistorial - 1] : historial[indiceHistorial];
+        if (!accion) return;
+        historialOcupado = true;
+        actualizarBotonesHistorial();
+        try {
+            await (direccion < 0 ? accion.deshacer() : accion.rehacer());
+            indiceHistorial += direccion;
+            await cargar();
+            avisar(`${direccion < 0 ? "Deshecho" : "Rehecho"}: ${accion.texto}.${accion.nota ? ` ${accion.nota}` : ""}`);
+        } catch (error) {
+            avisar(`No se pudo ${direccion < 0 ? "deshacer" : "rehacer"}: ${error.message}`);
+        } finally {
+            historialOcupado = false;
+            actualizarBotonesHistorial();
+        }
+    };
+    botonDeshacer.addEventListener("click", () => ejecutarHistorial(-1));
+    botonRehacer.addEventListener("click", () => ejecutarHistorial(1));
+    document.addEventListener("keydown", (evento) => {
+        if (!(evento.ctrlKey || evento.metaKey) || ["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
+        const tecla = evento.key.toLowerCase();
+        if (tecla === "z" && !evento.shiftKey) { evento.preventDefault(); ejecutarHistorial(-1); }
+        else if (tecla === "y" || (tecla === "z" && evento.shiftKey)) { evento.preventDefault(); ejecutarHistorial(1); }
+    });
+    actualizarBotonesHistorial();
+
+    // Operaciones sobre enlaces que comparten la acción original y su reversa.
+    const crearEnlaceServidor = (datos) => enviar(urls.crear, {
+        equipoA: datos.equipoA, puertoA: datos.puertoA, equipoB: datos.equipoB, puertoB: datos.puertoB,
+        medio: datos.medio, estadoDatos: datos.estadoDatos, estadoStp: datos.estadoStp
+    });
+    const actualizarEnlaceServidor = (id, valores) => enviar(urls.actualizar, { id, ...valores });
+
+    // Los movimientos se recuerdan por posición: al agarrar un equipo se guardan las posiciones previas de lo que se arrastra.
+    const posicionesPrevias = new Map();
+    const aplicarPosiciones = async (posiciones) => {
+        const nodos = [];
+        posiciones.forEach((posicion, id) => {
+            const nodo = cy.getElementById(id);
+            if (nodo.nonempty()) { nodo.position(posicion); nodos.push(nodo); }
+        });
+        await guardarPosiciones(nodos);
+    };
+    cy.on("grab", "node", (evento) => {
+        if (!esNodoReal(evento.target)) return;
+        posicionesPrevias.clear();
+        cy.nodes(":selected").union(evento.target).filter(esNodoReal)
+            .forEach((nodo) => posicionesPrevias.set(nodo.id(), { ...nodo.position() }));
+    });
+    cy.on("dragfree", "node", (evento) => {
+        if (!esNodoReal(evento.target) || posicionesPrevias.size === 0) return;
+        const antes = new Map(posicionesPrevias);
+        posicionesPrevias.clear();
+        const despues = new Map([...antes.keys()].map((id) => [id, { ...cy.getElementById(id).position() }]));
+        registrarAccion({
+            texto: antes.size === 1 ? `mover ${evento.target.data("nombre")}` : `mover ${antes.size} equipos`,
+            deshacer: () => aplicarPosiciones(antes), rehacer: () => aplicarPosiciones(despues)
+        });
     });
 
     /** Muestra un switch con sus equipos y los switches relacionados (vista «foco»). */
@@ -570,26 +727,49 @@
             guardar.type = "button";
             guardar.addEventListener("click", async () => {
                 try {
-                    const respuesta = await enviar(urls.actualizar, {
-                        id: arista.data("enlaceId"), medio: medio.selector.value, estadoDatos: datos.selector.value, estadoStp: stp.selector.value
-                    });
+                    const anteriores = { medio: arista.data("medio"), estadoDatos: arista.data("estadoDatos"), estadoStp: arista.data("estadoStp") };
+                    const nuevos = { medio: medio.selector.value, estadoDatos: datos.selector.value, estadoStp: stp.selector.value };
+                    const idEnlace = arista.data("enlaceId");
+                    const respuesta = await actualizarEnlaceServidor(idEnlace, nuevos);
+                    if (respuesta.cambios > 0) {
+                        registrarAccion({
+                            texto: `editar el enlace ${origen} ↔ ${destino}`,
+                            deshacer: () => actualizarEnlaceServidor(idEnlace, anteriores), rehacer: () => actualizarEnlaceServidor(idEnlace, nuevos)
+                        });
+                    }
                     await cargar();
                     avisar(respuesta.cambios > 0 ? "Enlace actualizado." : "No había cambios que guardar.");
                 } catch (error) { avisar(error.message); }
             });
+            const cambiarPuertos = crear("button", "boton boton-secundario", "Cambiar puertos");
+            cambiarPuertos.type = "button";
+            cambiarPuertos.addEventListener("click", () => abrirDialogo(arista.source().id(), arista.target().id(), {
+                enlaceId: arista.data("enlaceId"), puertoOrigenId: arista.data("puertoOrigenId"), puertoDestinoId: arista.data("puertoDestinoId")
+            }));
             const eliminar = crear("button", "boton boton-secundario", "Eliminar enlace");
             eliminar.type = "button";
             eliminar.addEventListener("click", async () => {
                 if (!window.confirm(`Se eliminará el enlace entre ${origen} y ${destino}. Solo cambia la documentación. ¿Continuar?`)) return;
                 try {
-                    await enviar(urls.eliminar, { id: arista.data("enlaceId") });
+                    // datosEnlace permite volver a crear el enlace idéntico si se deshace la eliminación.
+                    const datosEnlace = {
+                        equipoA: arista.data("source"), puertoA: arista.data("puertoOrigenId"), equipoB: arista.data("target"),
+                        puertoB: arista.data("puertoDestinoId"), medio: arista.data("medio"), estadoDatos: arista.data("estadoDatos"), estadoStp: arista.data("estadoStp")
+                    };
+                    const referencia = { enlaceId: arista.data("enlaceId") };
+                    await enviar(urls.eliminar, { id: referencia.enlaceId });
+                    registrarAccion({
+                        texto: `eliminar el enlace ${origen} ↔ ${destino}`,
+                        deshacer: async () => { referencia.enlaceId = (await crearEnlaceServidor(datosEnlace)).enlaceId; },
+                        rehacer: () => enviar(urls.eliminar, { id: referencia.enlaceId })
+                    });
                     panelVacio();
                     await cargar();
                     avisar("Enlace eliminado de la documentación.");
                 } catch (error) { avisar(error.message); }
             });
             const acciones = crear("div", "editor-acciones");
-            acciones.append(guardar, eliminar);
+            acciones.append(guardar, cambiarPuertos, eliminar);
             elementos.push(medio.bloque, datos.bloque, stp.bloque, acciones);
         }
         panel.replaceChildren(...elementos);
@@ -606,9 +786,11 @@
     const botonGuardarEnlace = porId("enlace-guardar");
     // extremos guarda los equipos y puertos elegidos mientras el diálogo está abierto.
     let extremos = { a: null, b: null, selectorA: null, selectorB: null };
+    // modoEdicion es nulo al crear un enlace y guarda el enlace y sus puertos actuales al cambiar los puertos de uno existente.
+    let modoEdicion = null;
 
     /** Arma el selector de puerto de un extremo: libres primero, ocupados desactivados y avisos de relación parcial. */
-    const bloquePuerto = (nodo, otro, titulo) => {
+    const bloquePuerto = (nodo, otro, titulo, puertoActual = null) => {
         const contenedor = crear("div");
         const etiqueta = crear("label", "", `${titulo}: ${nodo.data("nombre")}`);
         contenedor.append(etiqueta);
@@ -631,7 +813,10 @@
             if (puerto.velocidadMbps) texto += ` · ${velocidadTexto(puerto.velocidadMbps)}`;
             const opcion = crear("option");
             opcion.value = String(puerto.id);
-            if (puerto.enlazado) {
+            if (puerto.id === puertoActual) {
+                texto += " (puerto actual)";
+                sugerido = String(puerto.id);
+            } else if (puerto.enlazado) {
                 opcion.disabled = true;
                 texto += " (ocupado por un enlace)";
             } else if (puerto.relacionParcial) {
@@ -663,9 +848,9 @@
             return;
         }
         try {
-            const hallazgos = await pedirJson(urls.validar, {
-                equipoA: a.id(), puertoA: valorPuerto(selectorA), equipoB: b.id(), puertoB: valorPuerto(selectorB)
-            });
+            const parametros = { equipoA: a.id(), puertoA: valorPuerto(selectorA), equipoB: b.id(), puertoB: valorPuerto(selectorB) };
+            if (modoEdicion) parametros.excluir = modoEdicion.enlaceId;
+            const hallazgos = await pedirJson(urls.validar, parametros);
             avisosDialogo.replaceChildren(...hallazgos.map((hallazgo) => crear("p",
                 `aviso-campo ${hallazgo.severidad === "error" ? "aviso-campo-error" : hallazgo.severidad === "aviso" ? "aviso-campo-aviso" : ""}`.trim(),
                 hallazgo.mensaje)));
@@ -676,12 +861,16 @@
         }
     };
 
-    const abrirDialogo = (idOrigen, idDestino) => {
+    const abrirDialogo = (idOrigen, idDestino, edicion = null) => {
         const a = cy.getElementById(idOrigen);
         const b = cy.getElementById(idDestino);
         if (a.empty() || b.empty()) return;
-        const bloqueA = bloquePuerto(a, b, "Origen");
-        const bloqueB = bloquePuerto(b, a, "Destino");
+        modoEdicion = edicion;
+        porId("enlace-titulo").textContent = edicion ? "Cambiar los puertos del enlace" : "Nuevo enlace";
+        porId("enlace-campos-extra").hidden = edicion !== null;
+        botonGuardarEnlace.textContent = edicion ? "Guardar puertos" : "Guardar enlace";
+        const bloqueA = bloquePuerto(a, b, "Origen", edicion?.puertoOrigenId ?? null);
+        const bloqueB = bloquePuerto(b, a, "Destino", edicion?.puertoDestinoId ?? null);
         extremos = { a, b, selectorA: bloqueA.selector, selectorB: bloqueB.selector };
         porId("enlace-resumen").textContent = `${a.data("nombre")} ↔ ${b.data("nombre")}`;
         porId("enlace-bloque-a").replaceChildren(bloqueA.contenedor);
@@ -701,9 +890,39 @@
         const { a, b, selectorA, selectorB } = extremos;
         botonGuardarEnlace.disabled = true;
         try {
+            if (modoEdicion) {
+                // Cambio de puertos de un enlace existente: se recuerdan los puertos anteriores para poder deshacerlo.
+                const antes = { origen: modoEdicion.puertoOrigenId, destino: modoEdicion.puertoDestinoId };
+                const despues = { origen: valorPuerto(selectorA), destino: valorPuerto(selectorB) };
+                const idEnlace = modoEdicion.enlaceId;
+                const resultado = await enviar(urls.cambiarPuertos, { id: idEnlace, puertoA: despues.origen, puertoB: despues.destino });
+                if (resultado.cambios > 0) {
+                    registrarAccion({
+                        texto: `cambiar los puertos del enlace ${a.data("nombre")} ↔ ${b.data("nombre")}`,
+                        deshacer: () => enviar(urls.cambiarPuertos, { id: idEnlace, puertoA: antes.origen, puertoB: antes.destino }),
+                        rehacer: () => enviar(urls.cambiarPuertos, { id: idEnlace, puertoA: despues.origen, puertoB: despues.destino })
+                    });
+                }
+                dialogo.close();
+                await cargar();
+                const editada = cy.getElementById(`e${idEnlace}`);
+                if (editada.nonempty()) { editada.select(); mostrarArista(editada); }
+                avisar(resultado.cambios > 0 ? "Puertos del enlace actualizados." : "No había cambios en los puertos.");
+                return;
+            }
+
+            const valores = { medio: porId("enlace-medio").value, estadoDatos: porId("enlace-estado-datos").value, estadoStp: porId("enlace-stp").value };
             const respuesta = await enviar(urls.crear, {
-                equipoA: a.id(), puertoA: valorPuerto(selectorA), equipoB: b.id(), puertoB: valorPuerto(selectorB),
-                medio: porId("enlace-medio").value, estadoDatos: porId("enlace-estado-datos").value, estadoStp: porId("enlace-stp").value
+                equipoA: a.id(), puertoA: valorPuerto(selectorA), equipoB: b.id(), puertoB: valorPuerto(selectorB), ...valores
+            });
+            // La acción guarda los puertos efectivos (incluida una interfaz creada) para repetir el alta con los mismos datos.
+            const datosEnlace = { equipoA: a.id(), puertoA: respuesta.puertoOrigenId, equipoB: b.id(), puertoB: respuesta.puertoDestinoId, ...valores };
+            const referencia = { enlaceId: respuesta.enlaceId };
+            registrarAccion({
+                texto: `crear el enlace ${a.data("nombre")} ↔ ${b.data("nombre")}`,
+                nota: "Si el alta había convertido una relación parcial, esa relación no se restaura.",
+                deshacer: () => enviar(urls.eliminar, { id: referencia.enlaceId }),
+                rehacer: async () => { referencia.enlaceId = (await crearEnlaceServidor(datosEnlace)).enlaceId; }
             });
             dialogo.close();
             await cargar();
@@ -719,7 +938,7 @@
     // Al soltar la línea sobre otro equipo se descarta la arista provisional y se abre el diálogo de puertos.
     cy.on("ehcomplete", (evento, origen, destino, aristaAgregada) => {
         aristaAgregada.remove();
-        abrirDialogo(origen.id(), destino.id());
+        abrirDialogo(origen.id(), destino.id(), null);
     });
 
     // Modo conectar: permite dibujar arrastrando desde el propio equipo, útil en pantallas táctiles.

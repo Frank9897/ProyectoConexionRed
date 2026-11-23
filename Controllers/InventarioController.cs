@@ -202,6 +202,55 @@ public class InventarioController : Controller
     }
 
     /// <summary>
+    /// Avisa mientras se escribe si el nombre o la MAC ya figuran en otra ficha; solo informa, no impide guardar.
+    /// </summary>
+    /// <param name="nombre">Nombre escrito en el formulario.</param>
+    /// <param name="mac">MAC escrita en cualquier formato.</param>
+    /// <param name="id">Equipo en edición, para no compararlo consigo mismo; nulo en un alta.</param>
+    /// <param name="cancelacion">Señal de cancelación.</param>
+    /// <returns>JSON con avisos para el nombre y para la MAC.</returns>
+    [HttpGet]
+    public async Task<IActionResult> ValidarFicha(string? nombre, string? mac, int? id, CancellationToken cancelacion)
+    {
+        var avisosNombre = new List<object>();
+        var avisosMac = new List<object>();
+        var nombreLimpio = nombre?.Trim();
+        if (!string.IsNullOrEmpty(nombreLimpio))
+        {
+            var nombreMinuscula = nombreLimpio.ToLower();
+            var repetidos = await contextoInventario.Equipos.AsNoTracking()
+                .Where(equipo => equipo.Identificador != id && equipo.Nombre.ToLower() == nombreMinuscula)
+                .Select(equipo => new { equipo.Nombre, equipo.IpAdministracion }).Take(3).ToListAsync(cancelacion);
+            foreach (var repetido in repetidos)
+            {
+                avisosNombre.Add(new
+                {
+                    severidad = "aviso",
+                    mensaje = $"Ya existe una ficha con ese nombre ({repetido.Nombre}{(string.IsNullOrWhiteSpace(repetido.IpAdministracion) ? string.Empty : ", " + repetido.IpAdministracion)}). Cambia el nombre si es otro equipo."
+                });
+            }
+        }
+
+        var macNormalizada = NormalizarMac(mac);
+        if (macNormalizada is not null)
+        {
+            var otros = await contextoInventario.Equipos.AsNoTracking()
+                .Where(equipo => equipo.Identificador != id && equipo.DireccionMac != null && equipo.DireccionMac.ToUpper() == macNormalizada)
+                .Select(equipo => new { equipo.Nombre, equipo.IpAdministracion }).Take(3).ToListAsync(cancelacion);
+            foreach (var otro in otros)
+            {
+                avisosMac.Add(new
+                {
+                    severidad = "aviso",
+                    mensaje = $"Esa MAC ya figura en {otro.Nombre}{(string.IsNullOrWhiteSpace(otro.IpAdministracion) ? string.Empty : ", " + otro.IpAdministracion)}. Un mismo equipo con dos IP debería ser una sola ficha."
+                });
+            }
+        }
+
+        return Json(new { nombre = avisosNombre, mac = avisosMac });
+    }
+
+    /// <summary>
     /// Busca en el escaneo de la LAN la IP o la MAC escrita y propone fabricante, nombre y tipo de equipo.
     /// </summary>
     /// <param name="ip">IP escrita; se busca primero por ella.</param>

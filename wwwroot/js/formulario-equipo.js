@@ -269,5 +269,71 @@
         });
     }
 
+    // ---------- Avisos de nombre o MAC repetidos ----------
+    const avisosNombre = crear("div");
+    const avisosMacRepetida = crear("div");
+    nombre?.parentElement.append(avisosNombre);
+    mac?.parentElement.append(avisosMacRepetida);
+    const validarFicha = conRetraso(async () => {
+        try {
+            const resultado = await pedir("ValidarFicha", { nombre: nombre?.value.trim(), mac: mac?.value.trim(), id: identificadorEquipo });
+            mostrarAvisos(avisosNombre, resultado.nombre ?? []);
+            mostrarAvisos(avisosMacRepetida, resultado.mac ?? []);
+        } catch {
+            avisosNombre.replaceChildren();
+            avisosMacRepetida.replaceChildren();
+        }
+    });
+    nombre?.addEventListener("input", validarFicha);
+    mac?.addEventListener("change", validarFicha);
+
+    // ---------- Alta en dos pasos: primero la categoría, con íconos ----------
+    const rejilla = formulario.querySelector(".rejilla-formulario");
+    const accionesFormulario = formulario.querySelector(".acciones-formulario");
+    const esAlta = identificadorEquipo === null && /\/Crear\/?$/i.test(new URL(formulario.action).pathname);
+    if (esAlta && rejilla && window.IconosEquipo) {
+        const baseIconos = formulario.dataset.baseIconos ?? "/images/iconos/";
+        const contenedor = crear("div", "tarjetas-categoria");
+        contenedor.setAttribute("role", "group");
+        contenedor.setAttribute("aria-label", "Categoría del equipo");
+        const marcar = (tipo) => contenedor.querySelectorAll("button").forEach((boton) =>
+            boton.setAttribute("aria-pressed", String(boton.dataset.tipo === tipo)));
+        const mostrarCampos = () => {
+            rejilla.hidden = false;
+            if (accionesFormulario) accionesFormulario.hidden = false;
+        };
+
+        window.IconosEquipo.tipos.forEach((tipo) => {
+            const boton = crear("button", "tarjeta-categoria");
+            boton.type = "button";
+            boton.dataset.tipo = tipo;
+            boton.setAttribute("aria-pressed", "false");
+            const imagen = crear("img");
+            imagen.src = window.IconosEquipo.ruta(baseIconos, tipo);
+            imagen.alt = "";
+            boton.append(imagen, crear("span", "", tipo));
+            boton.addEventListener("click", () => {
+                selectorTipo.value = tipo;
+                marcar(tipo);
+                mostrarCampos();
+                // El cambio de tipo muestra u oculta las cantidades de puertos y actualiza las sugerencias.
+                selectorTipo.dispatchEvent(new Event("change", { bubbles: true }));
+                nombre?.focus();
+            });
+            contenedor.append(boton);
+        });
+
+        formulario.insertBefore(crear("p", "ayuda-formulario", "Paso 1: elige qué vas a agregar. Después se muestran los datos que corresponden."), rejilla);
+        formulario.insertBefore(contenedor, rejilla);
+        // Si el formulario volvió con datos (por un error al guardar) se muestra completo con su categoría marcada.
+        if (nombre?.value.trim()) {
+            marcar(selectorTipo.value);
+            mostrarCampos();
+        } else {
+            rejilla.hidden = true;
+            if (accionesFormulario) accionesFormulario.hidden = true;
+        }
+    }
+
     sugerirAdministrable();
 })();

@@ -169,7 +169,9 @@ public class EditorTopologiaController : Controller
                 medio = arista.Medio,
                 estadoDatos = arista.EstadoDatos,
                 estadoStp = arista.EstadoStp,
-                fuente = arista.Fuente
+                fuente = arista.Fuente,
+                puertoOrigenId = arista.Parcial ? (int?)null : arista.PuertoOrigenId,
+                puertoDestinoId = arista.Parcial ? null : arista.PuertoDestinoId
             }),
             alertas = CalcularAlertas(aristas, equipoPorId, ipsEnConflicto)
         });
@@ -199,12 +201,13 @@ public class EditorTopologiaController : Controller
     /// <param name="puertoA">Puerto de origen; 0 si el equipo no tiene interfaces y se creará una.</param>
     /// <param name="equipoB">Equipo de destino.</param>
     /// <param name="puertoB">Puerto de destino; 0 si el equipo no tiene interfaces y se creará una.</param>
+    /// <param name="excluir">Enlace que se está editando y no debe contar como ocupación; nulo al crear.</param>
     /// <param name="cancelacion">Señal de cancelación.</param>
     /// <returns>JSON con la lista de hallazgos (error, aviso o información); no guarda nada.</returns>
     [HttpGet]
-    public async Task<IActionResult> Validar(int equipoA, int puertoA, int equipoB, int puertoB, CancellationToken cancelacion)
+    public async Task<IActionResult> Validar(int equipoA, int puertoA, int equipoB, int puertoB, int? excluir, CancellationToken cancelacion)
     {
-        var validacion = await ValidarSolicitudAsync(equipoA, puertoA, equipoB, puertoB, cancelacion);
+        var validacion = await ValidarSolicitudAsync(equipoA, puertoA, equipoB, puertoB, excluir, cancelacion);
         return Json(validacion.Resultado.Hallazgos.Select(hallazgo => new
         {
             severidad = hallazgo.Severidad.ToString().ToLowerInvariant(),
@@ -241,7 +244,7 @@ public class EditorTopologiaController : Controller
             return BadRequest(new { errores = new[] { "El medio, el estado de los datos o el estado STP no son válidos." } });
         }
 
-        var validacion = await ValidarSolicitudAsync(equipoA, puertoA, equipoB, puertoB, cancelacion);
+        var validacion = await ValidarSolicitudAsync(equipoA, puertoA, equipoB, puertoB, null, cancelacion);
         if (validacion.Resultado.TieneErrores)
         {
             return BadRequest(new { errores = validacion.Resultado.Errores.Select(error => error.Mensaje) });
@@ -294,7 +297,14 @@ public class EditorTopologiaController : Controller
         await contextoInventario.EventosModificacion.AddRangeAsync(eventos, cancelacion);
         await contextoInventario.SaveChangesAsync(cancelacion);
         await transaccion.CommitAsync(cancelacion);
-        return Json(new { ok = true, enlaceId = enlace.Identificador, avisos = validacion.Resultado.Avisos.Select(aviso => aviso.Mensaje) });
+        return Json(new
+        {
+            ok = true,
+            enlaceId = enlace.Identificador,
+            puertoOrigenId = interfazOrigen.Identificador,
+            puertoDestinoId = interfazDestino.Identificador,
+            avisos = validacion.Resultado.Avisos.Select(aviso => aviso.Mensaje)
+        });
     }
 
     /// <summary>Elimina un enlace físico y lo deja registrado en el historial; los puertos quedan sin enlace.</summary>
@@ -362,6 +372,57 @@ public class EditorTopologiaController : Controller
         return Json(new { ok = true, cambios = eventos.Count });
     }
 
+    /// <summary>
+    /// Cambia los puertos de un enlace existente sin cambiar los equipos que une; se valida con las mismas reglas que un enlace nuevo.
+    /// </summary>
+    /// <param name="id">Identificador del enlace.</param>
+    /// <param name="puertoA">Nuevo puerto del equipo de origen.</param>
+    /// <param name="puertoB">Nuevo puerto del equipo de destino.</param>
+    /// <param name="cancelacion">Señal de cancelación.</param>
+    /// <returns>JSON con la cantidad de cambios, o los errores con código 400 o 404.</returns>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CambiarPuertos(int id, int puertoA, int puertoB, CancellationToken cancelacion)
+    {
+        var enlace = await contextoInventario.EnlacesFisicos.FirstOrDefaultAsync(e => e.Identificador == id, cancelacion);
+        if (enlace is null) return NotFound(new { errores = new[] { "El enlace ya no existe." } });
+        if (puertoA == enlace.IdentificadorPuertoOrigen && puertoB == enlace.IdentificadorPuertoDestino) return Json(new { ok = true, cambios = 0 });
+
+        // Los puertos nuevos deben seguir perteneciendo a los mismos equipos que ya unía el enlace.
+        var actuales = await contextoInventario.InterfacesEquipo.AsNoTracking()
+            .Where(interfaz => interfaz.Identificador == enlace.IdentificadorPuertoOrigen || interfaz.Identificador == enlace.IdentificadorPuertoDestino)
+            .ToListAsync(cancelacion);
+        var origen = actuales.FirstOrDefault(interfaz => interfaz.Identificador == enlace.IdentificadorPuertoOrigen);
+        var destino = actuales.FirstOrDefault(interfaz => interfaz.Identificador == enlace.IdentificadorPuertoDestino);
+        var nuevos = await contextoInventario.InterfacesEquipo.AsNoTracking()
+            .Where(interfaz => interfaz.Identificador == puertoA || interfaz.Identificador == puertoB).ToListAsync(cancelacion);
+        var nuevoA = nuevos.FirstOrDefault(interfaz => interfaz.Identificador == puertoA);
+        var nuevoB = nuevos.FirstOrDefault(interfaz => interfaz.Identificador == puertoB);
+        if (origen is null || destino is null || nuevoA is null || nuevoB is null
+            || nuevoA.IdentificadorEquipo != origen.IdentificadorEquipo || nuevoB.IdentificadorEquipo != destino.IdentificadorEquipo)
+        {
+            return BadRequest(new { errores = new[] { "Elige un puerto de cada uno de los equipos que une el enlace." } });
+        }
+
+        var validacion = await ValidadorTopologia.ValidarEnlaceAsync(contextoInventario, puertoA, puertoB, id, cancelacion);
+        if (validacion.TieneErrores)
+        {
+            return BadRequest(new { errores = validacion.Errores.Select(error => error.Mensaje) });
+        }
+
+        var anterior = await ObtenerExtremosAsync(enlace, cancelacion);
+        enlace.IdentificadorPuertoOrigen = puertoA;
+        enlace.IdentificadorPuertoDestino = puertoB;
+        await contextoInventario.SaveChangesAsync(cancelacion);
+        var nuevo = await ObtenerExtremosAsync(enlace, cancelacion);
+        var eventos = new List<EventoModificacion>();
+        UtilidadesConexiones.AgregarCambio(eventos, anterior.IdEquipoOrigen, anterior.NombreOrigen, ObtenerUsuario(),
+            "Puertos del enlace", anterior.Descripcion, nuevo.Descripcion);
+        await contextoInventario.EventosModificacion.AddRangeAsync(eventos, cancelacion);
+        await contextoInventario.SaveChangesAsync(cancelacion);
+        return Json(new { ok = true, cambios = 1, avisos = validacion.Avisos.Select(aviso => aviso.Mensaje) });
+    }
+
     /// <summary>Guarda la posición de los equipos movidos en el lienzo, compartida entre técnicos.</summary>
     /// <param name="posiciones">JSON con una lista de objetos id, x, y; se ignoran equipos inexistentes y valores no numéricos.</param>
     /// <param name="vista">Vista a la que pertenecen (switches, todo o foco-IDENTIFICADOR); vacío equivale a general.</param>
@@ -425,7 +486,7 @@ public class EditorTopologiaController : Controller
     /// Valida una conexión entre dos equipos y determina qué relaciones parciales se convertirán en enlace completo.
     /// </summary>
     private async Task<ValidacionSolicitud> ValidarSolicitudAsync(
-        int equipoA, int puertoA, int equipoB, int puertoB, CancellationToken cancelacion)
+        int equipoA, int puertoA, int equipoB, int puertoB, int? enlaceExcluido, CancellationToken cancelacion)
     {
         var resultado = new ResultadoValidacion();
         var equipos = await contextoInventario.Equipos.AsNoTracking().ToListAsync(cancelacion);
@@ -471,16 +532,17 @@ public class EditorTopologiaController : Controller
         ResultadoValidacion tecnico;
         if (puertoA > 0 && puertoB > 0)
         {
-            tecnico = await ValidadorTopologia.ValidarEnlaceAsync(contextoInventario, puertoA, puertoB, null, cancelacion);
+            tecnico = await ValidadorTopologia.ValidarEnlaceAsync(contextoInventario, puertoA, puertoB, enlaceExcluido, cancelacion);
         }
         else
         {
             // Con un extremo sin interfaz solo se pueden comprobar el equipo y la ocupación del puerto que sí existe.
-            tecnico = await ValidadorTopologia.ValidarEquiposAsync(contextoInventario, equipoA, equipoB, null, cancelacion);
+            tecnico = await ValidadorTopologia.ValidarEquiposAsync(contextoInventario, equipoA, equipoB, enlaceExcluido, cancelacion);
+            var excluido = enlaceExcluido ?? -1;
             foreach (var puerto in puertosElegidos)
             {
-                if (await contextoInventario.EnlacesFisicos.AnyAsync(enlace =>
-                        enlace.IdentificadorPuertoOrigen == puerto.Identificador || enlace.IdentificadorPuertoDestino == puerto.Identificador, cancelacion))
+                if (await contextoInventario.EnlacesFisicos.AnyAsync(enlace => enlace.Identificador != excluido
+                        && (enlace.IdentificadorPuertoOrigen == puerto.Identificador || enlace.IdentificadorPuertoDestino == puerto.Identificador), cancelacion))
                 {
                     tecnico.Agregar(SeveridadValidacion.Error, "PUERTO_OCUPADO",
                         $"El puerto {puerto.EtiquetaPuerto} ya tiene un enlace. Un puerto no puede conectarse a dos equipos a la vez, salvo mediante un switch no administrable intermedio.");

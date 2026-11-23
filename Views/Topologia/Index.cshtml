@@ -301,54 +301,110 @@
 </section>
 
 @{
-    // relacionesSinEquipoUnico reúne remotos sin una ficha que coincida de forma inequívoca.
-    var relacionesSinEquipoUnico = Model.RelacionesParciales
-        .Where(relacion => !relacion.IdentificadorEquipoRemoto.HasValue)
-        .ToList();
-    // relacionesSwitchSinPuertoUnico limita el faltante de puerto remoto a enlaces Capa 2 entre switches.
-    var relacionesSwitchSinPuertoUnico = Model.RelacionesParciales
-        .Where(relacion => relacion.CapaRelacional == "switching"
-            && relacion.IdentificadorEquipoRemoto.HasValue
-            && !relacion.IdentificadorPuertoRemoto.HasValue)
-        .ToList();
-    // enlacesSinMedio agrupa relaciones que no nombran el medio sin darlas por incorrectas.
-    var enlacesSinMedio = Model.Enlaces.Count(enlace => string.IsNullOrWhiteSpace(enlace.Medio)
-        || enlace.Medio.Equals("No confirmado", StringComparison.OrdinalIgnoreCase))
-        + Model.RelacionesParciales.Count(relacion => string.IsNullOrWhiteSpace(relacion.Medio)
-        || relacion.Medio.Equals("No confirmado", StringComparison.OrdinalIgnoreCase));
+    var resumen = Model.Resumen;
+    // Porcentaje devuelve el ancho entero de una barra; con total cero no dibuja nada.
+    string Porcentaje(int parte, int total) => total <= 0 ? "0" : ((int)Math.Round(parte * 100.0 / total)).ToString(System.Globalization.CultureInfo.InvariantCulture);
 }
 
-<section class="panel pendientes-topologia" aria-labelledby="titulo-pendientes-topologia">
+<section class="panel estado-red" aria-labelledby="titulo-estado-red">
     <div class="encabezado-seccion-topologia">
         <div>
-            <p class="sobrelinea">PENDIENTES DE DETALLE</p>
-            <h2 id="titulo-pendientes-topologia">Qué falta completar en la documentación</h2>
+            <p class="sobrelinea">ESTADO DE LA RED DOCUMENTADA</p>
+            <h2 id="titulo-estado-red">Direcciones IP, administración y STP</h2>
         </div>
     </div>
-    <p>Las relaciones documentadas se muestran según el Visio V3.5 y las aclaraciones confirmadas. Esta lista separa los detalles incompletos y las discrepancias entre fuentes.</p>
-    <div class="lista-pendientes-topologia">
-        <article><strong>Tramos del rack</strong><span>V3.5 actualiza varias tablas de rack; aún faltan algunos extremos remotos exactos y el cotejo físico de enlaces que no tienen un par único.</span></article>
-        <article><strong>Módulos SFP/SFP+</strong><span>Las tablas indican algunas jaulas ocupadas o libres, pero no siempre identifican el transceptor instalado ni el tipo exacto de óptica.</span></article>
-        <article><strong>Discrepancia S4148U y R770</strong><span>V3.5, Excel8 fila 22, anota S4148U puerto 21 hacia R770/iDRAC (192.168.0.247). La aclaración previa identifica allí el puerto LAN P2 (192.168.0.246) y ubica el iDRAC en HP 1920 puerto 16. Se conserva el enlace previamente confirmado hasta cotejar ambos extremos.</span></article>
-        <article><strong>Nombre del switch con IP 192.168.1.40</strong><span>La página «NOTIFICADORES» usa la misma IP y MAC que el equipo registrado como Regularización Dominial (RD). Se conserva esa ficha por coincidencia de ambos identificadores; el nombre del área queda pendiente de validar.</span></article>
-        <article><strong>IP de Agrimensura 3Com</strong><span>El resumen «SWITCHES AREAS» de V3.5 escribe 192.168.0.24; se conserva 192.168.1.24, previamente confirmado y usado por las tablas detalladas.</span></article>
-        <article><strong>Acceso administrativo</strong><span>Régimen y Mesa de Entrada Principal (Aruba 1930, 192.168.1.1) figuran sin acceso por falta de credenciales.</span></article>
-        <article><strong>Medio de conexión</strong><span>@enlacesSinMedio relaciones no indican un medio específico; no se asigna cobre o fibra por suposición.</span></article>
+    <p>Indicadores calculados desde el inventario; no se consulta la red real. El estado STP se documenta enlace por enlace desde el <a asp-controller="EditorTopologia" asp-action="Index">editor del mapa</a>.</p>
+
+    <div class="rejilla-estado-red">
+        @foreach (var red in resumen.Redes)
+        {
+            <article class="tarjeta-estado">
+                <h3>IP de la red @red.Nombre</h3>
+                <div class="barra-uso" role="img" aria-label="@red.EnUso en uso, @red.Reservadas reservadas, @red.EnConflicto en conflicto y @red.Libres libres de @red.Total">
+                    <span class="barra-uso-asignada" style="width:@Porcentaje(red.EnUso, red.Total)%"></span>
+                    <span class="barra-uso-reservada" style="width:@Porcentaje(red.Reservadas, red.Total)%"></span>
+                    <span class="barra-uso-conflicto" style="width:@Porcentaje(red.EnConflicto, red.Total)%"></span>
+                </div>
+                <ul class="cifras-estado">
+                    <li><strong>@red.EnUso</strong><span>en uso</span></li>
+                    <li><strong>@red.Reservadas</strong><span>reservadas</span></li>
+                    <li><strong>@red.EnConflicto</strong><span>en conflicto</span></li>
+                    <li><strong>@red.Libres</strong><span>libres de @red.Total</span></li>
+                </ul>
+            </article>
+        }
+        <article class="tarjeta-estado">
+            <h3>Conflictos y otras IP</h3>
+            @if (resumen.IpEnConflicto.Count == 0)
+            {
+                <p class="estado-ok">No hay IP compartidas por dos equipos.</p>
+            }
+            else
+            {
+                <p>IP declaradas por más de un equipo:</p>
+                <ul class="lista-estado">
+                    @foreach (var conflicto in resumen.IpEnConflicto.Take(8))
+                    {
+                        <li>@conflicto</li>
+                    }
+                </ul>
+            }
+            <p class="nota-estado">@resumen.IpFueraDeRango IP en uso fuera de 192.168.0.x y 192.168.1.x. @resumen.EquiposSinIp equipos sin IP y @resumen.EquiposSinMac sin MAC.</p>
+        </article>
+
+        <article class="tarjeta-estado">
+            <h3>Switches y administración</h3>
+            <ul class="cifras-estado">
+                <li><strong>@resumen.TotalSwitches</strong><span>switches</span></li>
+                <li><strong>@resumen.SwitchesAdministrables</strong><span>administrables</span></li>
+                <li><strong>@resumen.SwitchesNoAdministrables</strong><span>no administrables</span></li>
+                <li><strong>@resumen.SwitchesSinConfirmar</strong><span>sin confirmar</span></li>
+            </ul>
+            <p class="nota-estado">Un switch sin IP se considera no administrable y no tiene STP.</p>
+        </article>
+
+        <article class="tarjeta-estado tarjeta-estado-ancha">
+            <h3>STP o RSTP documentado</h3>
+            <ul class="cifras-estado">
+                <li><strong>@resumen.SwitchesStpDocumentado</strong><span>switches con STP documentado</span></li>
+                <li><strong>@resumen.SwitchesStpParcial</strong><span>con documentación parcial</span></li>
+                <li><strong>@resumen.SwitchesStpSinDocumentar</strong><span>sin documentar</span></li>
+                <li><strong>@resumen.SwitchesSinEnlacesCompletos</strong><span>sin enlaces completos</span></li>
+            </ul>
+            <p>@resumen.EnlacesStpDocumentado de @resumen.EnlacesCompletos enlaces completos tienen su estado STP documentado (@resumen.EnlacesStpSinDocumentar sin documentar).</p>
+            <p>Enlaces que cierran un ciclo: <strong>@resumen.CiclosSinDocumentar</strong> sin documentar, <strong>@resumen.CiclosDocumentados</strong> ya documentados y <strong>@resumen.CiclosEnRelacionesParciales</strong> que solo existen como relación parcial (conviértelos en enlace completo para poder documentarlos).</p>
+            @if (resumen.SwitchesPendientesStp.Count > 0)
+            {
+                <p>Switches con enlaces sin estado STP:</p>
+                <ul class="lista-estado">
+                    @foreach (var pendiente in resumen.SwitchesPendientesStp)
+                    {
+                        <li>@pendiente.Nombre: @pendiente.SinDocumentar de @pendiente.Enlaces enlaces sin documentar</li>
+                    }
+                </ul>
+            }
+            else if (resumen.EnlacesCompletos > 0)
+            {
+                <p class="estado-ok">Todos los enlaces completos tienen su estado STP documentado.</p>
+            }
+            <p class="nota-estado">Los switches sin enlaces completos tienen sus conexiones como relaciones parciales: se documenta su STP al dibujarlas como enlaces en el editor.</p>
+        </article>
+
+        <article class="tarjeta-estado">
+            <h3>Conexiones y puertos</h3>
+            <ul class="cifras-estado">
+                <li><strong>@resumen.EnlacesCompletos</strong><span>enlaces completos</span></li>
+                <li><strong>@resumen.EnlacesConfirmados</strong><span>confirmados</span></li>
+                <li><strong>@resumen.RelacionesParciales</strong><span>relaciones parciales</span></li>
+                <li><strong>@resumen.RelacionesSinEquipo</strong><span>sin equipo asociado</span></li>
+            </ul>
+            <div class="barra-uso" role="img" aria-label="@resumen.PuertosConEnlace puertos con enlace, @resumen.PuertosConRelacionParcial con relación parcial y @resumen.PuertosSinDocumentar sin documentar">
+                <span class="barra-uso-asignada" style="width:@Porcentaje(resumen.PuertosConEnlace, resumen.PuertosTotal)%"></span>
+                <span class="barra-uso-reservada" style="width:@Porcentaje(resumen.PuertosConRelacionParcial, resumen.PuertosTotal)%"></span>
+            </div>
+            <p class="nota-estado">De @resumen.PuertosTotal puertos: @resumen.PuertosConEnlace con enlace completo, @resumen.PuertosConRelacionParcial con relación parcial y @resumen.PuertosSinDocumentar sin conexión documentada.</p>
+        </article>
     </div>
-    @if (relacionesSinEquipoUnico.Count > 0 || relacionesSwitchSinPuertoUnico.Count > 0)
-    {
-        <div class="pendientes-relaciones-topologia">
-            <strong>Extremos que no tienen cotejo único en las tablas</strong>
-            @foreach (var relacion in relacionesSinEquipoUnico)
-            {
-                <p>@relacion.EquipoLocal · Puerto @relacion.PuertoLocal → @(string.IsNullOrWhiteSpace(relacion.EquipoRemoto) ? relacion.IpRemota ?? "remoto sin identificar" : relacion.EquipoRemoto): falta una ficha remota única.</p>
-            }
-            @foreach (var relacion in relacionesSwitchSinPuertoUnico)
-            {
-                <p>@relacion.EquipoLocal · Puerto @relacion.PuertoLocal → @(relacion.EquipoRemoto ?? "switch remoto"): el puerto remoto no aparece en una fila recíproca única.</p>
-            }
-        </div>
-    }
 </section>
 
 
