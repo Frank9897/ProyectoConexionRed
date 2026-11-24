@@ -8,6 +8,9 @@ public class TopologiaViewModel
     /// <summary>Indicadores del estado de la red documentada (IP, administración, STP, conexiones y puertos).</summary>
     public ResumenRed Resumen { get; set; } = new();
 
+    /// <summary>Conflictos de datos (IP, MAC o nombre repetidos) con los equipos involucrados y las justificaciones guardadas.</summary>
+    public ConflictosViewModel Conflictos { get; set; } = new();
+
     /// <summary>Total de fichas de equipo; cambiarlo actualiza el indicador global.</summary>
     public int TotalEquipos { get; set; }
     /// <summary>Total de switches clasificados; cambiarlo actualiza el resumen de switching.</summary>

@@ -12,8 +12,11 @@ public sealed class ResumenRed
     /// <summary>Direcciones en uso fuera de las redes habituales (por ejemplo 10.0.1.1).</summary>
     public int IpFueraDeRango { get; set; }
 
-    /// <summary>Descripción de las IP que usan dos o más equipos, ya redactada para mostrarla.</summary>
+    /// <summary>Descripción de las IP que usan dos o más equipos y siguen sin resolver ni justificar, ya redactada para mostrarla.</summary>
     public List<string> IpEnConflicto { get; set; } = [];
+
+    /// <summary>Cantidad de IP compartidas que el técnico justificó.</summary>
+    public int IpConflictosJustificados { get; set; }
 
     /// <summary>Total de switches; los tres siguientes lo reparten según su administrabilidad.</summary>
     public int TotalSwitches { get; set; }

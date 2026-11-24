@@ -53,7 +53,7 @@
         </nav>
         <span class="inventario-activo-global">Base: @inventarioActivo?.Nombre</span>
     </header>
-    <main class="contenedor">
+    <main class="contenedor@(ViewData["AnchoCompleto"] is true ? " contenedor-completo" : string.Empty)">
         @RenderBody()
     </main>
     <footer class="pie">

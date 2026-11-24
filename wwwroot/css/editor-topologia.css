@@ -1,25 +1,69 @@
-/* editor-mapa dispone barra, lienzo y panel lateral; cambiar la altura mínima altera el espacio del lienzo. */
-.editor-mapa { display: grid; grid-template-columns: minmax(0, 1fr) 340px; grid-template-rows: auto minmax(560px, calc(100vh - 260px)) auto; gap: 12px; }
-.editor-barra { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.editor-barra input[type="search"] { min-width: 220px; }
-.editor-casilla { display: inline-flex; align-items: center; gap: 6px; font-size: .9rem; }
-.editor-lienzo { border: 1px solid #d8dee8; border-radius: 10px; background: #fbfcfe; min-height: 560px; }
-.editor-lateral { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
-.editor-panel { border: 1px solid #d8dee8; border-radius: 10px; padding: 10px 12px; background: #fff; }
-.editor-panel h2 { margin: 0 0 8px; font-size: 1rem; }
+/* editor-mapa reparte la página en tres zonas: a la izquierda lo que hay que atender (alertas y equipos sin conexiones),
+   al centro el mapa con los tipos arriba y la leyenda abajo, y a la derecha el detalle de lo seleccionado. */
+.editor-mapa {
+    display: grid;
+    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr) minmax(290px, 350px);
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+    grid-template-areas:
+        "barra barra barra"
+        "izquierda tipos derecha"
+        "izquierda mapa derecha"
+        "izquierda leyenda derecha"
+        "estado estado estado";
+    gap: 8px;
+    height: calc(100vh - 100px);
+    min-height: 620px;
+}
+.editor-barra { grid-area: barra; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.editor-titulo { margin: 0 6px 0 2px; font-size: 1.15rem; letter-spacing: -.01em; }
+/* editor-grupo reúne controles de una misma tarea con un título pequeño, para encontrarlos sin leer toda la barra. */
+.editor-grupo { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 4px 8px; border: 1px solid #d8dee8; border-radius: 10px; background: #fff; }
+.editor-grupo-titulo { font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #5a6677; margin-right: 2px; }
+.editor-barra input[type="search"] { min-width: 190px; }
+.editor-barra select, .editor-barra input, .editor-barra button { font-size: .88rem; }
+.editor-casilla { display: inline-flex; align-items: center; gap: 6px; font-size: .88rem; }
+
+.editor-izquierda { grid-area: izquierda; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.editor-derecha { grid-area: derecha; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.editor-lienzo { grid-area: mapa; border: 1px solid #d8dee8; border-radius: 10px; background: #fbfcfe; min-height: 0; }
+.editor-franja { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 4px 10px; border: 1px solid #d8dee8; border-radius: 10px; background: #fff; }
+.editor-franja-tipos { grid-area: tipos; }
+.editor-franja-leyenda { grid-area: leyenda; }
+.editor-franja-titulo { margin: 0; font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #5a6677; white-space: nowrap; }
+.editor-estado { grid-area: estado; margin: 0; min-height: 1.3em; color: #3b4658; font-size: .88rem; }
+
+/* editor-panel es cada bloque de lectura; los de las columnas laterales reparten la altura y se desplazan por dentro. */
+.editor-panel { display: flex; flex-direction: column; min-height: 0; border: 1px solid #d8dee8; border-radius: 10px; padding: 10px 12px; background: #fff; overflow-y: auto; }
+.editor-panel h2 { margin: 0 0 8px; font-size: .95rem; }
+.editor-panel-alertas { flex: 3 1 0; }
+.editor-panel-sin-conexion { flex: 2 1 0; }
+.editor-panel-seleccion { flex: 1 1 0; }
 .editor-vacio { margin: 0; color: #5a6677; font-size: .9rem; }
-.editor-estado { grid-column: 1 / -1; margin: 0; min-height: 1.4em; color: #3b4658; font-size: .9rem; }
 .editor-dato { margin: 2px 0; font-size: .9rem; }
 .editor-dato strong { font-weight: 600; }
 .editor-acciones { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; flex-wrap: wrap; }
 .editor-alerta { display: block; width: 100%; text-align: left; margin: 0 0 6px; padding: 6px 8px; border: 1px solid #e7d3a0; border-radius: 8px; background: #fff8e6; color: #5c4a14; font-size: .85rem; cursor: pointer; }
 .editor-alerta-ok { border-color: #bcd9c8; background: #f1faf4; color: #2d5a42; }
-.editor-leyenda { list-style: none; margin: 0; padding: 0; font-size: .85rem; display: grid; gap: 4px; }
-.leyenda-linea { display: inline-block; width: 34px; border-top: 3px solid #46556b; vertical-align: middle; margin-right: 6px; }
+.editor-camino { margin: 8px 0 0; padding: 6px 8px; border: 1px solid #d8c8ec; border-radius: 8px; background: #f7f1fd; font-size: .85rem; color: #3f2a5c; }
+.editor-campos-inline { display: grid; gap: 6px; margin-top: 8px; }
+.editor-campos-inline label { font-weight: 600; font-size: .85rem; }
+
+/* editor-tipos y editor-leyenda son franjas de una sola línea que se desplazan de lado si no caben. */
+.editor-tipos { display: flex; flex: 1 1 auto; min-width: 0; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.editor-tipo { display: flex; align-items: center; gap: 6px; padding: 3px 8px; border: 1px solid #d8dee8; border-radius: 8px; background: #fff; font-size: .82rem; cursor: pointer; white-space: nowrap; }
+.editor-tipo img { width: 22px; height: 22px; }
+.editor-leyenda { list-style: none; margin: 0; padding: 0; display: flex; gap: 4px 16px; flex-wrap: wrap; font-size: .8rem; color: #3b4658; }
+.leyenda-linea { display: inline-block; width: 30px; border-top: 3px solid #46556b; vertical-align: middle; margin-right: 6px; }
 .leyenda-parcial { border-top: 2px dotted #9aa5b4; }
 .leyenda-bloqueado { border-top: 3px dashed #b4533c; }
 .leyenda-redundante { border-top: 3px dashed #d9822b; }
 .leyenda-reenvio { border-top-color: #2f9f6f; }
+
+.editor-sin-conexion { display: flex; align-items: center; gap: 8px; width: 100%; margin: 0 0 4px; padding: 4px 8px; border: 1px solid #d8dee8; border-radius: 8px; background: #fff; font-size: .85rem; cursor: pointer; text-align: left; }
+.editor-sin-conexion img { width: 24px; height: 24px; }
+.editor-sin-conexion small { color: #5a6677; margin-left: auto; }
+#mapa-sin-conexion { margin-top: 8px; }
+
 /* editor-dialogo es la ventana de creación de enlaces; el ancho máximo evita que los selects queden desproporcionados. */
 .editor-dialogo { width: min(640px, 94vw); border: 1px solid #c8d0dc; border-radius: 12px; padding: 16px 18px; }
 .editor-dialogo::backdrop { background: rgba(20, 30, 45, .45); }
@@ -27,16 +71,14 @@
 .editor-campos { display: grid; gap: 10px; }
 .editor-campos label { display: block; font-weight: 600; margin-bottom: 4px; }
 .editor-campos select { width: 100%; }
-@media (max-width: 1000px) { .editor-mapa { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(480px, 70vh) auto auto; } }
-.editor-camino { margin: 8px 0 0; padding: 6px 8px; border: 1px solid #d8c8ec; border-radius: 8px; background: #f7f1fd; font-size: .85rem; color: #3f2a5c; }
-.editor-campos-inline { display: grid; gap: 6px; margin-top: 8px; }
-.editor-campos-inline label { font-weight: 600; font-size: .85rem; }
-.editor-tipos { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; }
-.editor-tipo { display: flex; align-items: center; gap: 8px; padding: 4px 8px; border: 1px solid #d8dee8; border-radius: 8px; background: #fff; font-size: .85rem; cursor: pointer; text-align: left; }
-.editor-tipo img { width: 26px; height: 26px; }
-.editor-sin-conexion { display: flex; align-items: center; gap: 8px; width: 100%; margin: 0 0 4px; padding: 4px 8px; border: 1px solid #d8dee8; border-radius: 8px; background: #fff; font-size: .85rem; cursor: pointer; text-align: left; }
-.editor-sin-conexion img { width: 24px; height: 24px; }
-.editor-sin-conexion small { color: #5a6677; margin-left: auto; }
-#mapa-sin-conexion { max-height: 220px; overflow-y: auto; margin-top: 8px; }
-.editor-casillas-tipo { display: flex; flex-wrap: wrap; gap: 6px; }
-.editor-tarjetas-categoria { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+
+/* En pantallas angostas las zonas se apilan: barra, mapa, selección, alertas y lo demás. */
+@media (max-width: 1100px) {
+    .editor-mapa {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto minmax(480px, 70vh) auto auto auto auto;
+        grid-template-areas: "barra" "tipos" "mapa" "leyenda" "derecha" "izquierda" "estado";
+        height: auto;
+    }
+    .editor-panel { max-height: 360px; }
+}

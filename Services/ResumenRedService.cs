@@ -47,7 +47,14 @@ public static class ResumenRedService
         resumen.IpFueraDeRango = direcciones.Count(direccion =>
             !PrefijosRed.Any(red => direccion.Direccion.StartsWith(red.Prefijo, StringComparison.Ordinal))
             && direccion.Estado is SincronizadorIps.Asignada or SincronizadorIps.EnConflicto);
-        resumen.IpEnConflicto = direcciones.Where(direccion => direccion.Estado == SincronizadorIps.EnConflicto)
+        // Las IP compartidas que el técnico justificó no cuentan como pendientes.
+        var ipsJustificadas = (await contexto.ConflictosJustificados.AsNoTracking()
+                .Where(justificacion => justificacion.Tipo == "IP").Select(justificacion => justificacion.Clave).ToListAsync(cancelacion))
+            .ToHashSet(StringComparer.Ordinal);
+        resumen.IpConflictosJustificados = direcciones.Count(direccion =>
+            direccion.Estado == SincronizadorIps.EnConflicto && ipsJustificadas.Contains(direccion.Direccion));
+        resumen.IpEnConflicto = direcciones
+            .Where(direccion => direccion.Estado == SincronizadorIps.EnConflicto && !ipsJustificadas.Contains(direccion.Direccion))
             .OrderBy(direccion => direccion.Direccion, StringComparer.Ordinal)
             .Select(direccion => $"{direccion.Direccion}: {direccion.Observaciones}").ToList();
 

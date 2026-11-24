@@ -84,6 +84,47 @@ namespace ProyectoConexionRed.Web.Data.Migraciones
                     b.ToTable("ConexionesDocumentadas", (string)null);
                 });
 
+            modelBuilder.Entity("ProyectoConexionRed.Web.Models.ConflictoJustificado", b =>
+                {
+                    b.Property<int>("Identificador")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Clave")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Detalle")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("FechaUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Motivo")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NombreUsuario")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Identificador");
+
+                    b.HasIndex("Tipo", "Clave")
+                        .IsUnique();
+
+                    b.ToTable("ConflictosJustificados", (string)null);
+                });
+
             modelBuilder.Entity("ProyectoConexionRed.Web.Models.DireccionIp", b =>
                 {
                     b.Property<int>("Identificador")

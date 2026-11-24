@@ -1,12 +1,9 @@
 @{
     ViewData["Title"] = "Editor del mapa";
+    // El editor usa todo el ancho de la ventana con un margen pequeño en cada esquina.
+    ViewData["AnchoCompleto"] = true;
 }
 <link rel="stylesheet" href="~/css/editor-topologia.css" asp-append-version="true" />
-
-<section class="encabezado-pagina">
-    <h1>Editor del mapa</h1>
-    <p>Dibuja conexiones arrastrando desde un equipo hasta otro. Cada conexión se valida antes de guardarse. Solo se modifica la documentación; no se toca la red real.</p>
-</section>
 
 @Html.AntiForgeryToken()
 
@@ -21,68 +18,87 @@
          data-url-cambiar-puertos="@Url.Action("CambiarPuertos", "EditorTopologia")"
          data-base-iconos="@Url.Content("~/images/iconos/")"
          data-url-editar="@Url.Action("Editar", "Inventario", new { id = "__ID__" })">
+
     <div class="editor-barra" role="toolbar" aria-label="Herramientas del mapa">
-        <input type="search" id="mapa-buscar" placeholder="Buscar por nombre o IP" aria-label="Buscar equipo" />
-        <select id="mapa-area" aria-label="Filtrar por área"><option value="">Todas las áreas</option></select>
-        <select id="mapa-tipo" aria-label="Filtrar por tipo"><option value="">Todos los tipos</option></select>
-        <select id="mapa-vista" aria-label="Qué mostrar">
-            <option value="switches" selected>Solo switches y sus conexiones</option>
-            <option value="foco">Un switch y sus equipos</option>
-            <option value="todo">Todo el inventario</option>
-        </select>
-        <label id="mapa-etiqueta-foco" hidden>Switch en foco <select id="mapa-foco" aria-label="Switch en foco"></select></label>
-        <label class="editor-casilla"><input type="checkbox" id="mapa-etiquetas" checked /> Etiquetas de puertos</label>
-        <select id="mapa-color" aria-label="Colorear enlaces por">
-            <option value="stp">Colorear enlaces por estado STP</option>
-            <option value="datos">Colorear enlaces por estado de los datos</option>
-        </select>
-        <button type="button" id="mapa-conectar" class="boton boton-secundario" aria-pressed="false">Modo conectar</button>
-        <select id="mapa-diseno" aria-label="Tipo de distribución">
-            <option value="niveles" selected>Distribución por niveles (recomendada)</option>
-            <option value="cose">Distribución por fuerzas</option>
-            <option value="breadthfirst">Distribución en árbol</option>
-            <option value="concentric">Distribución concéntrica</option>
-            <option value="grid">Distribución en cuadrícula</option>
-        </select>
-        <button type="button" id="mapa-redistribuir" class="boton boton-secundario">Redistribuir</button>
-        <button type="button" id="mapa-ajustar" class="boton boton-secundario">Ajustar a pantalla</button>
-        <button type="button" id="mapa-deshacer" class="boton boton-secundario" disabled>Deshacer</button>
-        <button type="button" id="mapa-rehacer" class="boton boton-secundario" disabled>Rehacer</button>
-        <button type="button" id="mapa-recargar" class="boton boton-secundario">Recargar datos</button>
-        <button type="button" id="mapa-exportar" class="boton boton-secundario">Exportar imagen</button>
+        <h1 class="editor-titulo" title="Dibuja conexiones arrastrando desde un equipo hasta otro. Cada conexión se valida antes de guardarse. Solo se modifica la documentación; no se toca la red real.">Editor del mapa</h1>
+        <div class="editor-grupo" role="group" aria-label="Qué mostrar">
+            <span class="editor-grupo-titulo">Mostrar</span>
+            <input type="search" id="mapa-buscar" placeholder="Buscar por nombre o IP" aria-label="Buscar equipo" />
+            <select id="mapa-vista" aria-label="Qué mostrar">
+                <option value="switches" selected>Solo switches y sus conexiones</option>
+                <option value="foco">Un switch y sus equipos</option>
+                <option value="todo">Todo el inventario</option>
+            </select>
+            <label id="mapa-etiqueta-foco" hidden>Switch <select id="mapa-foco" aria-label="Switch en foco"></select></label>
+            <select id="mapa-area" aria-label="Filtrar por área"><option value="">Todas las áreas</option></select>
+            <select id="mapa-tipo" aria-label="Filtrar por tipo"><option value="">Todos los tipos</option></select>
+        </div>
+        <div class="editor-grupo" role="group" aria-label="Aspecto del mapa">
+            <span class="editor-grupo-titulo">Mapa</span>
+            <label class="editor-casilla"><input type="checkbox" id="mapa-etiquetas" checked /> Puertos</label>
+            <select id="mapa-color" aria-label="Colorear enlaces por">
+                <option value="stp">Color por estado STP</option>
+                <option value="datos">Color por estado de los datos</option>
+            </select>
+            <select id="mapa-diseno" aria-label="Tipo de distribución">
+                <option value="niveles" selected>Por niveles (recomendada)</option>
+                <option value="cose">Por fuerzas</option>
+                <option value="breadthfirst">En árbol</option>
+                <option value="concentric">Concéntrica</option>
+                <option value="grid">En cuadrícula</option>
+            </select>
+            <button type="button" id="mapa-redistribuir" class="boton boton-secundario">Redistribuir</button>
+            <button type="button" id="mapa-ajustar" class="boton boton-secundario">Ajustar</button>
+        </div>
+        <div class="editor-grupo" role="group" aria-label="Edición">
+            <span class="editor-grupo-titulo">Editar</span>
+            <button type="button" id="mapa-conectar" class="boton boton-secundario" aria-pressed="false">Modo conectar</button>
+            <button type="button" id="mapa-deshacer" class="boton boton-secundario" disabled>Deshacer</button>
+            <button type="button" id="mapa-rehacer" class="boton boton-secundario" disabled>Rehacer</button>
+        </div>
+        <div class="editor-grupo" role="group" aria-label="Datos">
+            <span class="editor-grupo-titulo">Datos</span>
+            <button type="button" id="mapa-recargar" class="boton boton-secundario">Recargar</button>
+            <button type="button" id="mapa-exportar" class="boton boton-secundario">Exportar imagen</button>
+        </div>
     </div>
 
-    <div id="lienzo-mapa" class="editor-lienzo" aria-label="Mapa de red"></div>
-
-    <aside class="editor-lateral">
-        <section class="editor-panel" aria-live="polite">
-            <h2>Selección</h2>
-            <div id="mapa-seleccion"><p class="editor-vacio">Selecciona un equipo o un enlace.</p></div>
-        </section>
-        <section class="editor-panel">
+    <aside class="editor-izquierda" aria-label="Alertas y equipos pendientes de conectar">
+        <section class="editor-panel editor-panel-alertas" aria-live="polite">
             <h2>Alertas</h2>
             <div id="mapa-alertas"><p class="editor-vacio">Cargando.</p></div>
         </section>
-        <section class="editor-panel">
+        <section class="editor-panel editor-panel-sin-conexion">
             <h2>Equipos sin conexiones</h2>
             <input type="search" id="mapa-sin-conexion-filtro" placeholder="Filtrar la lista" aria-label="Filtrar equipos sin conexiones" />
             <div id="mapa-sin-conexion"><p class="editor-vacio">Cargando.</p></div>
         </section>
-        <section class="editor-panel">
-            <h2>Tipos de equipo</h2>
-            <div id="mapa-tipos" class="editor-tipos"></div>
-        </section>
-        <section class="editor-panel">
-            <h2>Leyenda</h2>
-            <ul class="editor-leyenda">
-                <li><span class="leyenda-linea leyenda-completo"></span> Enlace físico completo</li>
-                <li><span class="leyenda-linea leyenda-parcial"></span> Relación documentada parcial</li>
-                <li><span class="leyenda-linea leyenda-bloqueado"></span> Bloqueado por STP</li>
-                <li><span class="leyenda-linea leyenda-redundante"></span> Redundante</li>
-                <li><span class="leyenda-linea leyenda-reenvio"></span> En reenvío (STP)</li>
-                <li>Borde punteado: switch no administrable</li>
-                <li>Al colorear por estado de los datos: verde confirmado, gris pendiente, ámbar a verificar, rojo desactualizado</li>
-            </ul>
+    </aside>
+
+    <div class="editor-franja editor-franja-tipos">
+        <h2 class="editor-franja-titulo">Tipos de equipo</h2>
+        <div id="mapa-tipos" class="editor-tipos"></div>
+    </div>
+
+    <div id="lienzo-mapa" class="editor-lienzo" aria-label="Mapa de red"></div>
+
+    <div class="editor-franja editor-franja-leyenda">
+        <h2 class="editor-franja-titulo">Leyenda</h2>
+        <ul class="editor-leyenda">
+            <li><span class="leyenda-linea leyenda-completo"></span> Enlace físico completo</li>
+            <li><span class="leyenda-linea leyenda-parcial"></span> Relación parcial</li>
+            <li><span class="leyenda-linea leyenda-reenvio"></span> En reenvío (STP)</li>
+            <li><span class="leyenda-linea leyenda-bloqueado"></span> Bloqueado por STP</li>
+            <li><span class="leyenda-linea leyenda-redundante"></span> Redundante</li>
+            <li>Borde punteado: switch no administrable</li>
+            <li>Color por datos: verde confirmado, gris pendiente, ámbar a verificar, rojo desactualizado</li>
+        </ul>
+    </div>
+
+    <aside class="editor-derecha" aria-label="Detalle de la selección">
+        <section class="editor-panel editor-panel-seleccion" aria-live="polite">
+            <h2>Selección</h2>
+            <div id="mapa-seleccion"><p class="editor-vacio">Selecciona un equipo o un enlace. Doble clic en un switch muestra sus equipos.</p></div>
         </section>
     </aside>
 

@@ -270,6 +270,7 @@ public class TopologiaController : Controller
         };
 
         resumenTopologia.Resumen = await ResumenRedService.CalcularAsync(contextoInventario, cancelacion);
+        resumenTopologia.Conflictos = await ConflictosService.ObtenerAsync(contextoInventario, cancelacion);
         return View(resumenTopologia);
     }
 

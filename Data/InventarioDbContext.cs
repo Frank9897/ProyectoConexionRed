@@ -58,6 +58,8 @@ public class InventarioDbContext : DbContext
 
     public DbSet<DireccionIp> DireccionesIp => Set<DireccionIp>();
 
+    public DbSet<ConflictoJustificado> ConflictosJustificados => Set<ConflictoJustificado>();
+
     /// <summary>
     /// Define nombres y límites de columnas; cambiar estas reglas requiere actualizar el esquema de la base.
     /// </summary>
@@ -201,6 +203,17 @@ public class InventarioDbContext : DbContext
             .WithMany()
             .HasForeignKey(nameof(DireccionIp.IdentificadorEquipo))
             .OnDelete(DeleteBehavior.SetNull);
+
+        // configuracionConflicto guarda las justificaciones; no puede haber dos para el mismo tipo y valor.
+        var configuracionConflicto = constructorModelo.Entity<ConflictoJustificado>();
+        configuracionConflicto.ToTable("ConflictosJustificados");
+        configuracionConflicto.HasKey(nameof(ConflictoJustificado.Identificador));
+        configuracionConflicto.Property(nameof(ConflictoJustificado.Tipo)).HasMaxLength(10).IsRequired();
+        configuracionConflicto.Property(nameof(ConflictoJustificado.Clave)).HasMaxLength(120).IsRequired();
+        configuracionConflicto.Property(nameof(ConflictoJustificado.Motivo)).HasMaxLength(120).IsRequired();
+        configuracionConflicto.Property(nameof(ConflictoJustificado.Detalle)).HasMaxLength(500);
+        configuracionConflicto.Property(nameof(ConflictoJustificado.NombreUsuario)).HasMaxLength(100).IsRequired();
+        configuracionConflicto.HasIndex(nameof(ConflictoJustificado.Tipo), nameof(ConflictoJustificado.Clave)).IsUnique();
 
         // configuracionMantenimiento integra la tabla de marcas al esquema migrable; cambiarla modifica su persistencia.
         var configuracionMantenimiento = constructorModelo.Entity<MantenimientoEjecutado>();

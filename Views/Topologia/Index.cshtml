@@ -337,11 +337,11 @@
             <h3>Conflictos y otras IP</h3>
             @if (resumen.IpEnConflicto.Count == 0)
             {
-                <p class="estado-ok">No hay IP compartidas por dos equipos.</p>
+                <p class="estado-ok">No hay IP compartidas sin resolver@(resumen.IpConflictosJustificados > 0 ? $" ({resumen.IpConflictosJustificados} justificadas)" : string.Empty).</p>
             }
             else
             {
-                <p>IP declaradas por más de un equipo:</p>
+                <p>IP declaradas por más de un equipo, sin resolver (<a href="#conflictos">corregir o justificar</a>):</p>
                 <ul class="lista-estado">
                     @foreach (var conflicto in resumen.IpEnConflicto.Take(8))
                     {
@@ -405,6 +405,128 @@
             <p class="nota-estado">De @resumen.PuertosTotal puertos: @resumen.PuertosConEnlace con enlace completo, @resumen.PuertosConRelacionParcial con relación parcial y @resumen.PuertosSinDocumentar sin conexión documentada.</p>
         </article>
     </div>
+</section>
+
+@{
+    var conflictos = Model.Conflictos;
+    // TituloConflicto redacta el encabezado de cada tarjeta según el tipo de valor repetido.
+    string TituloConflicto(ConflictoDetectado detectado) => detectado.Tipo switch
+    {
+        ConflictosViewModel.TipoIp => $"IP {detectado.Clave} declarada en {detectado.Equipos.Count} fichas",
+        ConflictosViewModel.TipoMac => $"MAC {detectado.Clave} repetida en {detectado.Equipos.Count} fichas",
+        _ => $"Nombre «{detectado.Equipos[0].Nombre}» repetido en {detectado.Equipos.Count} fichas"
+    };
+    // Orientacion ayuda a decidir entre corregir y justificar.
+    string Orientacion(string claseConflicto) => claseConflicto switch
+    {
+        ConflictosViewModel.TipoIp => "Si son equipos distintos, cambia la IP de uno de ellos. Si es una IP compartida a propósito o el mismo equipo cargado dos veces, justifícalo.",
+        ConflictosViewModel.TipoMac => "Una MAC no debería repetirse entre equipos distintos. Corrige o quita la MAC de la ficha equivocada; si es el mismo equipo con dos interfaces, justifícalo.",
+        _ => "Dos fichas con el mismo nombre se confunden en el mapa y en las búsquedas. Renombra una; si es el mismo equipo duplicado, justifícalo hasta unificarlas."
+    };
+    string Marcador(string claseConflicto) => claseConflicto switch
+    {
+        ConflictosViewModel.TipoIp => "Nueva IP (vacío para quitarla)",
+        ConflictosViewModel.TipoMac => "Nueva MAC (vacío para quitarla)",
+        _ => "Nuevo nombre"
+    };
+}
+
+<section class="panel conflictos-datos" id="conflictos" aria-labelledby="titulo-conflictos">
+    <div class="encabezado-seccion-topologia">
+        <div>
+            <p class="sobrelinea">CONFLICTOS DE DATOS</p>
+            <h2 id="titulo-conflictos">Corregir o justificar</h2>
+        </div>
+    </div>
+    <p>Valores que figuran repetidos en fichas distintas. Cada conflicto se resuelve cambiando el dato de una ficha o justificando por qué es correcto que se repita; las justificaciones y los cambios quedan en el historial.</p>
+    @if (TempData["MensajeConflictos"] is string mensajeConflictos)
+    {
+        <p class="estado-ok" role="status">@mensajeConflictos</p>
+    }
+    @if (TempData["ErrorConflictos"] is string errorConflictos)
+    {
+        <p class="aviso-campo aviso-campo-error" role="alert">@errorConflictos</p>
+    }
+    <p><strong>@conflictos.Pendientes.Count</strong> pendientes y <strong>@conflictos.Justificados.Count</strong> justificados.</p>
+
+    @if (conflictos.Pendientes.Count == 0)
+    {
+        <p class="estado-ok">No hay conflictos pendientes de IP, MAC ni nombre.</p>
+    }
+
+    <datalist id="ips-libres-conflictos">
+        @foreach (var ipLibre in conflictos.IpsLibres)
+        {
+            <option value="@ipLibre"></option>
+        }
+    </datalist>
+
+    @foreach (var conflicto in conflictos.Pendientes)
+    {
+        <article class="tarjeta-conflicto">
+            <h3>@TituloConflicto(conflicto)</h3>
+            <p class="nota-estado">@Orientacion(conflicto.Tipo)</p>
+            <ul class="equipos-conflicto">
+                @foreach (var equipoConflicto in conflicto.Equipos)
+                {
+                    <li>
+                        <div class="datos-equipo-conflicto">
+                            <strong>@equipoConflicto.Nombre</strong>
+                            <span>@equipoConflicto.Tipo@(string.IsNullOrWhiteSpace(equipoConflicto.Area) ? string.Empty : " · " + equipoConflicto.Area)</span>
+                            <span>IP @(equipoConflicto.Ip ?? "sin dato") · MAC @(equipoConflicto.Mac ?? "sin dato")</span>
+                            <a asp-controller="Inventario" asp-action="Editar" asp-route-id="@equipoConflicto.Identificador">Abrir ficha</a>
+                        </div>
+                        <form method="post" asp-controller="Conflictos" asp-action="Corregir" class="formulario-corregir">
+                            <input type="hidden" name="tipo" value="@conflicto.Tipo" />
+                            <input type="hidden" name="idEquipo" value="@equipoConflicto.Identificador" />
+                            <input type="text" name="valor" placeholder="@Marcador(conflicto.Tipo)" aria-label="@Marcador(conflicto.Tipo) para @equipoConflicto.Nombre" list="@(conflicto.Tipo == ConflictosViewModel.TipoIp ? "ips-libres-conflictos" : null)" autocomplete="off" />
+                            <button type="submit" class="boton boton-secundario">Cambiar</button>
+                        </form>
+                    </li>
+                }
+            </ul>
+            <details class="justificar-conflicto">
+                <summary>Justificar este conflicto</summary>
+                <form method="post" asp-controller="Conflictos" asp-action="Justificar">
+                    <input type="hidden" name="tipo" value="@conflicto.Tipo" />
+                    <input type="hidden" name="valor" value="@conflicto.Clave" />
+                    <label>Motivo
+                        <select name="motivo">
+                            @foreach (var motivo in ConflictosViewModel.MotivosPorTipo[conflicto.Tipo])
+                            {
+                                <option>@motivo</option>
+                            }
+                        </select>
+                    </label>
+                    <label>Explicación (obligatoria con «Otro»)
+                        <textarea name="detalle" rows="2" maxlength="500"></textarea>
+                    </label>
+                    <button type="submit" class="boton">Guardar justificación</button>
+                </form>
+            </details>
+        </article>
+    }
+
+    @if (conflictos.Justificados.Count > 0)
+    {
+        <details class="conflictos-justificados">
+            <summary>Conflictos justificados (@conflictos.Justificados.Count)</summary>
+            @foreach (var conflicto in conflictos.Justificados)
+            {
+                @{ var justificacion = conflicto.Justificacion!; }
+                <article class="tarjeta-conflicto tarjeta-conflicto-justificado">
+                    <h3>@TituloConflicto(conflicto)</h3>
+                    <p>Motivo: <strong>@justificacion.Motivo</strong>@(string.IsNullOrWhiteSpace(justificacion.Detalle) ? string.Empty : ". " + justificacion.Detalle)</p>
+                    <p class="nota-estado">Justificado por @justificacion.NombreUsuario el @justificacion.FechaUtc.ToString("dd/MM/yyyy HH:mm") UTC. Fichas: @string.Join(", ", conflicto.Equipos.Select(equipoConflicto => equipoConflicto.Nombre)).</p>
+                    <form method="post" asp-controller="Conflictos" asp-action="Revocar">
+                        <input type="hidden" name="tipo" value="@conflicto.Tipo" />
+                        <input type="hidden" name="valor" value="@conflicto.Clave" />
+                        <button type="submit" class="boton boton-secundario">Retirar la justificación</button>
+                    </form>
+                </article>
+            }
+        </details>
+    }
 </section>
 
 
