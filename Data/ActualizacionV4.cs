@@ -20,7 +20,7 @@ internal static class ActualizacionV4
 
     // CrearEquiposDetectadosSinDocumentar decide si los hosts del escaneo que no están en el inventario se dan de alta
     // como «A verificar»; ponerlo en false deja el escaneo solo para completar fichas existentes.
-    private const bool CrearEquiposDetectadosSinDocumentar = true;
+    private static readonly bool CrearEquiposDetectadosSinDocumentar = true;
 
     // SwitchesDe24Puertos lista los switches cuya tabla del Visio o cuyo nombre indica 24 puertos RJ45; si el equipo
     // no tiene cantidad RJ45 guardada se le asigna 24. Un nombre ausente de la lista no recibe cantidad RJ45.

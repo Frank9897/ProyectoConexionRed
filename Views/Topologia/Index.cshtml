@@ -513,7 +513,7 @@
             <summary>Conflictos justificados (@conflictos.Justificados.Count)</summary>
             @foreach (var conflicto in conflictos.Justificados)
             {
-                @{ var justificacion = conflicto.Justificacion!; }
+                var justificacion = conflicto.Justificacion!;
                 <article class="tarjeta-conflicto tarjeta-conflicto-justificado">
                     <h3>@TituloConflicto(conflicto)</h3>
                     <p>Motivo: <strong>@justificacion.Motivo</strong>@(string.IsNullOrWhiteSpace(justificacion.Detalle) ? string.Empty : ". " + justificacion.Detalle)</p>
