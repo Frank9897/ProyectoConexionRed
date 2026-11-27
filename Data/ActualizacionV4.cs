@@ -29,7 +29,7 @@ internal static class ActualizacionV4
         "Switch Aruba 1930 (WDGC)", "HP ProCurve 29100I-24G", "Switch HP 5500", "Switch HP 1920", "Switch HP 1920S",
         "Aruba 1930 (reserva)", "Switch Aruba 1930 (Reserva 2)", "Switch principal de Mesa de Entradas",
         "Switch Agrimensura 1 HP", "Switch Agrimensura 3Com", "Asuntos Jurídicos", "Cartografía", "Inmuebles",
-        "Mesa de Entrada (No principal)", "Puerta Agrimensura", "Regularización Dominial", "Secretaría", "Sistemas",
+        "Mesa de Entrada (No principal)", "Puerta Agrimensura", "Notificadores", "Secretaría", "Sistemas",
         "Valuación R0", "Valuación R1", "Valuación R2"
     };
 
@@ -228,7 +228,8 @@ internal static class ActualizacionV4
         || equipo.Modelo?.Contains("S4148", StringComparison.OrdinalIgnoreCase) == true
         || equipo.Nombre.Contains("Cisco", StringComparison.OrdinalIgnoreCase)
         || equipo.Nombre.Contains("Intellinet", StringComparison.OrdinalIgnoreCase)
-        || equipo.Nombre.Equals("SWITCH DE 8 PUERTOS", StringComparison.OrdinalIgnoreCase);
+        || equipo.Nombre.Equals("SWITCH DE 8 PUERTOS", StringComparison.OrdinalIgnoreCase)
+        || equipo.Nombre.Contains("no administrable", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Devuelve el número de jaula SFP local (25-28 equivalen a 1-4) o nulo si la interfaz no es de tipo SFP.

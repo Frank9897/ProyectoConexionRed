@@ -602,3 +602,11 @@ Este bloque permite continuar el trabajo con otra IA. Está basado en la lectura
 - **Persistencia:** tabla `ConflictosJustificados` (`Models/ConflictoJustificado.cs`, migración escrita a mano `20261120180000_Fase4ConflictosJustificados` con Designer y snapshot), con índice único por tipo y valor normalizado (IP recortada, MAC en mayúsculas con dos puntos, nombre en minúsculas). El panel de estado ya no cuenta como pendientes las IP compartidas justificadas.
 
 **Pendiente:** probar en navegador con la base real; unificación de conexiones (1c); proponer unir fichas duplicadas en vez de solo justificarlas.
+
+**Actualización DIAGRAMA RED V5.0 (25 de noviembre de 2026; sin compilar ni ejecutar):**
+- `DIAGRAMA RED V5.0.vsdx` tiene 22 páginas y 33 libros Excel sin cifrar. Los dibujos son iguales al V4; cambian 30 filas de las tablas y se agrega la tabla de un **switch no administrable** de 4 puertos detrás del puerto 18 de Puerta Agrimensura. Detalle en `docs/ANALISIS_V5_CONEXIONES.md`.
+- **Regla del usuario:** el V5 es la fuente de verdad; se **eliminan las conexiones que no respetan el V5**, en Topología y en el editor (ambos leen la misma base).
+- `Data/CatalogoPuertosAreasV3.cs` quedó actualizado al V5 (la fila de cada puerto conserva su `Libro` y `FilaFuente` originales; las filas nuevas de Puerta Agrimensura usan `Excel20`). El switch de IP 192.168.1.40 se llama ahora **Notificadores** (antes «Regularización Dominial») y el de 192.168.1.17 **Switch Régimen** (antes «Switch de área sin identificar (2)»); los catálogos del código ya usan esos nombres.
+- `Data/ActualizacionV5.cs` (llamada desde `InicializadorInventario` antes de `IncorporarDatosV3Async`): renombra, da de alta `Switch no administrable` y concilia **una sola vez** (marca `conciliacion-visio-v5-2026-11`) eliminando relaciones y enlaces que contradicen el V5 en los puertos con tabla, con evento en el historial. No elimina un enlace si el destino del V5 no resuelve a ninguna ficha.
+- `ActualizacionV4` excluye de la regla de 4 SFP a los switches con «no administrable» en el nombre.
+- **Pendiente:** probar con la base real (las eliminaciones son irreversibles salvo recrear los enlaces a mano; copiar el `.db` antes de arrancar); revisar que el puerto de enlace del switch no administrable (no documentado) se complete cuando haya datos.

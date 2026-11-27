@@ -32,6 +32,10 @@ public static class InicializadorInventario
         // CargarEquiposInicialesAsync agrega el catálogo documental una sola vez.
         await CargarEquiposInicialesAsync(contextoInventario, cancelacion);
 
+        // ActualizacionV5.AplicarAsync renombra los switches que el V5 identifica, agrega el switch no administrable de Puerta Agrimensura
+        // y, una sola vez por base, elimina las conexiones que contradicen el V5; va antes del importador para que este recree las vigentes.
+        await ActualizacionV5.AplicarAsync(contextoInventario, cancelacion);
+
         // IncorporarDatosV3Async completa MAC confirmadas y agrega el equipo de reserva documentado sin duplicarlo.
         await IncorporarDatosV3Async(contextoInventario, cancelacion);
 
@@ -1256,14 +1260,14 @@ public static class InicializadorInventario
             ("Inmuebles", "192.168.1.26", "Switch de área"),
             ("Mesa de Entrada (No principal)", "192.168.1.18", "No principal"),
             ("Puerta Agrimensura", "192.168.1.19", "Switch de área"),
-            ("Regularización Dominial", "192.168.1.40", "Switch de área"),
+            ("Notificadores", "192.168.1.40", "Switch de área"),
             ("Secretaría", "192.168.1.28", "Switch de área"),
             ("Sistemas", "192.168.1.216", "Switch de área"),
             ("Valuación R0", "192.168.1.32", "Switch de área"),
             ("Valuación R1", "192.168.1.29", "Switch de área"),
             ("Valuación R2", "192.168.1.20", "Switch de área"),
             ("Switch de Régimen", null, "Switch de área"),
-            ("Switch de área sin identificar (2)", "192.168.1.17", "Switch de área")
+            ("Switch Régimen", "192.168.1.17", "Switch de área")
         ];
     }
 
@@ -1286,7 +1290,7 @@ public static class InicializadorInventario
             ("Inmuebles", "192.168.1.26", "B8:AF:67:9B:8E:DD"),
             ("Mesa de Entrada (No principal)", "192.168.1.18", "5C:8A:38:9F:1A:32"),
             ("Puerta Agrimensura", "192.168.1.19", "5C:8A:38:9E:80:52"),
-            ("Regularización Dominial", "192.168.1.40", "B8:AF:67:9A:C5:9E"),
+            ("Notificadores", "192.168.1.40", "B8:AF:67:9A:C5:9E"),
             ("Secretaría", "192.168.1.28", "40:B9:3C:2A:BF:7D"),
             ("Sistemas", "192.168.1.216", "20:67:7C:4C:44:A8"),
             ("Valuación R0", "192.168.1.32", "78:48:59:73:47:83"),
@@ -1304,7 +1308,7 @@ public static class InicializadorInventario
         return
         [
             ("Switch principal de Mesa de Entradas", "192.168.1.1", "Aruba"),
-            ("Switch de área sin identificar (2)", "192.168.1.17", "Aruba")
+            ("Switch Régimen", "192.168.1.17", "Aruba")
         ];
     }
 
@@ -1378,7 +1382,7 @@ public static class InicializadorInventario
             new() { Nombre = "Inmuebles", IpAdministracion = "192.168.1.26", Area = "Inmuebles", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
             new() { Nombre = "Mesa de Entrada (No principal)", IpAdministracion = "192.168.1.18", Area = "Mesa de Entradas", RolEnArea = "No principal", TipoDispositivo = "Switch", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información", Observaciones = "El usuario confirma su función de switch secundario; enlaza al principal del área y da conexión a tres equipos." },
             new() { Nombre = "Puerta Agrimensura", IpAdministracion = "192.168.1.19", Area = "Agrimensura", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
-            new() { Nombre = "Regularización Dominial", IpAdministracion = "192.168.1.40", Area = "Regularización Dominial", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
+            new() { Nombre = "Notificadores", IpAdministracion = "192.168.1.40", Area = "Notificadores", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
             new() { Nombre = "Secretaría", IpAdministracion = "192.168.1.28", Area = "Secretaría", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
             new() { Nombre = "Sistemas", IpAdministracion = "192.168.1.216", Area = "Sistemas", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
             new() { Nombre = "Valuación R0", IpAdministracion = "192.168.1.32", Area = "Valuación", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
@@ -1386,7 +1390,7 @@ public static class InicializadorInventario
             new() { Nombre = "Valuación R2", IpAdministracion = "192.168.1.20", Area = "Valuación", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" },
             new() { Nombre = "Switch de Régimen", Area = "Régimen", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Inaccesible: falta de credenciales", Observaciones = "Equipo e inaccesibilidad confirmados por el usuario; IP no indicada en el registro base." },
             new() { Nombre = "Switch principal de Mesa de Entradas", Fabricante = "Aruba", Modelo = "1930", IpAdministracion = "192.168.1.1", Area = "Mesa de Entradas", TipoDispositivo = "Switch", RolEnArea = "Principal", EstadoDatos = "Vigente", EstadoAdministrativo = "Inaccesible: falta de credenciales", Observaciones = "Aruba 1930 principal del área; inaccesible por falta de credenciales según el usuario." },
-            new() { Nombre = "Switch de área sin identificar (2)", IpAdministracion = "192.168.1.17", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" }
+            new() { Nombre = "Switch Régimen", IpAdministracion = "192.168.1.17", TipoDispositivo = "Switch", RolEnArea = "Switch de área", EstadoDatos = "Vigente", EstadoAdministrativo = "Sin información" }
         ];
     }
 }

@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace ProyectoConexionRed.Web.Data;
 
 /// <summary>
-/// Mantiene posiciones de switches de área y rack documentadas en el V3.5 y verificadas contra el V4.0 (las tablas Excel del V4 no cambian sus destinos).
+/// Mantiene posiciones de switches de área y rack documentadas en el V3.5 y verificadas contra el V4.0 y actualizadas al V5.0 (30 filas cambian y se agrega la tabla del switch no administrable de Puerta Agrimensura).
 /// </summary>
 internal static class CatalogoPuertosAreasV3
 {
@@ -511,8 +511,8 @@ internal static class CatalogoPuertosAreasV3
     "Libro": "Excel13",
     "FilaFuente": "9",
     "EtiquetaPuerto": "8",
-    "Destino": "Agrimensura600",
-    "IpRemota": "192.168.0.151"
+    "Destino": "Desconocido",
+    "IpRemota": null
   },
   {
     "EquipoLocal": "Asuntos Jurídicos",
@@ -871,7 +871,7 @@ internal static class CatalogoPuertosAreasV3
     "Libro": "Excel14",
     "FilaFuente": "25",
     "EtiquetaPuerto": "24",
-    "Destino": "HPE 1920s (E)",
+    "Destino": "Switch HP 1920 (E)",
     "IpRemota": "192.168.1.115"
   },
   {
@@ -1465,8 +1465,8 @@ internal static class CatalogoPuertosAreasV3
     "Libro": "Excel19",
     "FilaFuente": "19",
     "EtiquetaPuerto": "18",
-    "Destino": "Agrimensura21",
-    "IpRemota": "192.168.0.124"
+    "Destino": "Switch no administrable",
+    "IpRemota": null
   },
   {
     "EquipoLocal": "Puerta Agrimensura",
@@ -1474,8 +1474,8 @@ internal static class CatalogoPuertosAreasV3
     "Libro": "Excel19",
     "FilaFuente": "20",
     "EtiquetaPuerto": "19",
-    "Destino": "Agrimensura23",
-    "IpRemota": "192.168.0.37"
+    "Destino": "LIBRE",
+    "IpRemota": null
   },
   {
     "EquipoLocal": "Puerta Agrimensura",
@@ -1519,11 +1519,11 @@ internal static class CatalogoPuertosAreasV3
     "Libro": "Excel19",
     "FilaFuente": "25",
     "EtiquetaPuerto": "24",
-    "Destino": "SWTICH ARUBA Mentrada",
-    "IpRemota": "192.168.1.1"
+    "Destino": "LIBRE",
+    "IpRemota": null
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "2",
@@ -1532,7 +1532,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": null
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "3",
@@ -1541,7 +1541,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": "192.168.0.196"
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "4",
@@ -1550,7 +1550,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": "192.168.0.228"
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "5",
@@ -1559,7 +1559,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": "192.168.0.193"
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "6",
@@ -1568,7 +1568,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": "192.168.0.78"
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "7",
@@ -1577,7 +1577,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": null
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "8",
@@ -1586,7 +1586,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": "192.168.0.71"
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "9",
@@ -1595,7 +1595,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": null
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "10",
@@ -1604,7 +1604,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": null
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "11",
@@ -1613,7 +1613,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": null
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "12",
@@ -1622,7 +1622,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": null
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "13",
@@ -1631,7 +1631,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": null
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "14",
@@ -1640,7 +1640,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": "192.168.0.170"
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "15",
@@ -1649,7 +1649,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": null
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "16",
@@ -1658,7 +1658,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": null
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "17",
@@ -1667,7 +1667,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": null
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "18",
@@ -1676,7 +1676,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": "192.168.0.212"
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "19",
@@ -1685,7 +1685,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": null
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "20",
@@ -1694,7 +1694,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": "192.168.0.197"
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "21",
@@ -1703,7 +1703,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": "192.168.0.226"
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "22",
@@ -1712,7 +1712,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": null
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "23",
@@ -1721,7 +1721,7 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": null
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "24",
@@ -1730,13 +1730,13 @@ internal static class CatalogoPuertosAreasV3
     "IpRemota": "192.168.0.199"
   },
   {
-    "EquipoLocal": "Regularización Dominial",
+    "EquipoLocal": "Notificadores",
     "Pagina": "NOTIFICADORES",
     "Libro": "Excel20",
     "FilaFuente": "25",
     "EtiquetaPuerto": "24",
-    "Destino": "SWITCH HP1920 (E)",
-    "IpRemota": "192.168.1.115"
+    "Destino": "DELL S4148U-ON",
+    "IpRemota": "192.168.1.44"
   },
   {
     "EquipoLocal": "Secretaría",
@@ -3361,7 +3361,7 @@ internal static class CatalogoPuertosAreasV3
     "FilaFuente": "24",
     "EtiquetaPuerto": "23",
     "Destino": "Switch DELL S4148U-ON 48G",
-    "IpRemota": "LAN",
+    "IpRemota": "MGMT p1 atrás",
     "EsRack": true
   },
   {
@@ -3631,8 +3631,8 @@ internal static class CatalogoPuertosAreasV3
     "Libro": "Excel8",
     "FilaFuente": "3",
     "EtiquetaPuerto": "2",
-    "Destino": "SUMARIOS",
-    "IpRemota": null,
+    "Destino": "SWITCH NOTIFICADORES",
+    "IpRemota": "192.168.1.40",
     "EsRack": true,
     "TipoInterfaz": "SFP+"
   },
@@ -3642,8 +3642,8 @@ internal static class CatalogoPuertosAreasV3
     "Libro": "Excel8",
     "FilaFuente": "4",
     "EtiquetaPuerto": "3",
-    "Destino": "OCUPADO",
-    "IpRemota": null,
+    "Destino": "SWITCH ASUNTOS JURIDICOS",
+    "IpRemota": "192.168.1.30",
     "EsRack": true,
     "TipoInterfaz": "SFP+"
   },
@@ -3664,8 +3664,8 @@ internal static class CatalogoPuertosAreasV3
     "Libro": "Excel8",
     "FilaFuente": "6",
     "EtiquetaPuerto": "5",
-    "Destino": "OCUPADO",
-    "IpRemota": null,
+    "Destino": "SWITCH REGIMEN",
+    "IpRemota": "192.168.1.17",
     "EsRack": true,
     "TipoInterfaz": "SFP+"
   },
@@ -3741,7 +3741,7 @@ internal static class CatalogoPuertosAreasV3
     "Libro": "Excel8",
     "FilaFuente": "13",
     "EtiquetaPuerto": "12",
-    "Destino": "OCUPADO",
+    "Destino": "SIN SFP",
     "IpRemota": null,
     "EsRack": true,
     "TipoInterfaz": "SFP+"
@@ -4012,6 +4012,42 @@ internal static class CatalogoPuertosAreasV3
     "EsRack": false,
     "TipoInterfaz": "SFP",
     "EstadoRelacion": "Confirmado"
+  },
+  {
+    "EquipoLocal": "Switch no administrable",
+    "Pagina": "PUERTA AGRIMENSURA",
+    "Libro": "Excel20",
+    "FilaFuente": "2",
+    "EtiquetaPuerto": "1",
+    "Destino": "Agrimensura23",
+    "IpRemota": "192.168.0.37"
+  },
+  {
+    "EquipoLocal": "Switch no administrable",
+    "Pagina": "PUERTA AGRIMENSURA",
+    "Libro": "Excel20",
+    "FilaFuente": "3",
+    "EtiquetaPuerto": "2",
+    "Destino": "Agrimensura21",
+    "IpRemota": "192.168.0.124"
+  },
+  {
+    "EquipoLocal": "Switch no administrable",
+    "Pagina": "PUERTA AGRIMENSURA",
+    "Libro": "Excel20",
+    "FilaFuente": "4",
+    "EtiquetaPuerto": "3",
+    "Destino": "LIBRE",
+    "IpRemota": null
+  },
+  {
+    "EquipoLocal": "Switch no administrable",
+    "Pagina": "PUERTA AGRIMENSURA",
+    "Libro": "Excel20",
+    "FilaFuente": "5",
+    "EtiquetaPuerto": "4",
+    "Destino": "LIBRE",
+    "IpRemota": null
   }
 ]
 """;
